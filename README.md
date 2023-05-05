@@ -29,3 +29,8 @@ The immediate goals are:
 - [ ] Compile a working WASM version that interacts with JavaScript
 
 These should provide insights into Ledger's inner workings and concepts.
+
+# Documentation
+
+- [Ledger for Developers](https://ledger-cli.org/doc/ledger3.html#Ledger-for-Developers)
+- Ledger source code [repo](https://github.com/ledger/ledger/)

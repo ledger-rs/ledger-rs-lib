@@ -3,7 +3,9 @@
  *
  * Parses textual input into the model structure.
  */
-use std::io::Read;
+use std::io::{Read, BufReader, BufRead};
+
+use crate::{journal::Journal, context::ParsingContext};
 
 enum LineParseResult {
     Comment,
@@ -13,8 +15,39 @@ enum LineParseResult {
 }
 
 /// parse textual input
-pub fn parse<T: Read>(source: T) {
-    todo!()
+pub fn parse<T: Read>(source: T) -> Journal {
+    let mut reader = BufReader::new(source);
+    let mut context = ParsingContext::new();
+    // To avoid allocation, reuse the String variable.
+    let mut line = String::new();
+
+    loop {
+        match reader.read_line(&mut line) {
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+            Ok(0) => {
+                // end of file?
+                println!("End of file");
+                break;
+            }
+            Ok(_) => {
+                // Remove the trailing newline characters
+                // let clean_line = strip_trailing_newline(&line);
+                let clean_line = &line.trim_end();
+
+                // use the read value
+                // TODO: let result = parse_line(&mut context, &clean_line);
+                // TODO: process_parsed_element(&mut context, result);
+
+                // clear the buffer before reading the next line.
+                line.clear();
+            }
+        }
+    }
+
+    context.journal
 }
 
 #[cfg(test)]

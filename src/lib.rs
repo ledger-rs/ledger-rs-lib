@@ -4,7 +4,10 @@
  * Implements all the logic and provides an entry point to 3rd-party code.
  */
 
+mod context;
+mod journal;
 mod parser;
+mod xact;
 
 /// entry point?
 pub fn run(args: Vec<String>) -> Vec<String> {
