@@ -4,6 +4,8 @@
  * Implements all the logic and provides an entry point to 3rd-party code.
  */
 
+mod parser;
+
 /// entry point?
 pub fn run(args: Vec<String>) -> Vec<String> {
     // here we should accept parameters:
