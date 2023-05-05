@@ -1,4 +1,4 @@
-use std::{ops::Index, fs::File};
+use std::fs::File;
 
 use journal::Journal;
 
@@ -8,6 +8,7 @@ use journal::Journal;
  * Implements all the logic and provides an entry point to 3rd-party code.
  */
 
+mod account;
 mod amount;
 mod commodity;
 mod context;
