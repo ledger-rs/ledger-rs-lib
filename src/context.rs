@@ -10,7 +10,7 @@ pub(crate) struct ParsingContext {
     pub journal: Journal,
 
     /// Transaction being parsed currently. If exist, we are in the process of parsing posts.
-    xact: Option<Xact>,
+    pub xact: Option<Xact>,
 
 }
 

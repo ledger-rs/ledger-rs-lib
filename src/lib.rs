@@ -4,9 +4,13 @@
  * Implements all the logic and provides an entry point to 3rd-party code.
  */
 
+mod amount;
+mod commodity;
 mod context;
 mod journal;
 mod parser;
+mod post;
+mod utils;
 mod xact;
 
 /// entry point?
