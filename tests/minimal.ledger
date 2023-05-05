@@ -1,0 +1,4 @@
+; The simplest journal. No commodities, two accounts, integer value.
+2023-05-05 Payee
+    Expenses  20
+    Assets
