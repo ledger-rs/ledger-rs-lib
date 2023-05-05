@@ -20,4 +20,9 @@ impl Xact {
             date,
         }
     }
+
+    pub fn add_post(&mut self, post: Post) {
+        self.posts.push(post);
+    }
+
 }

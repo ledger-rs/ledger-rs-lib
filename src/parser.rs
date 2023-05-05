@@ -41,7 +41,7 @@ pub fn parse<T: Read>(source: T) -> Journal {
 
                 // use the read value
                 let result = parse_line(&mut context, &clean_line);
-                // TODO: process_parsed_element(&mut context, result);
+                process_parsed_element(&mut context, result);
 
                 // clear the buffer before reading the next line.
                 line.clear();
@@ -256,6 +256,41 @@ fn parse_xact_content(context: &mut ParsingContext, source_line: &str) -> LinePa
 
     let post = parse_post(context, line);
     LineParseResult::Post(post)
+}
+
+/// handler for the parsed element
+fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseResult) {
+    match parse_result {
+        LineParseResult::Comment => (),
+
+        LineParseResult::Empty => {
+            match context.xact.take() {
+                Some(xact_val) => {
+                    // An empty line is a separator between transactions.
+                    // Append to Journal.
+                    context.journal.add_xact(xact_val);
+
+                    // Reset the current transaction variable. <= done by .take()
+                    // context.xact = None;
+
+                }
+                // else just ignore.
+                None => (),
+            }
+        }
+
+        LineParseResult::Xact(xact) => {
+            context.xact = Some(xact);
+            // The transaction is finalized and added to Journal
+            // after the posts are processed.
+        }
+
+        LineParseResult::Post(post) => {
+            // todo: link xact to post.xact
+            // add to xact.posts
+            context.xact.as_mut().expect("xact ref").add_post(post);
+        }
+    }
 }
 
 /// Starts iterating through the string at the given location,
