@@ -1,3 +1,5 @@
+use journal::Journal;
+
 /**
  * Ledger-rs library
  * 
@@ -10,6 +12,7 @@ mod context;
 mod journal;
 mod parser;
 mod post;
+mod report;
 mod utils;
 mod xact;
 
@@ -26,7 +29,7 @@ pub fn run(args: Vec<String>) -> Vec<String> {
 }
 
 /// Entry point for a report?
-fn report() {
+fn report(journal: Journal) {
     todo!()
 }
 
