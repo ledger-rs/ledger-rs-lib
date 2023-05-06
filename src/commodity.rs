@@ -1,5 +1,6 @@
 use crate::utils;
 
+#[derive(Debug, PartialEq)]
 pub(crate) struct Commodity {
     symbol: String,
     // graph_index
@@ -12,8 +13,8 @@ pub(crate) struct Commodity {
 }
 
 impl Commodity {
-    pub fn new(symbol: String) -> Self {
-        Self { symbol }
+    pub fn new(symbol: &str) -> Self {
+        Self { symbol: symbol.to_owned() }
     }
 }
 

@@ -1,12 +1,15 @@
-use crate::{context::ParsingContext, commodity::{Commodity, self}, utils};
+use crate::commodity::Commodity;
+use rust_decimal::Decimal;
 
 /**
  * Amount
  */
 
- pub struct Amount {
-    precision: u16,
-    quantity: i64,
+ #[derive(Debug, PartialEq)]
+pub struct Amount {
+    // precision: u16,
+    // quantity: i64,
+    value: Decimal,
     // commodity: Option<&Commodity>,
     commodity: Option<Commodity>,
 }
@@ -14,96 +17,35 @@ use crate::{context::ParsingContext, commodity::{Commodity, self}, utils};
 impl Amount {
     pub fn new() -> Self {
         Self {
-            precision: 0,
-            quantity: 0,
+            // precision: 0,
+            // quantity: 0,
+            value: Decimal::ZERO,
             commodity: None,
         }
     }
 
-    pub(crate) fn from(quantity: i64, precision: u16, commodity: Option<Commodity>) -> Self {
-        Self { precision, quantity, commodity }
-    }
+    // pub(crate) fn from(quantity: i64, precision: u16, commodity: Option<Commodity>) -> Self {
+    //     Self { precision, quantity, commodity }
+    // }
 
-    /// Parse amount
-    /// amount.cc
-    /// bool amount_t::parse(std::istream& in, const parse_flags_t& flags)
-    /// The possible syntax for an amount is:
+    /// Parses the amount from string.
+    /// Currently just accept a simple format "[-]NUM SYM"
+    /// 
+    /// Acceptable formats should be like in Ledger:
     ///   [-]NUM[ ]SYM [@ AMOUNT]
     ///   SYM[ ][-]NUM [@ AMOUNT]
-    pub(crate) fn parse(context: &mut ParsingContext, input: &str) -> Amount {
-        let symbol: &str;
-        let quant: &str;
-        // details
-        let mut negative = false;
+    pub(crate) fn parse(input: &str) -> Amount {
+        let separator_index = input.find(' ').expect("separator found");
+        let val_str = &input[..separator_index];
+        let symbol_str = &input[separator_index+1..];
+        
+        let value = Decimal::from_str_radix(val_str, 10).expect("amount parsed");
 
-        // cursor for chars.
-        let mut c = utils::peek_next_nonws(input);
-        let mut next_char = input.chars().skip(c).next();
+        let commodity: Option<Commodity> = Some(Commodity::new(symbol_str));
 
-        if next_char == Some('-') {
-            // TODO: complete the negative number parsing.
-            negative = true;
-            c = utils::peek_next_nonws(input);
-            next_char = input.chars().skip(c).next();
-        }
-
-        if next_char.unwrap().is_digit(10) {
-            let offset: usize;
-            (quant, offset) = parse_quantity(input);
-            // move the cursor
-            c += offset;
-
-            // COMMODITY_STYLE_SEPARATED
-
-            symbol = commodity::parse_symbol(&input[c..]);
-        } else {
-            todo!("commodity-first format, i.e. $25")
-        }
-
-        if quant.is_empty() {
-            panic!("No quantity specified for amount")
-        }
-
-        // Create the commodity if has not already been seen, and update the
-        // precision if something greater was used for the quantity.
-
-        let mut amount = Amount::new();
-
-        if symbol.is_empty() {
-            // amount.commodity = None;
-        } else {
-            // TODO: use a reference
-            // let commodity = context.commodity_pool.find(symbol);
-            // TODO: create if not found.
-            // amount.commodity = Cell::new(commodity);
-            // For now, just use the symbol.
-            amount.commodity = Some(Commodity::new(symbol.to_string()));
-        }
-
-        // precision
-        let mut decimal_offset: u16 = 0;
-        // iterate through characters backwards, searching for the decimal separator.
-        for c in quant.chars().rev() {
-            if c == '.' {
-                // TODO: check for multiple decimal separators
-                // todo: decimal comma style
-                todo!("process")
-            } else if c == ',' {
-                todo!("process")
-            } else {
-                decimal_offset += 1;
-            }
-        }
-        // todo: assign precision to commodity
-        // if amount.precision > commodity.precision
-
-        amount.quantity = i64::from_str_radix(quant, 10).expect("parsed quantity");
-        // TODO: amount.precision
-
-        // TODO: negative number
-
-        amount
+        Amount { value, commodity }
     }
+
 }
 
 /// Identifies the quantity in the input string.
@@ -128,4 +70,57 @@ fn parse_quantity(input: &str) -> (&str, usize) {
         }
     }
     return ("", 0);
+}
+
+#[cfg(test)]
+mod tests {
+    use rust_decimal::{prelude::FromPrimitive, Decimal};
+
+    use crate::commodity::Commodity;
+
+    use super::Amount;
+
+    #[test]
+    fn test_positive_no_commodity() {
+        let actual = Amount::parse("20");
+        let expected = Amount {
+            value: Decimal::from_i16(20).expect("20"),
+            commodity: None,
+        };
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_negative_no_commodity() {
+        let actual = Amount::parse("-20");
+        let expected = Amount {
+            value: Decimal::from_i16(-20).expect("what can go wrong here?"),
+            commodity: None,
+        };
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_pos_w_commodity_separated() {
+        let actual = Amount::parse("20 EUR");
+        let expected = Amount {
+            value: Decimal::from_i16(20).expect("what can go wrong here?"),
+            commodity: Some(Commodity::new("EUR")),
+        };
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_neg_commodity_separated() {
+        let actual = Amount::parse("-20 EUR");
+        let expected = Amount {
+            value: Decimal::from_i16(-20).expect("what can go wrong here?"),
+            commodity: Some(Commodity::new("EUR")),
+        };
+
+        assert_eq!(expected, actual);
+    }
 }

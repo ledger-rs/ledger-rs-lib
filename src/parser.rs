@@ -86,12 +86,13 @@ fn parse_line(context: &mut ParsingContext, line: &str) -> LineParseResult {
     }
 }
 
-fn parse_date(line: &str) -> NaiveDate {
+fn parse_date(date_str: &str) -> NaiveDate {
     // It should be enough to get the content until the first whitespace.
-    let ws_index = line.find(' ').expect("date end");
-    let date_str = &line[0..ws_index];
+    // let ws_index = line.find(' ').expect("date end");
+    // let date_str = &line[0..ws_index];
 
     // todo: support more date formats?
+
     let date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d").expect("date parsed");
 
     date
@@ -128,8 +129,8 @@ fn parse_post(context: &mut ParsingContext, line: &str) -> Post {
     let next_char = line.chars().skip(end).next();
     if next.is_some() && next_char.is_some() && next_char != Some(';') && next_char != Some('=') {
         if next_char != Some('(') {
-            let amount_slice = &line[next.unwrap()..];
-            post.amount = Amount::parse(context, amount_slice);
+            let amount_str = &line[next.unwrap()..];
+            post.amount = Amount::parse(amount_str);
         } else {
             post.amount = parse_amount_expr();
         }
@@ -177,8 +178,30 @@ fn parse_amount_expr() -> Amount {
     todo!("complete")
 }
 
+/// Parse transaction header
+/// 2023-05-05 Payee  ; Note
 fn parse_xact(line: &str) -> LineParseResult {
-    // let mut next_start: usize = 0;
+    // the first space is between the Date and the Payee.
+    let separator_index = line.find(' ').expect("separator between the date and the payee");
+    let date_str = &line[..separator_index];
+    let payee_str = &line[separator_index + 1..];
+
+    let note_separator_index = line.find("  ;");
+    if note_separator_index.is_some() {
+        // let note_str = &line
+    }
+
+    // now translate the strings into values
+    let date = parse_date(date_str);
+    let payee = payee_str.to_owned();
+    // TODO: parse note
+    let note = None;
+
+    let xact = Xact::new(Some(date), payee, note);
+    LineParseResult::Xact(xact)
+}
+
+fn parse_xact_old(line: &str) -> LineParseResult {
     let next = next_element(line, 0, false);
     let mut next_index = match next {
         Some(index) => index,
