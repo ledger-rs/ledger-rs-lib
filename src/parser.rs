@@ -37,10 +37,10 @@ pub fn parse<T: Read>(source: T) -> Journal {
             Ok(_) => {
                 // Remove the trailing newline characters
                 // let clean_line = strip_trailing_newline(&line);
-                let clean_line = &line.trim_end();
+                let trimmed = &line.trim_end();
 
                 // use the read value
-                let result = parse_line(&mut context, &clean_line);
+                let result = parse_line(&mut context, &trimmed);
                 process_parsed_element(&mut context, result);
 
                 // clear the buffer before reading the next line.
@@ -53,9 +53,8 @@ pub fn parse<T: Read>(source: T) -> Journal {
 }
 
 /// Parsing each individual line. The controller of the parsing logic.
-fn parse_line<'a>(context: &mut ParsingContext, line: &str) -> LineParseResult {
-    let len = line.len();
-    if len == 0 {
+fn parse_line(context: &mut ParsingContext, line: &str) -> LineParseResult {
+    if line.is_empty() {
         return LineParseResult::Empty;
     }
 
@@ -155,8 +154,7 @@ fn next_element(line: &str, start: usize, variable: bool) -> Option<usize> {
     let mut spaces: u8 = 0;
 
     // iterate over the string
-    for p in line.char_indices().skip(start) {
-        let character = p.1;
+    for (i, character) in line.char_indices().skip(start) {
         if !(character == ' ' || character == '\t') {
             continue;
         }
@@ -165,7 +163,7 @@ fn next_element(line: &str, start: usize, variable: bool) -> Option<usize> {
         spaces += 1;
 
         if !variable || character == '\t' || spaces == 2 {
-            position = p.0 + 1;
+            position = i + 1;
             return skip_ws(line, &position);
             // } else if character == '\t' {
             //     return skip_ws(line, &position + 1)
@@ -296,14 +294,12 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
 /// Starts iterating through the string at the given location,
 /// skips the whitespace and returns the location of the next element.
 fn skip_ws(line: &str, start: &usize) -> Option<usize> {
-    for p in line.char_indices().skip(*start) {
-        let character = p.1;
-        while character == ' ' || character == '\t' || character == '\n' {
+    for (i, c) in line.char_indices().skip(*start) {
+        while c == ' ' || c == '\t' || c == '\n' {
             continue;
         }
-        return Some(p.0);
+        return Some(i);
     }
-
     return None;
 }
 
