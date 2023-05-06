@@ -10,11 +10,11 @@ pub struct Xact {
 }
 
 impl Xact {
-    pub fn new(date: Option<NaiveDate>, payee: String, note: Option<String>) -> Self {
+    pub fn new(date: Option<NaiveDate>, payee: &str, note: Option<String>) -> Self {
         // code: Option<String>
 
         Self {
-            payee,
+            payee: payee.to_owned(),
             note,
             posts: vec![],
             date,

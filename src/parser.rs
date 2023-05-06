@@ -193,7 +193,7 @@ fn parse_xact(line: &str) -> LineParseResult {
 
     // now translate the strings into values
     let date = parse_date(date_str);
-    let payee = payee_str.to_owned();
+    let payee = payee_str;
     // TODO: parse note
     let note = None;
 
@@ -222,7 +222,7 @@ fn parse_xact_old(line: &str) -> LineParseResult {
     // if next.is_some() && next == '(' {}
 
     // Parse the description text
-    let mut payee = "<Unspecified payee>".to_owned();
+    let mut payee = "<Unspecified payee>";
     if next.is_some() && next_index < line.len() {
         let mut pos = next_index;
         let mut spaces: usize = 0;
