@@ -30,7 +30,7 @@ pub fn run(args: Vec<String>) -> Vec<String> {
 
     // Minimalistic approach:
     // get the file input
-    let file_path = match get_file_argument(&args) {
+    let file_path = match get_filename_argument(&args) {
         Some(filename) => filename,
         None => panic!("No filename passed as argument"),
     };
@@ -44,15 +44,18 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     output
 }
 
-fn get_file_argument(args: &Vec<String>) -> Option<&String> {
-    if !args.contains(&"-f".to_owned()) {
+fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
+    if !args.contains(&"-f".to_string()) {
         return None;
     }
 
     // Find the position of the -f arg
-    let index = args.iter().position(|a| a == "-f").expect("the position of -f arg");
+    let index = args.iter().position(|a| a == &"-f").expect("the position of -f arg");
     // now take the filename
-    let filename = args.iter().nth(index + 1);
+    let filename = match args.iter().nth(index + 1) {
+        Some(file) => Some(file.as_str()),
+        None => None,
+    };
     
     filename
 }
@@ -77,13 +80,14 @@ fn parse(file_path: &str) -> Journal {
 
 #[cfg(test)]
 mod tests {
-    use crate::{run, get_file_argument};
+    use crate::{run, get_filename_argument};
 
     #[test]
     fn test_minimal() {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).expect("arguments parsed");
+        // let args = args_string.iter().map(AsRef::as_ref).collect();
 
         let actual = run(args);
 
@@ -94,10 +98,10 @@ mod tests {
     fn test_get_file_arg() {
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).expect("arguments parsed");
+        let expected = Some("tests/minimal.ledger");
 
-        let actual = get_file_argument(&args);
+        let actual = get_filename_argument(&args);
 
-        let expected = "tests/minimal.ledger".to_string();
-        assert_eq!(Some(&expected), actual);
+        assert_eq!(expected, actual);
     }
 }

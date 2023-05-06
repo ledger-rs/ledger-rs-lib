@@ -4,6 +4,11 @@
 
 #[test]
 fn minimal_test() {
-    let args = vec![];
-    ledger_rs_prototype::run(args);
+    let command = "b -f tests/minimal.ledger";
+    let args: Vec<String> = shell_words::split(command).unwrap();
+    
+    let actual = ledger_rs_prototype::run(args);
+
+    // todo: compare to expected output.
+    assert!(false)
 }
