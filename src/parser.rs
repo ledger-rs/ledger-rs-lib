@@ -345,6 +345,18 @@ mod tests {
 
         let actual = parse(cursor);
 
-        assert!(false, "add checks");
+        assert_eq!(1, actual.xacts.len());
+        
+        let xact = actual.xacts.first().unwrap();
+        assert_eq!("Supermarket", xact.payee);
+        assert_eq!(2, xact.posts.len());
+
+        let post_1 = xact.posts.iter().nth(0).unwrap();
+        assert_eq!("Expenses", post_1.account);
+        assert_eq!("20", post_1.amount.quantity.to_string());
+        assert_eq!(None, post_1.amount.commodity);
+
+        let post_2 = xact.posts.iter().nth(1).unwrap();
+        assert_eq!("Assets", post_2.account);
     }
 }

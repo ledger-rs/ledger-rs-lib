@@ -1,8 +1,8 @@
 use crate::utils;
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Commodity {
-    symbol: String,
+pub struct Commodity {
+    pub symbol: String,
     // graph_index
     // precision
     // name

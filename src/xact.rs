@@ -3,10 +3,10 @@ use chrono::NaiveDate;
 use crate::post::Post;
 
 pub struct Xact {
-    date: Option<NaiveDate>,
+    pub date: Option<NaiveDate>,
+    pub payee: String,
     pub posts: Vec<Post>,
-    payee: String,
-    note: Option<String>, 
+    pub note: Option<String>, 
 }
 
 impl Xact {

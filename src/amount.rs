@@ -9,8 +9,8 @@ use rust_decimal::Decimal;
 
 #[derive(Debug, PartialEq)]
 pub struct Amount {
-    quantity: Decimal,
-    commodity: Option<Commodity>,
+    pub quantity: Decimal,
+    pub commodity: Option<Commodity>,
 }
 
 impl Amount {
