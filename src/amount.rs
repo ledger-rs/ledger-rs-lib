@@ -7,45 +7,56 @@ use rust_decimal::Decimal;
 
  #[derive(Debug, PartialEq)]
 pub struct Amount {
-    // precision: u16,
-    // quantity: i64,
     value: Decimal,
-    // commodity: Option<&Commodity>,
     commodity: Option<Commodity>,
 }
 
 impl Amount {
     pub fn new() -> Self {
         Self {
-            // precision: 0,
-            // quantity: 0,
             value: Decimal::ZERO,
             commodity: None,
         }
     }
 
-    // pub(crate) fn from(quantity: i64, precision: u16, commodity: Option<Commodity>) -> Self {
-    //     Self { precision, quantity, commodity }
-    // }
-
     /// Parses the amount from string.
-    /// Currently just accept a simple format "[-]NUM SYM"
+    /// Currently just accept a simple format "[-]NUM[ SYM]"
     /// 
     /// Acceptable formats should be like in Ledger:
     ///   [-]NUM[ ]SYM [@ AMOUNT]
     ///   SYM[ ][-]NUM [@ AMOUNT]
     pub(crate) fn parse(input: &str) -> Amount {
-        let separator_index = input.find(' ').expect("separator found");
-        let val_str = &input[..separator_index];
-        let symbol_str = &input[separator_index+1..];
-        
-        let value = Decimal::from_str_radix(val_str, 10).expect("amount parsed");
+        let has_number = input.chars().any(|c| c.is_numeric());
+        if !has_number {
+            panic!("No numeric value found in the string to parse into amount.");
+        }
 
-        let commodity: Option<Commodity> = Some(Commodity::new(symbol_str));
+        let sep_option = input.find(' ');
+        let amount = match sep_option {
+            Some(index) => parse_symbol_separated(input, index),
+            None => parse_numeric_only(input),
+        };
 
-        Amount { value, commodity }
+        amount
     }
+}
 
+fn parse_numeric_only(input: &str) -> Amount {
+    let value = Decimal::from_str_radix(input, 10).expect("amount parsed");
+    Amount { value, commodity: None }
+}
+
+fn parse_symbol_separated(input: &str, sep_index: usize) -> Amount {
+    //let separator_index = .expect("separator found");
+
+    let val_str = &input[..sep_index];
+    let symbol_str = &input[sep_index+1..];
+    
+    let value = Decimal::from_str_radix(val_str, 10).expect("amount parsed");
+
+    let commodity: Option<Commodity> = Some(Commodity::new(symbol_str));
+
+    Amount { value, commodity }
 }
 
 /// Identifies the quantity in the input string.
