@@ -6,7 +6,7 @@ use crate::{journal::Journal, filters::calc_posts};
 
 /// Balance report. Invoked with 'b' command.
 /// Or accounts_report in ledger.
-fn balance_report(journal: Journal) {
+fn balance_report(journal: Journal) -> Vec<String> {
     // filters:
     // - amount
     // - total
@@ -38,13 +38,10 @@ mod tests {
 
     fn create_journal() -> Journal {
         let mut xact = Xact::new(None, "Payee", None);
-        let mut post = Post::new();
-        post.account = "Assets".into();
-        post.amount = Amount::parse("20 EUR");
+        let mut post = Post::new("Assets".into(), Amount::parse("20 EUR"));
         xact.add_post(post);
 
-        post = Post::new();
-        post.account = "Expenses".into();
+        post = Post::new("Expenses".into(), None);
         xact.add_post(post);
 
         let mut journal = Journal::new();

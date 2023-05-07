@@ -18,10 +18,10 @@ impl Journal {
         }
     }
 
-    pub fn add_xact(&mut self, xact: Xact) {
+    pub fn add_xact(&mut self, mut xact: Xact) {
         // todo: xact.journal =
         
-        xact.finalize();
+        // TODO: xact.finalize();
 
         // todo: extend_xact()
         // todo: check_all_metadata())

@@ -1,4 +1,4 @@
-use std::{ops::AddAssign, str::FromStr};
+use std::{ops::{AddAssign, Deref}, str::FromStr};
 
 use crate::commodity::Commodity;
 use rust_decimal::Decimal;
@@ -10,12 +10,12 @@ use rust_decimal_macros::dec;
 
 #[derive(Debug, PartialEq)]
 pub struct Amount {
-    pub quantity: Option<Decimal>,
+    pub quantity: Decimal,
     pub commodity: Option<Commodity>,
 }
 
 impl Amount {
-    pub fn new(quantity: Option<Decimal>, commodity: Option<Commodity>) -> Self {
+    pub fn new(quantity: Decimal, commodity: Option<Commodity>) -> Self {
         Self {
             quantity,
             commodity,
@@ -24,7 +24,7 @@ impl Amount {
 
     pub fn null() -> Self {
         Self {
-            quantity: None,
+            quantity: dec!(0),
             commodity: None,
         }
     }
@@ -35,11 +35,11 @@ impl Amount {
     /// Acceptable formats should be like in Ledger:
     ///   [-]NUM[ ]SYM [@ AMOUNT]
     ///   SYM[ ][-]NUM [@ AMOUNT]
-    pub(crate) fn parse(input: &str) -> Amount {
+    pub(crate) fn parse(input: &str) -> Option<Amount> {
         let trimmed = input.trim();
 
         if trimmed.is_empty() {
-            return Amount::null();
+            return None;
         }
 
         // sequential parsing is probably better for handling all options.
@@ -54,26 +54,16 @@ impl Amount {
         }
     }
 
-    pub fn add(&mut self, other: &Self) {
+    pub fn add(&mut self, other: &Amount) {
         if self.commodity != other.commodity {
             panic!("don't know yet how to handle this")
         }
-        if other.quantity.is_none() {
+        if other.quantity.is_zero() {
             // nothing to do
             return;
         }
 
-        let mut left = match self.quantity {
-            Some(val) => val,
-            None => dec!(0),
-        };
-        let right = match other.quantity {
-            Some(val) => val,
-            None => dec!(0),
-        };
-        left += right;
-
-        self.quantity = Some(left);
+        self.quantity += other.quantity;
     }
 }
 
@@ -85,18 +75,9 @@ impl std::ops::Add<Amount> for Amount {
             panic!("don't know yet how to handle this")
         }
 
-        let left = match self.quantity {
-            Some(val) => val,
-            None => dec!(0),
-        };
-        let right = match rhs.quantity {
-            Some(val) => val,
-            None => dec!(0),
-        };
+        let sum = self.quantity + rhs.quantity;
 
-        let sum = left + right;
-
-        Amount::new(Some(sum), self.commodity)
+        Amount::new(sum, self.commodity)
     }
 }
 
@@ -106,19 +87,17 @@ impl AddAssign<Amount> for Amount {
             panic!("don't know yet how to handle this")
         }
 
-        let mut left = match self.quantity {
-            Some(val) => val,
-            None => dec!(0),
-        };
-        let right = match other.quantity {
-            Some(val) => val,
-            None => dec!(0),
-        };
-        left += right;
-
-        self.quantity = Some(left);
+        self.quantity += other.quantity;
     }
 }
+
+// impl Deref for Amount {
+//     type Target = Decimal;
+
+//     fn deref(&self) -> &Self::Target {
+//         &self.quantity
+//     }
+// }
 
 fn parse_quantity(input: &str) -> Option<Decimal> {
     // handle empty string
@@ -134,7 +113,7 @@ fn parse_quantity(input: &str) -> Option<Decimal> {
     // Decimal::from_str_radix(input, 10).expect("amount parsed")
 }
 
-fn parse_number_first(input: &str) -> Amount {
+fn parse_number_first(input: &str) -> Option<Amount> {
     // find the separation index
     let mut separator_index: usize = input.len();
     for (i, c) in input.char_indices() {
@@ -151,13 +130,14 @@ fn parse_number_first(input: &str) -> Amount {
     let quantity = parse_quantity(quantity_str);
     let commodity = parse_symbol(symbol_str);
 
-    Amount {
-        quantity,
-        commodity,
+    if quantity.is_some() {
+        return Some(Amount::new(quantity.unwrap(), commodity));
+    } else {
+        return None;
     }
 }
 
-fn parse_symbol_first(input: &str) -> Amount {
+fn parse_symbol_first(input: &str) -> Option<Amount> {
     // find the separation index
     let mut separator_index: usize = input.len();
     for (i, c) in input.char_indices() {
@@ -175,9 +155,10 @@ fn parse_symbol_first(input: &str) -> Amount {
     let quantity = parse_quantity(quantity_str);
     let commodity = parse_symbol(symbol_str);
 
-    Amount {
-        quantity,
-        commodity,
+    if quantity.is_some() {
+        return Some(Amount::new(quantity.unwrap(), commodity));
+    } else {
+        return None;
     }
 }
 
@@ -202,19 +183,19 @@ mod tests {
     #[test]
     fn test_positive_no_commodity() {
         let expected = Amount {
-            quantity: Some(dec!(20)),
+            quantity: dec!(20),
             commodity: None,
         };
-        let actual = Amount::parse("20");
+        let actual = Amount::parse("20").unwrap();
 
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_negative_no_commodity() {
-        let actual = Amount::parse("-20");
+        let actual = Amount::parse("-20").unwrap();
         let expected = Amount {
-            quantity: Some(dec!(-20)),
+            quantity: dec!(-20),
             commodity: None,
         };
 
@@ -223,9 +204,9 @@ mod tests {
 
     #[test]
     fn test_pos_w_commodity_separated() {
-        let actual = Amount::parse("20 EUR");
+        let actual = Amount::parse("20 EUR").unwrap();
         let expected = Amount {
-            quantity: Some(dec!(20)),
+            quantity: dec!(20),
             commodity: Some(Commodity::new("EUR")),
         };
 
@@ -234,9 +215,9 @@ mod tests {
 
     #[test]
     fn test_neg_commodity_separated() {
-        let actual = Amount::parse("-20 EUR");
+        let actual = Amount::parse("-20 EUR").unwrap();
         let expected = Amount {
-            quantity: Some(dec!(-20)),
+            quantity: dec!(-20),
             commodity: Some(Commodity::new("EUR")),
         };
 
@@ -246,11 +227,11 @@ mod tests {
     #[test]
     fn test_full_w_commodity_separated() {
         let expected = Amount {
-            quantity: Some(dec!(-20000)),
+            quantity: dec!(-20000),
             commodity: Some(Commodity::new("EUR")),
         };
 
-        let actual = Amount::parse("-20000.00 EUR");
+        let actual = Amount::parse("-20000.00 EUR").unwrap();
 
         assert_eq!(expected, actual);
     }
@@ -258,11 +239,11 @@ mod tests {
     #[test]
     fn test_full_commodity_first() {
         let expected = Amount {
-            quantity: Some(dec!(-20000)),
+            quantity: dec!(-20000),
             commodity: Some(Commodity::new("A$")),
         };
 
-        let actual = Amount::parse("A$-20000.00");
+        let actual = Amount::parse("A$-20000.00").unwrap();
 
         assert_eq!(expected, actual);
     }
@@ -279,13 +260,13 @@ mod tests {
     #[test]
     fn test_addition() {
         let c1 = Commodity::new("EUR");
-        let left = Amount::new(Some(dec!(10)), Some(c1));
+        let left = Amount::new(dec!(10), Some(c1));
         let c2 = Commodity::new("EUR");
-        let right = Amount::new(Some(dec!(15)), Some(c2));
+        let right = Amount::new(dec!(15), Some(c2));
 
         let actual = left + right;
 
-        assert_eq!(Some(dec!(25)), actual.quantity);
+        assert_eq!(dec!(25), actual.quantity);
         assert!(actual.commodity.is_some());
         assert_eq!("EUR", actual.commodity.unwrap().symbol);
     }
@@ -293,14 +274,14 @@ mod tests {
     #[test]
     fn test_add_assign() {
         let c1 = Commodity::new("EUR");
-        let mut actual = Amount::new(Some(dec!(21)), Some(c1));
+        let mut actual = Amount::new(dec!(21), Some(c1));
         let c2 = Commodity::new("EUR");
-        let other = Amount::new(Some(dec!(13)), Some(c2));
+        let other = Amount::new(dec!(13), Some(c2));
 
         // actual += addition;
         actual.add(&other);
 
-        assert_eq!(Some(dec!(34)), actual.quantity);
+        assert_eq!(dec!(34), actual.quantity);
     }
 
     #[test]
@@ -308,7 +289,6 @@ mod tests {
         let input = " ";
         let actual = Amount::parse(input);
 
-        assert_eq!(None, actual.quantity);
-        assert_eq!(None, actual.commodity);
+        assert_eq!(None, actual);
     }
 }

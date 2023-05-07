@@ -102,8 +102,6 @@ fn parse_date(date_str: &str) -> NaiveDate {
 /// Parse a Posting.
 /// line is the source line trimmed on both ends.
 fn parse_post(line: &str) -> Post {
-    let mut post = Post::new();
-
     // todo: link to transaction
     // todo: position
     // pathname
@@ -121,19 +119,20 @@ fn parse_post(line: &str) -> Post {
         None => line.len(),
     };
 
-    let name = line[0..end].trim_end().to_string();
+    let account_name = line[0..end].trim_end();
     // TODO: register account with the Journal, structure into a tree.
-    post.account = name;
+    //post.account = name;
 
     // Parse the optional amount
 
+    let mut amount = None;
     let next_char = line.chars().skip(end).next();
     if next.is_some() && next_char.is_some() && next_char != Some(';') && next_char != Some('=') {
         if next_char != Some('(') {
             let amount_str = &line[next.unwrap()..];
-            post.amount = Amount::parse(amount_str);
+            amount = Amount::parse(amount_str);
         } else {
-            post.amount = parse_amount_expr();
+            amount = parse_amount_expr();
         }
     }
 
@@ -145,6 +144,7 @@ fn parse_post(line: &str) -> Post {
 
     // tags
 
+    let post = Post::new(account_name, amount);
     post
 }
 
@@ -175,7 +175,7 @@ fn next_element(line: &str, start: usize, variable: bool) -> Option<usize> {
     None
 }
 
-fn parse_amount_expr() -> Amount {
+fn parse_amount_expr() -> Option<Amount> {
     todo!("complete")
 }
 
@@ -355,8 +355,8 @@ mod tests {
 
         let post_1 = xact.posts.iter().nth(0).unwrap();
         assert_eq!("Expenses", post_1.account);
-        assert_eq!("20", post_1.amount.quantity.unwrap().to_string());
-        assert_eq!(None, post_1.amount.commodity);
+        assert_eq!("20", post_1.amount.as_ref().unwrap().quantity.to_string());
+        assert_eq!(None, post_1.amount.as_ref().unwrap().commodity);
 
         let post_2 = xact.posts.iter().nth(1).unwrap();
         assert_eq!("Assets", post_2.account);
