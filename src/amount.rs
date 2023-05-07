@@ -36,19 +36,21 @@ impl Amount {
     ///   [-]NUM[ ]SYM [@ AMOUNT]
     ///   SYM[ ][-]NUM [@ AMOUNT]
     pub(crate) fn parse(input: &str) -> Amount {
-        if input.is_empty() {
-            panic!("Invalid string for parsing into amount (empty)!")
+        let trimmed = input.trim();
+
+        if trimmed.is_empty() {
+            return Amount::null();
         }
 
         // sequential parsing is probably better for handling all options.
-        let first_char = input.chars().next().unwrap();
+        let first_char = trimmed.chars().next().unwrap();
         if first_char == '-' || first_char.is_numeric() {
             // first_char == '.' || first_char == ',' ||
             // Starts with numeric.
-            parse_number_first(input)
+            parse_number_first(trimmed)
         } else {
             // symbol
-            parse_symbol_first(input)
+            parse_symbol_first(trimmed)
         }
     }
 
@@ -194,7 +196,6 @@ fn parse_symbol(input: &str) -> Option<Commodity> {
 
 #[cfg(test)]
 mod tests {
-    use rust_decimal::{prelude::FromPrimitive, Decimal};
     use rust_decimal_macros::dec;
 
     use crate::commodity::Commodity;
@@ -310,6 +311,7 @@ mod tests {
         let input = " ";
         let actual = Amount::parse(input);
 
-        todo!()
+        assert_eq!(None, actual.quantity);
+        assert_eq!(None, actual.commodity);
     }
 }
