@@ -3,11 +3,11 @@
  *
  * Parses textual input into the model structure.
  */
-use std::io::{Read, BufReader, BufRead};
+use std::io::{BufRead, BufReader, Read};
 
 use chrono::NaiveDate;
 
-use crate::{journal::Journal, context::ParsingContext, xact::Xact, post::Post, amount::Amount};
+use crate::{amount::Amount, context::ParsingContext, journal::Journal, post::Post, xact::Xact};
 
 enum LineParseResult {
     Comment,
@@ -100,7 +100,7 @@ fn parse_date(date_str: &str) -> NaiveDate {
 
 /// Parse a Posting.
 /// line is the source line trimmed on both ends.
-fn parse_post(context: &mut ParsingContext, line: &str) -> Post {
+fn parse_post(line: &str) -> Post {
     let mut post = Post::new();
 
     // todo: link to transaction
@@ -182,7 +182,9 @@ fn parse_amount_expr() -> Amount {
 /// 2023-05-05 Payee  ; Note
 fn parse_xact(line: &str) -> LineParseResult {
     // the first space is between the Date and the Payee.
-    let separator_index = line.find(' ').expect("separator between the date and the payee");
+    let separator_index = line
+        .find(' ')
+        .expect("separator between the date and the payee");
     let date_str = &line[..separator_index];
     let payee_str = &line[separator_index + 1..];
 
@@ -275,7 +277,7 @@ fn parse_xact_content(context: &mut ParsingContext, source_line: &str) -> LinePa
     }
     // todo: assert, check, expr
 
-    let post = parse_post(context, line);
+    let post = parse_post(line);
     LineParseResult::Post(post)
 }
 
@@ -293,7 +295,6 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
 
                     // Reset the current transaction variable. <= done by .take()
                     // context.xact = None;
-
                 }
                 // else just ignore.
                 None => (),
@@ -327,7 +328,6 @@ fn skip_ws(line: &str, start: &usize) -> Option<usize> {
     return None;
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
@@ -347,7 +347,7 @@ mod tests {
         let actual = parse(cursor);
 
         assert_eq!(1, actual.xacts.len());
-        
+
         let xact = actual.xacts.first().unwrap();
         assert_eq!("Supermarket", xact.payee);
         assert_eq!(2, xact.posts.len());

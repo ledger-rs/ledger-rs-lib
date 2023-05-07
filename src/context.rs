@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use crate::{journal::Journal, xact::Xact};
 
 /**
