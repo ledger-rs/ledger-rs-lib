@@ -20,11 +20,10 @@ enum LineParseResult {
 pub fn parse<T: Read>(source: T) -> Journal {
     let mut reader = BufReader::new(source);
     let mut context = ParsingContext::new();
+    // To avoid allocation, reuse the String variable.
+    let mut line = String::new();
 
     loop {
-        // To avoid allocation, reuse the String variable.
-        let mut line = String::new();
-
         match reader.read_line(&mut line) {
             Err(err) => {
                 println!("Error: {:?}", err);
@@ -40,8 +39,9 @@ pub fn parse<T: Read>(source: T) -> Journal {
                 // let clean_line = strip_trailing_newline(&line);
                 let trimmed = &line.trim_end();
 
-                // use the read value
+                // Use the line from the file. Parse.
                 let result = parse_line(&context, &trimmed);
+                // Do something with the parsed element.
                 process_parsed_element(&mut context, result);
 
                 // clear the buffer before reading the next line.
