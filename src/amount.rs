@@ -14,7 +14,11 @@ pub struct Amount {
 }
 
 impl Amount {
-    pub fn new() -> Self {
+    pub fn new(quantity: Decimal, commodity: Option<Commodity>) -> Self {
+        Self { quantity, commodity }
+    }
+
+    pub fn null() -> Self {
         Self {
             quantity: Decimal::ZERO,
             commodity: None,
@@ -42,6 +46,20 @@ impl Amount {
             // symbol
             parse_symbol_first(input)
         }
+    }
+}
+
+impl std::ops::Add<Amount> for Amount {
+    type Output = Amount;
+
+    fn add(self, rhs: Amount) -> Self::Output {
+        if self.commodity != rhs.commodity {
+            panic!("don't know yet how to handle this")
+        }
+
+        let sum = self.quantity + rhs.quantity;
+
+        Amount::new(sum, self.commodity)
     }
 }
 
@@ -108,6 +126,7 @@ fn parse_symbol(input: &str) -> Option<Commodity> {
 #[cfg(test)]
 mod tests {
     use rust_decimal::{prelude::FromPrimitive, Decimal};
+    use rust_decimal_macros::dec;
 
     use crate::commodity::Commodity;
 
@@ -188,5 +207,19 @@ mod tests {
         let actual = parse_quantity(input);
 
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_addition() {
+        let c1 = Commodity::new("EUR");
+        let left = Amount::new(dec!(10), Some(c1));
+        let c2 = Commodity::new("EUR");
+        let right = Amount::new(dec!(15), Some(c2));
+
+        let actual = left + right;
+
+        assert_eq!(dec!(25), actual.quantity);
+        assert!(actual.commodity.is_some());
+        assert_eq!("EUR", actual.commodity.unwrap().symbol);
     }
 }

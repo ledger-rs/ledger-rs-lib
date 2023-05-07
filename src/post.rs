@@ -16,7 +16,7 @@ impl Post {
         Self {
             // xact: None,
             
-            amount: Amount::new(),
+            amount: Amount::null(),
             account: "".to_string(),
         }
     }

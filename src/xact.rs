@@ -1,12 +1,15 @@
 use chrono::NaiveDate;
+use rust_decimal_macros::dec;
 
-use crate::post::Post;
+use crate::{amount::Amount, post::Post};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
     pub payee: String,
     pub posts: Vec<Post>,
-    pub note: Option<String>, 
+    pub note: Option<String>,
+
+    // pub balance: Amount,
 }
 
 impl Xact {
@@ -18,6 +21,7 @@ impl Xact {
             note,
             posts: vec![],
             date,
+            // balance: Amount::null(),
         }
     }
 
@@ -25,4 +29,17 @@ impl Xact {
         self.posts.push(post);
     }
 
+    /// Finalize transaction.
+    /// bool xact_base_t::finalize()
+    pub fn finalize(&self) {
+        let mut balance = Amount::null();
+
+        for post in &self.posts {
+            // must balance?
+
+            // amount = post.cost ? post.amount
+            // for now, just use the amount
+            //todo balance += post.amount;
+        }
+    }
 }
