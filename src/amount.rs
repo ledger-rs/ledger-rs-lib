@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, ops::AddAssign};
 
 use crate::commodity::Commodity;
 use rust_decimal::Decimal;
@@ -47,6 +47,14 @@ impl Amount {
             parse_symbol_first(input)
         }
     }
+
+    pub fn add(&mut self, other: &Self) {
+        if self.commodity != other.commodity {
+            panic!("don't know yet how to handle this")
+        }
+
+        self.quantity += other.quantity;
+    }
 }
 
 impl std::ops::Add<Amount> for Amount {
@@ -60,6 +68,16 @@ impl std::ops::Add<Amount> for Amount {
         let sum = self.quantity + rhs.quantity;
 
         Amount::new(sum, self.commodity)
+    }
+}
+
+impl AddAssign<Amount> for Amount {
+    fn add_assign(&mut self, rhs: Amount) {
+        if self.commodity != rhs.commodity {
+            panic!("don't know yet how to handle this")
+        }
+
+        self.quantity += rhs.quantity;
     }
 }
 
@@ -221,5 +239,18 @@ mod tests {
         assert_eq!(dec!(25), actual.quantity);
         assert!(actual.commodity.is_some());
         assert_eq!("EUR", actual.commodity.unwrap().symbol);
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let c1 = Commodity::new("EUR");
+        let mut actual = Amount::new(dec!(21), Some(c1));
+        let c2 = Commodity::new("EUR");
+        let other = Amount::new(dec!(13), Some(c2));
+
+        // actual += addition;
+        actual.add(&other);
+
+        assert_eq!(dec!(34), actual.quantity);
     }
 }

@@ -39,7 +39,7 @@ impl Xact {
 
             // amount = post.cost ? post.amount
             // for now, just use the amount
-            //todo balance += post.amount;
+            balance.add(&post.amount);
         }
     }
 }
