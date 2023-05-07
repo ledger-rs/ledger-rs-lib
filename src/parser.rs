@@ -308,6 +308,7 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
 
         LineParseResult::Post(post) => {
             // todo: link xact to post.xact
+            // post.
             // add to xact.posts
             context.xact.as_mut().expect("xact ref").add_post(post);
         }

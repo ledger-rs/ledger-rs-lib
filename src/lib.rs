@@ -12,6 +12,7 @@ mod account;
 mod amount;
 mod commodity;
 mod context;
+mod filters;
 mod journal;
 mod parser;
 mod post;

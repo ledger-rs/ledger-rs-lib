@@ -1,14 +1,32 @@
-use crate::journal::Journal;
+use crate::{journal::Journal, filters::calc_posts};
 
 /**
  * Reports
  */
 
+/// Balance report. Invoked with 'b' command.
+/// Or accounts_report in ledger.
 fn balance_report(journal: Journal) {
-    // iterate over accounts
+    // filters:
+    // - amount
+    // - total
+    // - display amount
+    // - display total
+    // revalued total
 
-    // ???
+    // iterate over posts
+
+    // calc_posts::operator() is in filters.cc
+    calc_posts();
+
+    // accounts_flusher
     
+    todo!()
+}
+
+fn accounts_flusher_operator() {
+    // create accounts iterator
+    // pass_down_accounts
     todo!()
 }
 
