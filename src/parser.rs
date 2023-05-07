@@ -20,10 +20,11 @@ enum LineParseResult {
 pub fn parse<T: Read>(source: T) -> Journal {
     let mut reader = BufReader::new(source);
     let mut context = ParsingContext::new();
-    // To avoid allocation, reuse the String variable.
-    let mut line = String::new();
 
     loop {
+        // To avoid allocation, reuse the String variable.
+        let mut line = String::new();
+
         match reader.read_line(&mut line) {
             Err(err) => {
                 println!("Error: {:?}", err);
@@ -40,7 +41,7 @@ pub fn parse<T: Read>(source: T) -> Journal {
                 let trimmed = &line.trim_end();
 
                 // use the read value
-                let result = parse_line(&mut context, &trimmed);
+                let result = parse_line(context.xact.is_some(), &trimmed);
                 process_parsed_element(&mut context, result);
 
                 // clear the buffer before reading the next line.
@@ -53,7 +54,7 @@ pub fn parse<T: Read>(source: T) -> Journal {
 }
 
 /// Parsing each individual line. The controller of the parsing logic.
-fn parse_line(context: &mut ParsingContext, line: &str) -> LineParseResult {
+fn parse_line(is_in_xact: bool, line: &str) -> LineParseResult {
     if line.is_empty() {
         return LineParseResult::Empty;
     }
@@ -71,8 +72,8 @@ fn parse_line(context: &mut ParsingContext, line: &str) -> LineParseResult {
         }
 
         ' ' | '\t' => {
-            if context.xact.is_some() {
-                return parse_xact_content(context, line);
+            if is_in_xact {
+                return parse_xact_content(line);
             } else {
                 panic!("Unexpected whitespace at beginning of line");
             }
@@ -268,7 +269,7 @@ fn parse_xact_old(line: &str) -> LineParseResult {
     LineParseResult::Xact(xact)
 }
 
-fn parse_xact_content(context: &mut ParsingContext, source_line: &str) -> LineParseResult {
+fn parse_xact_content(source_line: &str) -> LineParseResult {
     let line = source_line.trim();
 
     // trailing note
