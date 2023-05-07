@@ -41,7 +41,7 @@ pub fn parse<T: Read>(source: T) -> Journal {
                 let trimmed = &line.trim_end();
 
                 // use the read value
-                let result = parse_line(context.xact.is_some(), &trimmed);
+                let result = parse_line(&context, &trimmed);
                 process_parsed_element(&mut context, result);
 
                 // clear the buffer before reading the next line.
@@ -54,7 +54,7 @@ pub fn parse<T: Read>(source: T) -> Journal {
 }
 
 /// Parsing each individual line. The controller of the parsing logic.
-fn parse_line(is_in_xact: bool, line: &str) -> LineParseResult {
+fn parse_line(context: &ParsingContext, line: &str) -> LineParseResult {
     if line.is_empty() {
         return LineParseResult::Empty;
     }
@@ -72,7 +72,7 @@ fn parse_line(is_in_xact: bool, line: &str) -> LineParseResult {
         }
 
         ' ' | '\t' => {
-            if is_in_xact {
+            if context.xact.is_some() {
                 return parse_xact_content(line);
             } else {
                 panic!("Unexpected whitespace at beginning of line");
