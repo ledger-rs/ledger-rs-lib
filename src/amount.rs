@@ -59,11 +59,8 @@ impl Amount {
             panic!("don't know yet how to handle this")
         }
         if other.quantity.is_none() {
-            panic!("Can't add a NULL amount (yet)!")
-        }
-
-        if self.quantity.is_none() {
-            self.quantity = Some(Decimal::ZERO);
+            // nothing to do
+            return;
         }
 
         let mut left = match self.quantity {
