@@ -355,7 +355,7 @@ mod tests {
 
         let post_1 = xact.posts.iter().nth(0).unwrap();
         assert_eq!("Expenses", post_1.account);
-        assert_eq!("20", post_1.amount.quantity.to_string());
+        assert_eq!("20", post_1.amount.quantity.unwrap().to_string());
         assert_eq!(None, post_1.amount.commodity);
 
         let post_2 = xact.posts.iter().nth(1).unwrap();

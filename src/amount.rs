@@ -1,7 +1,8 @@
-use std::{str::FromStr, ops::AddAssign};
+use std::{ops::AddAssign, str::FromStr};
 
 use crate::commodity::Commodity;
 use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 /**
  * Amount
@@ -9,18 +10,21 @@ use rust_decimal::Decimal;
 
 #[derive(Debug, PartialEq)]
 pub struct Amount {
-    pub quantity: Decimal,
+    pub quantity: Option<Decimal>,
     pub commodity: Option<Commodity>,
 }
 
 impl Amount {
-    pub fn new(quantity: Decimal, commodity: Option<Commodity>) -> Self {
-        Self { quantity, commodity }
+    pub fn new(quantity: Option<Decimal>, commodity: Option<Commodity>) -> Self {
+        Self {
+            quantity,
+            commodity,
+        }
     }
 
     pub fn null() -> Self {
         Self {
-            quantity: Decimal::ZERO,
+            quantity: None,
             commodity: None,
         }
     }
@@ -39,7 +43,7 @@ impl Amount {
         // sequential parsing is probably better for handling all options.
         let first_char = input.chars().next().unwrap();
         if first_char == '-' || first_char.is_numeric() {
-            // first_char == '.' || first_char == ',' || 
+            // first_char == '.' || first_char == ',' ||
             // Starts with numeric.
             parse_number_first(input)
         } else {
@@ -52,8 +56,25 @@ impl Amount {
         if self.commodity != other.commodity {
             panic!("don't know yet how to handle this")
         }
+        if other.quantity.is_none() {
+            panic!("Can't add a NULL amount (yet)!")
+        }
 
-        self.quantity += other.quantity;
+        if self.quantity.is_none() {
+            self.quantity = Some(Decimal::ZERO);
+        }
+
+        let mut left = match self.quantity {
+            Some(val) => val,
+            None => dec!(0),
+        };
+        let right = match other.quantity {
+            Some(val) => val,
+            None => dec!(0),
+        };
+        left += right;
+
+        self.quantity = Some(left);
     }
 }
 
@@ -65,28 +86,52 @@ impl std::ops::Add<Amount> for Amount {
             panic!("don't know yet how to handle this")
         }
 
-        let sum = self.quantity + rhs.quantity;
+        let left = match self.quantity {
+            Some(val) => val,
+            None => dec!(0),
+        };
+        let right = match rhs.quantity {
+            Some(val) => val,
+            None => dec!(0),
+        };
 
-        Amount::new(sum, self.commodity)
+        let sum = left + right;
+
+        Amount::new(Some(sum), self.commodity)
     }
 }
 
 impl AddAssign<Amount> for Amount {
-    fn add_assign(&mut self, rhs: Amount) {
-        if self.commodity != rhs.commodity {
+    fn add_assign(&mut self, other: Amount) {
+        if self.commodity != other.commodity {
             panic!("don't know yet how to handle this")
         }
 
-        self.quantity += rhs.quantity;
+        let mut left = match self.quantity {
+            Some(val) => val,
+            None => dec!(0),
+        };
+        let right = match other.quantity {
+            Some(val) => val,
+            None => dec!(0),
+        };
+        left += right;
+
+        self.quantity = Some(left);
     }
 }
 
-fn parse_quantity(input: &str) -> Decimal {
+fn parse_quantity(input: &str) -> Option<Decimal> {
+    // handle empty string
+    if input.is_empty() {
+        return None;
+    }
+
     // get rid of thousand separators
     // let clean = input.replace(',', '');
 
-    Decimal::from_str(input).unwrap()
-    
+    Some(Decimal::from_str(input).unwrap())
+
     // Decimal::from_str_radix(input, 10).expect("amount parsed")
 }
 
@@ -103,11 +148,14 @@ fn parse_number_first(input: &str) -> Amount {
     }
     let quantity_str = &input[..separator_index];
     let symbol_str = &input[separator_index..];
-    
+
     let quantity = parse_quantity(quantity_str);
     let commodity = parse_symbol(symbol_str);
 
-    Amount { quantity, commodity }
+    Amount {
+        quantity,
+        commodity,
+    }
 }
 
 fn parse_symbol_first(input: &str) -> Amount {
@@ -124,11 +172,14 @@ fn parse_symbol_first(input: &str) -> Amount {
 
     let symbol_str = &input[..separator_index];
     let quantity_str = &input[separator_index..];
-    
+
     let quantity = parse_quantity(quantity_str);
     let commodity = parse_symbol(symbol_str);
 
-    Amount { quantity, commodity }
+    Amount {
+        quantity,
+        commodity,
+    }
 }
 
 fn parse_symbol(input: &str) -> Option<Commodity> {
@@ -148,12 +199,12 @@ mod tests {
 
     use crate::commodity::Commodity;
 
-    use super::{Amount, parse_quantity};
+    use super::{parse_quantity, Amount};
 
     #[test]
     fn test_positive_no_commodity() {
         let expected = Amount {
-            quantity: Decimal::from_i16(20).expect("20"),
+            quantity: Some(dec!(20)),
             commodity: None,
         };
         let actual = Amount::parse("20");
@@ -165,7 +216,7 @@ mod tests {
     fn test_negative_no_commodity() {
         let actual = Amount::parse("-20");
         let expected = Amount {
-            quantity: Decimal::from_i16(-20).expect("what can go wrong here?"),
+            quantity: Some(dec!(-20)),
             commodity: None,
         };
 
@@ -176,7 +227,7 @@ mod tests {
     fn test_pos_w_commodity_separated() {
         let actual = Amount::parse("20 EUR");
         let expected = Amount {
-            quantity: Decimal::from_i16(20).expect("what can go wrong here?"),
+            quantity: Some(dec!(20)),
             commodity: Some(Commodity::new("EUR")),
         };
 
@@ -187,7 +238,7 @@ mod tests {
     fn test_neg_commodity_separated() {
         let actual = Amount::parse("-20 EUR");
         let expected = Amount {
-            quantity: Decimal::from_i16(-20).expect("what can go wrong here?"),
+            quantity: Some(dec!(-20)),
             commodity: Some(Commodity::new("EUR")),
         };
 
@@ -197,7 +248,7 @@ mod tests {
     #[test]
     fn test_full_w_commodity_separated() {
         let expected = Amount {
-            quantity: Decimal::from_i16(-20000).expect("what can go wrong here?"),
+            quantity: Some(dec!(-20000)),
             commodity: Some(Commodity::new("EUR")),
         };
 
@@ -209,7 +260,7 @@ mod tests {
     #[test]
     fn test_full_commodity_first() {
         let expected = Amount {
-            quantity: Decimal::from_i16(-20000).expect("what can go wrong here?"),
+            quantity: Some(dec!(-20000)),
             commodity: Some(Commodity::new("A$")),
         };
 
@@ -221,7 +272,7 @@ mod tests {
     #[test]
     fn test_quantity_separators() {
         let input = "-1000000.00";
-        let expected = Decimal::from_i32(-1_000_000).unwrap();
+        let expected = Some(dec!(-1_000_000));
         let actual = parse_quantity(input);
 
         assert_eq!(expected, actual);
@@ -230,13 +281,13 @@ mod tests {
     #[test]
     fn test_addition() {
         let c1 = Commodity::new("EUR");
-        let left = Amount::new(dec!(10), Some(c1));
+        let left = Amount::new(Some(dec!(10)), Some(c1));
         let c2 = Commodity::new("EUR");
-        let right = Amount::new(dec!(15), Some(c2));
+        let right = Amount::new(Some(dec!(15)), Some(c2));
 
         let actual = left + right;
 
-        assert_eq!(dec!(25), actual.quantity);
+        assert_eq!(Some(dec!(25)), actual.quantity);
         assert!(actual.commodity.is_some());
         assert_eq!("EUR", actual.commodity.unwrap().symbol);
     }
@@ -244,13 +295,21 @@ mod tests {
     #[test]
     fn test_add_assign() {
         let c1 = Commodity::new("EUR");
-        let mut actual = Amount::new(dec!(21), Some(c1));
+        let mut actual = Amount::new(Some(dec!(21)), Some(c1));
         let c2 = Commodity::new("EUR");
-        let other = Amount::new(dec!(13), Some(c2));
+        let other = Amount::new(Some(dec!(13)), Some(c2));
 
         // actual += addition;
         actual.add(&other);
 
-        assert_eq!(dec!(34), actual.quantity);
+        assert_eq!(Some(dec!(34)), actual.quantity);
+    }
+
+    #[test]
+    fn test_null_amount() {
+        let input = " ";
+        let actual = Amount::parse(input);
+
+        todo!()
     }
 }
