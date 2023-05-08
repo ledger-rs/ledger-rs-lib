@@ -36,11 +36,14 @@ pub fn parse<T: Read>(source: T) -> Journal {
                 println!("Error: {:?}", err);
                 break;
             }
-            // Ok(0) => {
-            //     // end of file?
-            //     println!("End of file");
-            //     break;
-            // }
+            Ok(0) => {
+                // finalize any open transactions
+                process_parsed_element(&mut context, LineParseResult::Empty);
+
+                // end of file?
+                println!("End of file");
+                break;
+            }
             Ok(count) => {
                 log::debug!("Read {:?} characters", count);
 
@@ -60,14 +63,6 @@ pub fn parse<T: Read>(source: T) -> Journal {
     }
 
     context.journal
-}
-
-/// The apparently efficient method from
-/// https://doc.rust-lang.org/stable/rust-by-example/std_misc/file/read_lines.html
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path>, {
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
 }
 
 /// Parsing each individual line. The controller of the parsing logic.

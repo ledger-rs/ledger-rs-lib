@@ -26,12 +26,18 @@ impl Amount {
     }
 
     pub fn copy_from(other: &Amount) -> Self {
-        let symbol = &other.commodity.as_ref().unwrap().symbol;
-        let c = Commodity::new(symbol);
+        let com = match &other.commodity {
+            Some(other_commodity) => {
+                let symbol = &other.commodity.as_ref().unwrap().symbol;
+                let c = Commodity::new(symbol);
+                Some(c)
+            },
+            None => None,
+        };
         
         Self {
             quantity: other.quantity,
-            commodity: Some(c),
+            commodity: com,
         }
     }
 
@@ -306,5 +312,14 @@ mod tests {
         let actual = Amount::parse(input);
 
         assert_eq!(None, actual);
+    }
+
+    #[test]
+    fn test_copy_from_no_commodity() {
+        let other = Amount::new(dec!(10), None);
+        let actual = Amount::copy_from(&other);
+
+        assert_eq!(dec!(10), actual.quantity);
+        assert_eq!(None, actual.commodity);
     }
 }

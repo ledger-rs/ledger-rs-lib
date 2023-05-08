@@ -1,4 +1,4 @@
-; basic test file
+; Two transactions with a blank line separator.
 
 2023-04-21 Supermarket
     Expenses:Food  20 EUR
