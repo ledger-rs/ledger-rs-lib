@@ -77,6 +77,9 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
         null_post = None;
     }
 
+    // TODO: Process Commodities?
+    // TODO: Process Account records from Posts.
+
     // Linking
 
     // Move the Xact into the Journal's Xacts collection.

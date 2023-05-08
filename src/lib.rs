@@ -15,6 +15,7 @@ mod context;
 mod filters;
 mod journal;
 mod parser;
+mod pool;
 mod post;
 mod report;
 mod utils;

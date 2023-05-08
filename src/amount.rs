@@ -65,7 +65,6 @@ impl Amount {
         // sequential parsing is probably better for handling all options.
         let first_char = trimmed.chars().next().unwrap();
         if first_char == '-' || first_char.is_numeric() {
-            // first_char == '.' || first_char == ',' ||
             // Starts with numeric.
             parse_number_first(trimmed)
         } else {
@@ -227,11 +226,12 @@ mod tests {
 
     #[test]
     fn test_pos_w_commodity_separated() {
-        let actual = Amount::parse("20 EUR").unwrap();
         let expected = Amount {
             quantity: dec!(20),
             commodity: Some(Commodity::new("EUR")),
         };
+
+        let actual = Amount::parse("20 EUR").unwrap();
 
         assert_eq!(expected, actual);
     }

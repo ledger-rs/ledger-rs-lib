@@ -3,13 +3,13 @@ use crate::utils;
 #[derive(Debug, PartialEq)]
 pub struct Commodity {
     pub symbol: String,
-    // graph_index
+    // graph_index: Option
     // precision
-    // name
-    // note
-    // smaller
-    // larger
-    // value_expr
+    // name: Option
+    // note: Option
+    // smaller: Option
+    // larger: Option
+    // value_expr: Option
 }
 
 impl Commodity {
