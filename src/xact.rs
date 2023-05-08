@@ -40,7 +40,7 @@ impl Xact {
 /// TODO: add posts to the Journal, create links to Account and Xact.
 ///
 pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
-    let mut balance = Amount::null();
+    let mut balance: Option<Amount> = None;
     // The pointer to the post that has no amount.
     let mut null_post: Option<&mut Post> = None;
 
@@ -51,7 +51,12 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
         // amount = post.cost ? post.amount
         // for now, just use the amount
         if !post.amount.is_none() {
-            balance.add(post.amount.as_ref().unwrap());
+            if balance.is_none() {
+                let initial_amount = Amount::copy_from(post.amount.as_ref().unwrap());
+                balance = Some(initial_amount);
+            } else {
+                balance.as_mut().unwrap().add(post.amount.as_ref().unwrap());
+            }
         } else if null_post.is_some() {
             todo!()
         } else {
@@ -71,7 +76,7 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
 
         let post = null_post.unwrap();
         // use inverse amount
-        post.amount = Some(balance.inverse());
+        post.amount = Some(balance.unwrap().inverse());
         null_post = None;
     }
 
@@ -111,7 +116,9 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
 mod tests {
     use rust_decimal_macros::dec;
 
-    use crate::{amount::Amount, context::ParsingContext, post::Post, xact::finalize, account::Account};
+    use crate::{
+        account::Account, amount::Amount, context::ParsingContext, post::Post, xact::finalize,
+    };
 
     use super::Xact;
 

@@ -3,7 +3,7 @@
  *
  * Parses textual input into the model structure.
  */
-use std::io::{BufRead, BufReader, Read};
+use std::{io::{BufRead, BufReader, Read, self}, fs::File, path::Path};
 
 use chrono::NaiveDate;
 
@@ -36,12 +36,14 @@ pub fn parse<T: Read>(source: T) -> Journal {
                 println!("Error: {:?}", err);
                 break;
             }
-            Ok(0) => {
-                // end of file?
-                println!("End of file");
-                break;
-            }
-            Ok(_) => {
+            // Ok(0) => {
+            //     // end of file?
+            //     println!("End of file");
+            //     break;
+            // }
+            Ok(count) => {
+                log::debug!("Read {:?} characters", count);
+
                 // Remove the trailing newline characters
                 // let clean_line = strip_trailing_newline(&line);
                 let trimmed = &line.trim_end();
@@ -58,6 +60,14 @@ pub fn parse<T: Read>(source: T) -> Journal {
     }
 
     context.journal
+}
+
+/// The apparently efficient method from
+/// https://doc.rust-lang.org/stable/rust-by-example/std_misc/file/read_lines.html
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where P: AsRef<Path>, {
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
 }
 
 /// Parsing each individual line. The controller of the parsing logic.

@@ -25,6 +25,16 @@ impl Amount {
         }
     }
 
+    pub fn copy_from(other: &Amount) -> Self {
+        let symbol = &other.commodity.as_ref().unwrap().symbol;
+        let c = Commodity::new(symbol);
+        
+        Self {
+            quantity: other.quantity,
+            commodity: Some(c),
+        }
+    }
+
     pub fn null() -> Self {
         Self {
             quantity: dec!(0),

@@ -74,7 +74,7 @@ fn report(journal: Journal) -> Vec<String> {
 }
 
 /// Parse input and return the model structure.
-fn parse(file_path: &str) -> Journal {
+pub fn parse(file_path: &str) -> Journal {
     parser::parse(File::open(file_path).expect("file opened"))
 }
 
