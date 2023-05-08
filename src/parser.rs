@@ -297,18 +297,18 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
         LineParseResult::Comment => (),
 
         LineParseResult::Empty => {
-            if context.xact.is_some() {
-                // An empty line is a separator between transactions.
+            match context.xact.take() {
+                Some(xact) => {
+                    // An empty line is a separator between transactions.
 
-                // Append Transaction to Journal.
-                let xact = context.xact.take().unwrap();
-                xact::finalize(xact, &mut context.journal);
+                    // Append Transaction to Journal.
+                    xact::finalize(xact, &mut context.journal);
 
-                // Reset the current transaction variable.
-                context.xact = None;
-            } else {
+                    // Reset the current transaction variable.
+                    context.xact = None;
+                }
                 // else just ignore.
-                // None => (),
+                None => (),
             }
         }
 
