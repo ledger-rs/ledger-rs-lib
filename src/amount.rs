@@ -28,8 +28,9 @@ impl Amount {
     pub fn copy_from(other: &Amount) -> Self {
         let com = match &other.commodity {
             Some(other_commodity) => {
-                let symbol = &other.commodity.as_ref().unwrap().symbol;
-                let c = Commodity::new(symbol);
+                //let symbol = &other.commodity.as_ref().unwrap().symbol;
+                let s = &other_commodity.symbol;
+                let c = Commodity::new(s);
                 Some(c)
             },
             None => None,

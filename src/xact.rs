@@ -1,7 +1,4 @@
-use std::cell::RefCell;
-
 use chrono::NaiveDate;
-use rust_decimal_macros::dec;
 
 use crate::{amount::Amount, journal::Journal, post::Post};
 

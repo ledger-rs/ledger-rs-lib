@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 /**
  * External tests
  */

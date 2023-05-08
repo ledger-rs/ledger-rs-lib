@@ -3,12 +3,11 @@
  *
  * Parses textual input into the model structure.
  */
-use std::{io::{BufRead, BufReader, Read, self}, fs::File, path::Path};
+use std::{io::{BufRead, BufReader, Read}};
 
 use chrono::NaiveDate;
 
 use crate::{
-    account::Account,
     amount::Amount,
     context::ParsingContext,
     journal::Journal,
@@ -166,7 +165,7 @@ fn parse_post(line: &str) -> Post {
 /// utils.h
 /// inline char * next_element(char * buf, bool variable = false)
 fn next_element(line: &str, start: usize, variable: bool) -> Option<usize> {
-    let mut position: usize = 0;
+    let position: usize;
     let mut spaces: u8 = 0;
 
     // iterate over the string

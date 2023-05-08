@@ -1,4 +1,4 @@
-use crate::{amount::Amount, xact::Xact, account::Account};
+use crate::{amount::Amount, account::Account};
 
 /**
  * Posting
