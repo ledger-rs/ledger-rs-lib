@@ -1,10 +1,9 @@
 /**
  * Parsing context
- * 
+ *
  * Provides context data and temporary storage during parsing operation.
  */
-
- use crate::{journal::Journal, xact::Xact, post::Post};
+use crate::{journal::Journal, post::Post, xact::Xact};
 
 pub(crate) struct ParsingContext {
     pub journal: Journal,
@@ -21,7 +20,7 @@ impl ParsingContext {
             journal: Journal::new(),
             // cache:
             xact: None,
-            posts: None
+            posts: None,
         }
     }
 
@@ -29,6 +28,8 @@ impl ParsingContext {
         if self.posts.is_none() {
             self.posts = Some(vec![]);
         }
+
+        // self.posts.as_mut().and_then(|mut vec| vec.push(post));
 
         let col = self.posts.as_mut().unwrap();
         col.push(post);
