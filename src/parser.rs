@@ -302,7 +302,8 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
                     // An empty line is a separator between transactions.
 
                     // Append Transaction to Journal.
-                    xact::finalize(xact, &mut context.journal);
+                    let posts = context.posts.take().unwrap();
+                    xact::finalize(xact, posts, &mut context.journal);
 
                     // Reset the current transaction variable.
                     context.xact = None;
@@ -316,12 +317,12 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
             // Store in the context while being parsed.
             context.xact = Some(xact);
 
-            // The transaction is finalized ~and added to Journal~
-            // after the contained posts are processed.
+            // The transaction is finalized and added to Journal
+            // after all the posts from the Xact are processed.
         }
 
         LineParseResult::Post(post) => {
-            context.posts.push(post);
+            context.add_post(post);
         }
     }
 }

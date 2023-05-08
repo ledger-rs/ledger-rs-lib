@@ -53,7 +53,7 @@ fn list_of_actions() {
 /// 
 /// TODO: add posts to the Journal, create links to Account and Xact.
 /// 
-pub fn finalize(xact: Xact, journal: &mut Journal) {
+pub fn finalize(xact: Xact, posts: Vec<Post>, journal: &mut Journal) {
     let mut balance = Amount::null();
     // let mut null_post: Option<&mut Post> = None;
     // The pointer to the post that has no amount.
