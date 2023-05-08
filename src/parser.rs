@@ -7,7 +7,7 @@ use std::io::{BufRead, BufReader, Read};
 
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, context::ParsingContext, journal::Journal, post::Post, xact::Xact};
+use crate::{amount::Amount, context::ParsingContext, journal::Journal, post::Post, xact::Xact, account::Account};
 
 enum LineParseResult {
     Comment,
@@ -68,11 +68,13 @@ fn parse_line(context: &ParsingContext, line: &str) -> LineParseResult {
         }
 
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+            // Starts with date.
             return parse_xact(line);
         }
 
         ' ' | '\t' => {
-            if context.xact.is_some() {
+            if context.current_xact_index.is_some() {
+                // We have an "open" transaction being parsed. Read the contents.
                 return parse_xact_content(line);
             } else {
                 panic!("Unexpected whitespace at beginning of line");
@@ -288,11 +290,12 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
         LineParseResult::Comment => (),
 
         LineParseResult::Empty => {
-            match context.xact.take() {
-                Some(xact_val) => {
+            match context.current_xact_index {
+                Some(i) => {
                     // An empty line is a separator between transactions.
                     // Append to Journal.
-                    context.journal.add_xact(xact_val);
+                    todo!("finalize xact")
+                    // TODO: context.journal.add_xact(xact_val);
 
                     // Reset the current transaction variable. <= done by .take()
                     // context.xact = None;
@@ -303,16 +306,28 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
         }
 
         LineParseResult::Xact(xact) => {
-            context.xact = Some(xact);
-            // The transaction is finalized and added to Journal
-            // after the posts are processed.
+            // Add to the collection
+            let i = context.journal.add_xact(xact);
+            context.current_xact_index = Some(i);
+            
+            // The transaction is finalized ~and added to Journal~
+            // after the contained posts are processed.
         }
 
-        LineParseResult::Post(post) => {
-            // todo: link xact to post.xact
-            // post.
+        LineParseResult::Post(mut post) => {
+            // Link post.xact
+            let xact_index = context.current_xact_index.unwrap();
+            post.xact_index = Some(xact_index);
+
+            // Add post to the collection.
+            let post_index = context.journal.add_post(post);
+
             // add to xact.posts
-            context.xact.as_mut().expect("xact ref").add_post(post);
+            let xact = context.journal.xacts.get_mut(xact_index).unwrap();
+            xact.posts.push(post_index);
+            
+            // TODO: add post to the Journal, create links to Account and Xact.
+            todo!("link everything")
         }
     }
 }
@@ -347,20 +362,22 @@ mod tests {
 "#;
         let cursor = Cursor::new(input);
 
-        let actual = parse(cursor);
+        let journal = parse(cursor);
 
-        assert_eq!(1, actual.xacts.len());
+        assert_eq!(1, journal.xacts.len());
 
-        let xact = actual.xacts.first().unwrap();
+        let xact = journal.xacts.first().unwrap();
         assert_eq!("Supermarket", xact.payee);
         assert_eq!(2, xact.posts.len());
 
-        let post_1 = xact.posts.iter().nth(0).unwrap();
-        assert_eq!(Account::new("Expenses"), post_1.account);
-        assert_eq!("20", post_1.amount.as_ref().unwrap().quantity.to_string());
-        assert_eq!(None, post_1.amount.as_ref().unwrap().commodity);
+        // let post_1 = xact.posts.iter().nth(0).unwrap();
+        let post1 = &journal.posts[xact.posts[0]];
+        assert_eq!(Account::new("Expenses"), post1.account);
+        assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
+        assert_eq!(None, post1.amount.as_ref().unwrap().commodity);
 
-        let post_2 = xact.posts.iter().nth(1).unwrap();
-        assert_eq!(Account::new("Assets"), post_2.account);
+        // let post_2 = xact.posts.iter().nth(1).unwrap();
+        let post2 = &journal.posts[xact.posts[1]];
+        assert_eq!(Account::new("Assets"), post2.account);
     }
 }

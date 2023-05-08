@@ -3,12 +3,13 @@ use std::cell::RefCell;
 use chrono::NaiveDate;
 use rust_decimal_macros::dec;
 
-use crate::{amount::Amount, post::Post};
+use crate::{amount::Amount, post::Post, journal::Journal};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
     pub payee: String,
-    pub posts: Vec<Post>,
+    // pub posts: Vec<Post>,
+    pub posts: Vec<usize>,
     pub note: Option<String>,
     // pub balance: Amount,
 }
@@ -26,79 +27,92 @@ impl Xact {
         }
     }
 
-    pub fn add_post(&mut self, post: Post) {
-        self.posts.push(post);
+    // pub fn add_post(&mut self, post: Post) {
+    //     self.posts.push(post);
+    // }
+}
+
+/// Finalize transaction.
+/// bool xact_base_t::finalize()
+pub fn finalize(xact: &Xact, journal: &mut Journal) {
+    let mut balance = Amount::null();
+    // let mut null_post: Option<&mut Post> = None;
+    // The pointer to the post that has no amount.
+    let mut null_post: Option<usize> = None;
+
+    for post_index in &xact.posts {
+        let post = &journal.posts[*post_index];
+
+        // must balance?
+
+        // amount = post.cost ? post.amount
+        // for now, just use the amount
+        if !post.amount.is_none() {
+            balance.add(post.amount.as_ref().unwrap());
+        } else if null_post.is_some() {
+            todo!()
+        } else {
+            null_post = Some(*post_index);
+        }
     }
 
-    /// Finalize transaction.
-    /// bool xact_base_t::finalize()
-    pub fn finalize(&mut self) {
-        let mut balance = Amount::null();
-        let mut null_post: Option<&mut Post> = None;
+    // If there is only one post, balance against the default account if one has
+    // been set.
 
-        for post in &mut self.posts {
-            // must balance?
+    if null_post.is_some() {
+        // If one post has no value at all, its value will become the inverse of
+        // the rest.  If multiple commodities are involved, multiple posts are
+        // generated to balance them all.
+        log::debug!("There was a null posting");
 
-            // amount = post.cost ? post.amount
-            // for now, just use the amount
-            if !post.amount.is_none() {
-                balance.add(post.amount.as_ref().unwrap());
-            } else if null_post.is_some() {
-                todo!()
-            } else {
-                null_post = Some(post);
-            }
-        }
+        if let Some(i) = null_post {
+            let post = journal.posts.get_mut(i).expect("mutable post");
+            // use inverse amount
+            post.amount = Some(balance.inverse());
+            null_post = None;
+        };
+    }
 
-        // If there is only one post, balance against the default account if one has
-        // been set.
+    // Add a pointer to each posting to their related accounts
 
-        if null_post.is_some() {
-            // If one post has no value at all, its value will become the inverse of
-            // the rest.  If multiple commodities are involved, multiple posts are
-            // generated to balance them all.
-            log::debug!("There was a null posting");
-
-            if let Some(x) = null_post {
-                // use inverse amount
-                x.amount = Some(balance.inverse());
-                null_post = None;
-            };
-        }
-
-        // Add a pointer to each posting to their related accounts
-
-        for post in &self.posts {
-            // add a pointer to account
-            // Add post to account's list of post references.
-            // post.borrow_mut().account.posts.borrow_mut().push(post.borrow());
-            todo!()
-        }
-
+    for post_index in &xact.posts {
+        // add a pointer to account: 
+        // TODO: account.posts.add_post(post);
+        // Add post to account's list of post references.
+        // post.borrow_mut().account.posts.borrow_mut().push(post.borrow());
+        todo!()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use rust_decimal_macros::dec;
 
-    use crate::{amount::Amount, post::Post, account::Account};
-
-    use super::Xact;
+    use crate::{account::Account, xact::finalize, parser};
 
     /// finalize
     #[test]
     fn test_finalize() {
-        let mut xact = Xact::new(None, "payee", None);
-        xact.add_post(Post::new("Expenses", Some(Amount::new(dec!(25), None))));
-        xact.add_post(Post::new("Assets", None));
+        let src = r#";
+2023-05-05 Payee
+    Expenses  25
+    Assets
 
-        xact.finalize();
+"#;
+        let source = Cursor::new(src);
+        let mut journal = parser::parse(source);
+        let xact = &journal.xacts[0];
 
-        let actual = xact.posts.iter().nth(2).unwrap();
-        let actual_amount = actual.amount.as_ref().unwrap();
-        assert_eq!(dec!(-25), actual_amount.quantity);
-        assert_eq!(None, actual_amount.commodity);
-        assert_eq!(Account::new("Assets"), actual.account);
+        // finalize(xact, &mut journal);
+
+        // let mut post_index = xact.posts[0];
+        // let post1 = &journal.posts[post_index];
+        // let amount = post1.amount.unwrap();
+        // assert_eq!(dec!(-25), amount.quantity);
+        // assert_eq!(None, amount.commodity);
+        // assert_eq!(Account::new("Assets"), post1.account);
+        todo!("complete")
     }
 }

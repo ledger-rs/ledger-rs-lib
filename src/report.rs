@@ -32,21 +32,21 @@ fn accounts_flusher_operator() {
 
 #[cfg(test)]
 mod tests {
-    use crate::{journal::Journal, xact::Xact, post::Post, amount::Amount};
+    use std::io::Cursor;
+
+    use crate::{journal::Journal, xact::Xact, post::Post, amount::Amount, parse, parser};
 
     use super::balance_report;
 
     fn create_journal() -> Journal {
-        let mut xact = Xact::new(None, "Payee", None);
-        let mut post = Post::new("Assets".into(), Amount::parse("20 EUR"));
-        xact.add_post(post);
+        let src = r#";
+2023-05-05 Payee
+    Expenses  20 EUR
+    Assets
 
-        post = Post::new("Expenses".into(), None);
-        xact.add_post(post);
-
-        let mut journal = Journal::new();
-        journal.add_xact(xact);
-
+"#;
+        let source = Cursor::new(src);
+        let journal = parser::parse(source);
         journal
     }
 

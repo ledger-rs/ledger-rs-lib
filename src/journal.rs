@@ -1,4 +1,4 @@
-use crate::xact::Xact;
+use crate::{xact::Xact, account::Account, post::Post};
 
 /**
  * Journal
@@ -7,6 +7,8 @@ use crate::xact::Xact;
 pub struct Journal {
     // pub master: Account,
     pub xacts: Vec<Xact>,
+    pub posts: Vec<Post>,
+    pub accounts: Vec<Account>,
 }
 
 impl Journal {
@@ -14,19 +16,32 @@ impl Journal {
         Journal {
             // master: Account::new(),
             xacts: vec![],
-            // current_context: ,
+            posts: vec![],
+            accounts: vec![],
         }
     }
 
-    pub fn add_xact(&mut self, mut xact: Xact) {
-        // todo: xact.journal =
+    // pub fn add_xact(&mut self, mut xact: Xact) {
+    //     // todo: xact.journal =
         
-        // TODO: xact.finalize();
+    //     // TODO: xact.finalize();
 
-        // todo: extend_xact()
-        // todo: check_all_metadata())
-        // todo: for each post - extend + check metadata
+    //     // todo: extend_xact()
+    //     // todo: check_all_metadata())
+    //     // todo: for each post - extend + check metadata
 
+    //     self.xacts.push(xact);
+    // }
+
+    pub fn add_xact(&mut self, xact: Xact) -> usize {
+        let i = self.xacts.len();
         self.xacts.push(xact);
+        i
+    }
+
+    pub fn add_post(&mut self, post: Post) -> usize {
+        let i = self.posts.len();
+        self.posts.push(post);
+        i
     }
 }
