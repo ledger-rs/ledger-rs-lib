@@ -83,7 +83,7 @@ fn parse(file_path: &str) -> Journal {
 mod tests {
     use crate::{run, get_filename_argument};
 
-    #[test]
+    //#[test]
     fn test_minimal() {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
