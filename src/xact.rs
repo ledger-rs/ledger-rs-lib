@@ -32,21 +32,6 @@ impl Xact {
     // }
 }
 
-fn list_of_actions() {
-    // TODO: Link post.xact
-    //let xact_index = context.xact.unwrap();
-    // post.xact_index = Some(xact_index);
-
-    // TODO: Add post to the Journal's Posts collection.
-    // let post_index = context.journal.add_post(post);
-
-    // TODO: add to xact.posts
-    // let xact = context.journal.xacts.get_mut(xact_index).unwrap();
-    // xact.posts.push(post_index);
-
-    // TODO: add to account.posts
-}
-
 /// Finalize transaction.
 /// Adds the Xact and the Posts to the Journal.
 ///
@@ -59,6 +44,7 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
     // The pointer to the post that has no amount.
     let mut null_post: Option<&mut Post> = None;
 
+    // Balance
     for post in posts.iter_mut() {
         // must balance?
 
@@ -76,6 +62,7 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
     // If there is only one post, balance against the default account if one has
     // been set.
 
+    // Handle null-amount post.
     if null_post.is_some() {
         // If one post has no value at all, its value will become the inverse of
         // the rest.  If multiple commodities are involved, multiple posts are
@@ -88,14 +75,35 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
         null_post = None;
     }
 
+    // Linking
+
+    // Move the Xact into the Journal's Xacts collection.
+    let xact_index = journal.add_xact(xact);
+
+    // Link post.xact->xact
+    for post in posts.iter_mut() {
+        post.xact_index = Some(xact_index);
+    }
+
+    let mut post_indices = vec![];
+    // Add posts to the Journal's Posts collection.
+    for post in posts {
+        let post_index = journal.add_post(post);
+        post_indices.push(post_index);
+    }
+
     // Add a pointer to each posting to their related accounts
 
-    for post in posts.iter_mut() {
+    let xact = journal.xacts.get_mut(xact_index).unwrap();
+    for post_index in post_indices {
+        // add to xact.posts
+        xact.posts.push(post_index);
+
         // add a pointer to account:
         // TODO: account.posts.add_post(post);
         // Add post to account's list of post references.
         // post.borrow_mut().account.posts.borrow_mut().push(post.borrow());
-        todo!()
+        // todo!("handle account")
     }
 }
 
@@ -103,7 +111,7 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
 mod tests {
     use rust_decimal_macros::dec;
 
-    use crate::{amount::Amount, context::ParsingContext, post::Post, xact::finalize};
+    use crate::{amount::Amount, context::ParsingContext, post::Post, xact::finalize, account::Account};
 
     use super::Xact;
 
@@ -120,26 +128,27 @@ mod tests {
     /// finalize
     #[test]
     fn test_finalize() {
-        //         let src = r#";
-        // 2023-05-05 Payee
-        //     Expenses  25
-        //     Assets
-
-        // "#;
-        //let source = Cursor::new(src);
-        //let mut journal = parser::parse(source);
-        //let xact = &journal.xacts[0];
+        // Arrange
         let mut context = ParsingContext::new();
         let (xact, posts) = setup();
 
+        // Act
         finalize(xact, posts, &mut context.journal);
 
-        // let mut post_index = xact.posts[0];
-        // let post1 = &journal.posts[post_index];
-        // let amount = post1.amount.unwrap();
-        // assert_eq!(dec!(-25), amount.quantity);
-        // assert_eq!(None, amount.commodity);
-        // assert_eq!(Account::new("Assets"), post1.account);
-        todo!("complete")
+        // Assert
+        // let xact = context.journal.xacts.last().unwrap();
+        let post1 = &context.journal.posts[0];
+        assert_eq!(Account::new("Expenses"), post1.account);
+        let amount = post1.amount.as_ref().unwrap();
+        assert_eq!(dec!(25), amount.quantity);
+        assert_eq!(None, amount.commodity);
+
+        let post2 = &context.journal.posts[1];
+        assert_eq!(Account::new("Assets"), post2.account);
+        // assert_eq!(None, post2.amount);
+        // The amount has been automatically recalculated to offset the first one.
+        let amount = post2.amount.as_ref().unwrap();
+        assert_eq!(dec!(-25), amount.quantity);
+        assert_eq!(None, amount.commodity);
     }
 }
