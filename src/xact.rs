@@ -32,9 +32,28 @@ impl Xact {
     // }
 }
 
+fn list_of_actions() {
+    // TODO: Link post.xact
+    //let xact_index = context.xact.unwrap();
+    // post.xact_index = Some(xact_index);
+
+    // TODO: Add post to the Journal's Posts collection.
+    // let post_index = context.journal.add_post(post);
+
+    // TODO: add to xact.posts
+    // let xact = context.journal.xacts.get_mut(xact_index).unwrap();
+    // xact.posts.push(post_index);
+
+    // TODO: add to account.posts
+}
+
 /// Finalize transaction.
-/// bool xact_base_t::finalize()
-pub fn finalize(xact: &Xact, journal: &mut Journal) {
+/// 
+/// `bool xact_base_t::finalize()`
+/// 
+/// TODO: add posts to the Journal, create links to Account and Xact.
+/// 
+pub fn finalize(xact: Xact, journal: &mut Journal) {
     let mut balance = Amount::null();
     // let mut null_post: Option<&mut Post> = None;
     // The pointer to the post that has no amount.

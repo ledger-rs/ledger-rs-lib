@@ -34,7 +34,7 @@ fn accounts_flusher_operator() {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{journal::Journal, xact::Xact, post::Post, amount::Amount, parse, parser};
+    use crate::{journal::Journal, parser};
 
     use super::balance_report;
 

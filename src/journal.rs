@@ -21,18 +21,6 @@ impl Journal {
         }
     }
 
-    // pub fn add_xact(&mut self, mut xact: Xact) {
-    //     // todo: xact.journal =
-        
-    //     // TODO: xact.finalize();
-
-    //     // todo: extend_xact()
-    //     // todo: check_all_metadata())
-    //     // todo: for each post - extend + check metadata
-
-    //     self.xacts.push(xact);
-    // }
-
     pub fn add_xact(&mut self, xact: Xact) -> usize {
         let i = self.xacts.len();
         self.xacts.push(xact);

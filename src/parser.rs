@@ -7,7 +7,14 @@ use std::io::{BufRead, BufReader, Read};
 
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, context::ParsingContext, journal::Journal, post::Post, xact::Xact, account::Account};
+use crate::{
+    account::Account,
+    amount::Amount,
+    context::ParsingContext,
+    journal::Journal,
+    post::Post,
+    xact::{self, Xact},
+};
 
 enum LineParseResult {
     Comment,
@@ -73,7 +80,7 @@ fn parse_line(context: &ParsingContext, line: &str) -> LineParseResult {
         }
 
         ' ' | '\t' => {
-            if context.current_xact_index.is_some() {
+            if context.xact.is_some() {
                 // We have an "open" transaction being parsed. Read the contents.
                 return parse_xact_content(line);
             } else {
@@ -290,44 +297,31 @@ fn process_parsed_element(context: &mut ParsingContext, parse_result: LineParseR
         LineParseResult::Comment => (),
 
         LineParseResult::Empty => {
-            match context.current_xact_index {
-                Some(i) => {
-                    // An empty line is a separator between transactions.
-                    // Append to Journal.
-                    todo!("finalize xact")
-                    // TODO: context.journal.add_xact(xact_val);
+            if context.xact.is_some() {
+                // An empty line is a separator between transactions.
 
-                    // Reset the current transaction variable. <= done by .take()
-                    // context.xact = None;
-                }
+                // Append Transaction to Journal.
+                let xact = context.xact.take().unwrap();
+                xact::finalize(xact, &mut context.journal);
+
+                // Reset the current transaction variable.
+                context.xact = None;
+            } else {
                 // else just ignore.
-                None => (),
+                // None => (),
             }
         }
 
         LineParseResult::Xact(xact) => {
-            // Add to the collection
-            let i = context.journal.add_xact(xact);
-            context.current_xact_index = Some(i);
-            
+            // Store in the context while being parsed.
+            context.xact = Some(xact);
+
             // The transaction is finalized ~and added to Journal~
             // after the contained posts are processed.
         }
 
-        LineParseResult::Post(mut post) => {
-            // Link post.xact
-            let xact_index = context.current_xact_index.unwrap();
-            post.xact_index = Some(xact_index);
-
-            // Add post to the collection.
-            let post_index = context.journal.add_post(post);
-
-            // add to xact.posts
-            let xact = context.journal.xacts.get_mut(xact_index).unwrap();
-            xact.posts.push(post_index);
-            
-            // TODO: add post to the Journal, create links to Account and Xact.
-            todo!("link everything")
+        LineParseResult::Post(post) => {
+            context.posts.push(post);
         }
     }
 }
