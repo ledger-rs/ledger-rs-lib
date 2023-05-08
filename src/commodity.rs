@@ -38,3 +38,25 @@ pub fn parse_symbol(input: &str) -> &str {
 
     &input[c..]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Commodity;
+
+    #[test]
+    fn test_comparison() {
+        let c1 = Commodity::new("EUR");
+        let c2 = Commodity::new("EUR");
+
+        assert!(c1 == c2);
+    }
+
+    #[test]
+    fn test_comparison_ne() {
+        let c1 = Commodity::new("EUR");
+        let c2 = Commodity::new("GBP");
+
+        assert!(c1 != c2);
+    }
+
+}
