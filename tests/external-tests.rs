@@ -1,9 +1,12 @@
+use chrono::NaiveDate;
+use rust_decimal_macros::dec;
+
 /**
  * External tests
  */
 
 // todo: #[test]
-fn minimal_test() {
+fn minimal_test_b() {
     let command = "b -f tests/minimal.ledger";
     let args: Vec<String> = shell_words::split(command).unwrap();
     
@@ -30,4 +33,31 @@ fn test_parsing_two_xact() {
 
     assert_eq!(2, journal.xacts.len());
     assert_eq!(4, journal.posts.len());
+}
+
+#[test]
+fn detailed_basic_test() {
+    let file_path = "tests/basic.ledger";
+    
+    // Act
+    let journal = ledger_rs_prototype::parse(file_path);
+
+    // Assert
+    assert_eq!(1, journal.xacts.len());
+    let xact = journal.xacts.first().unwrap();
+    assert_eq!(NaiveDate::parse_from_str("2023-04-21", "%Y-%m-%d").unwrap(), xact.date.unwrap());
+    assert_eq!("Supermarket", xact.payee);
+    // Posts
+    assert_eq!(2, journal.posts.len());
+    let post1 = journal.posts.get(xact.posts[0]).unwrap();
+    assert_eq!("Expenses:Food", post1.account.name);
+    let amount1 = post1.amount.as_ref().unwrap();
+    assert_eq!(dec!(20), amount1.quantity);
+    assert_eq!("EUR", amount1.commodity.as_ref().unwrap().symbol);
+
+    let post2 = journal.posts.get(xact.posts[1]).unwrap();
+    assert_eq!("Assets:Cash", post2.account.name);
+    let amount2 = post2.amount.as_ref().unwrap();
+    assert_eq!(dec!(-20), amount2.quantity);
+    assert_eq!("EUR", amount2.commodity.as_ref().unwrap().symbol);
 }
