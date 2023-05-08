@@ -1,4 +1,7 @@
-use std::{ops::{AddAssign, Deref}, str::FromStr};
+use std::{
+    ops::{AddAssign, Mul},
+    str::FromStr,
+};
 
 use crate::commodity::Commodity;
 use rust_decimal::Decimal;
@@ -65,6 +68,17 @@ impl Amount {
 
         self.quantity += other.quantity;
     }
+
+    /// Returns an inverse amount.
+    /// Normally it is a quantity with the opposite sign.
+    pub fn inverse(&self) -> Amount {
+        let new_quantity = self.quantity.mul(dec!(-1));
+        let new_commodity = match &self.commodity {
+            Some(c) => Some(Commodity::new(&c.symbol)),
+            None => None,
+        };
+        Amount::new(new_quantity, new_commodity)
+    }
 }
 
 impl std::ops::Add<Amount> for Amount {
@@ -90,14 +104,6 @@ impl AddAssign<Amount> for Amount {
         self.quantity += other.quantity;
     }
 }
-
-// impl Deref for Amount {
-//     type Target = Decimal;
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.quantity
-//     }
-// }
 
 fn parse_quantity(input: &str) -> Option<Decimal> {
     // handle empty string

@@ -333,6 +333,8 @@ fn skip_ws(line: &str, start: &usize) -> Option<usize> {
 mod tests {
     use std::io::Cursor;
 
+    use crate::account::Account;
+
     use super::parse;
 
     #[test]
@@ -354,11 +356,11 @@ mod tests {
         assert_eq!(2, xact.posts.len());
 
         let post_1 = xact.posts.iter().nth(0).unwrap();
-        assert_eq!("Expenses", post_1.account);
+        assert_eq!(Account::new("Expenses"), post_1.account);
         assert_eq!("20", post_1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post_1.amount.as_ref().unwrap().commodity);
 
         let post_2 = xact.posts.iter().nth(1).unwrap();
-        assert_eq!("Assets", post_2.account);
+        assert_eq!(Account::new("Assets"), post_2.account);
     }
 }

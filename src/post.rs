@@ -1,13 +1,14 @@
-use crate::{amount::Amount, xact::Xact};
+use crate::{amount::Amount, xact::Xact, account::Account};
 
 /**
  * Posting
  */
 
+ #[derive(Debug, PartialEq)]
 pub struct Post {
     // pub xact: Option<&'a Xact<'a>>,
 
-    pub account: String,
+    pub account: Account,
     pub amount: Option<Amount>,
 }
 
@@ -16,12 +17,12 @@ impl Post {
         Self {
             // xact: None,
             
-            account: account.to_string(),
+            account: Account::new(account),
             amount,
         }
     }
 
     pub fn empty() -> Self {
-        Self { account: "".to_string(), amount: Some(Amount::null()) }
+        Self::new("", None)
     }
 }
