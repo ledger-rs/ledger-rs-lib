@@ -110,7 +110,7 @@ fn read_next_directive(line: &str) {
 /// ```
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
-fn parse_xact_header(line: &str) -> (&str, &str, &str, &str) {
+fn parse_xact_header(line: &str) -> [&str;4] {
     if line.is_empty() {
         panic!("Invalid input for Xact record.")
     }
@@ -135,7 +135,7 @@ fn parse_xact_header(line: &str) -> (&str, &str, &str, &str) {
         }
         None => {
             date = &line;
-            return (date, "", "", "");
+            return [date, "", "", ""];
         }
     };
     log::debug!("date: {:?}", date);
@@ -193,7 +193,7 @@ fn parse_xact_header(line: &str) -> (&str, &str, &str, &str) {
     };
     log::debug!("note: {:?}", note);
 
-    (date, aux_date, payee, note)
+    [date, aux_date, payee, note]
 }
 
 #[cfg(test)]
@@ -238,59 +238,60 @@ mod tests {
 
         let input = "2023-05-01 Payee  ; Note";
 
-        let (date, aux_date, payee, note) = parse_xact_header(input);
+        let mut iter = parse_xact_header(input).into_iter();
+        // let [date, aux_date, payee, note] = iter.as_slice();
 
-        assert_eq!("2023-05-01", date);
-        assert_eq!("", aux_date);
-        assert_eq!("Payee", payee);
-        assert_eq!("Note", note);
+        assert_eq!("2023-05-01", iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
+        assert_eq!("Payee", iter.next().unwrap());
+        assert_eq!("Note", iter.next().unwrap());
     }
 
     #[test]
     fn test_parsing_xact_header_aux_dates() {
         let input = "2023-05-02=2023-05-01 Payee  ; Note";
 
-        let (date, aux_date, payee, note) = parse_xact_header(input);
+        let mut iter = parse_xact_header(input).into_iter();
 
-        assert_eq!("2023-05-02", date);
-        assert_eq!("2023-05-01", aux_date);
-        assert_eq!("Payee", payee);
-        assert_eq!("Note", note);
+        assert_eq!("2023-05-02", iter.next().unwrap());
+        assert_eq!("2023-05-01", iter.next().unwrap());
+        assert_eq!("Payee", iter.next().unwrap());
+        assert_eq!("Note", iter.next().unwrap());
     }
 
     #[test]
     fn test_parsing_xact_header_no_note() {
         let input = "2023-05-01 Payee";
 
-        let (date, aux_date, payee, note) = parse_xact_header(input);
+        let mut iter = parse_xact_header(input).into_iter();
 
-        assert_eq!("2023-05-01", date);
-        assert_eq!("", aux_date);
-        assert_eq!("Payee", payee);
-        assert_eq!("", note);
+        assert_eq!("2023-05-01", iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
+        assert_eq!("Payee", iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
     }
 
     #[test]
     fn test_parsing_xact_header_no_payee_w_note() {
         let input = "2023-05-01  ; Note";
 
-        let (date, aux_date, payee, note) = parse_xact_header(input);
+        let mut iter = parse_xact_header(input).into_iter();
 
-        assert_eq!("2023-05-01", date);
-        assert_eq!("", aux_date);
-        assert_eq!("", payee);
-        assert_eq!("Note", note);
+        assert_eq!("2023-05-01", iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
+        assert_eq!("Note", iter.next().unwrap());
     }
 
     #[test]
     fn test_parsing_xact_header_date_only() {
         let input = "2023-05-01";
 
-        let (date, aux_date, payee, note) = parse_xact_header(input);
+        let mut iter = parse_xact_header(input).into_iter();
 
-        assert_eq!(input, date);
-        assert_eq!("", aux_date);
-        assert_eq!("", payee);
-        assert_eq!("", note);
+        assert_eq!(input, iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
+        assert_eq!("", iter.next().unwrap());
     }
 }
