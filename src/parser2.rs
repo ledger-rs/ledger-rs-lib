@@ -13,15 +13,18 @@
  * the collections in the Journal.
  * It also creates links among the models. This functionality is from finalize() function.
  */
-use std::io::{BufRead, BufReader, Read};
+use std::{
+    error::Error,
+    io::{BufRead, BufReader, Read},
+};
 
-use crate::{context::ParsingContext, journal::Journal};
+use crate::{context::ParsingContext, journal::Journal, xact::Xact};
 
 pub(crate) fn read<T: Read>(source: T) -> Journal {
     // iterate over lines
 
     let mut reader = BufReader::new(source);
-    let mut context = ParsingContext::new();
+    // let mut context = ParsingContext::new();
     // To avoid allocation, reuse the String variable.
     let mut line = String::new();
 
@@ -39,7 +42,14 @@ pub(crate) fn read<T: Read>(source: T) -> Journal {
                 // Remove the trailing newline characters
                 let trimmed = &line.trim_end();
 
-                read_next_directive(trimmed);
+                match read_next_directive(&mut line, &mut reader) {
+                    Ok(_) => (), // continue
+                    Err(err) => {
+                        log::error!("Error: {:?}", err);
+                        println!("Error: {:?}", err);
+                        break;
+                    }
+                };
             }
         }
 
@@ -47,12 +57,15 @@ pub(crate) fn read<T: Read>(source: T) -> Journal {
         line.clear();
     }
 
-    context.journal
+    todo!("return journal")
 }
 
-fn read_next_directive(line: &str) {
+fn read_next_directive<T: Read>(
+    line: &mut String,
+    reader: &mut BufReader<T>,
+) -> Result<(), String> {
     if line.is_empty() {
-        return;
+        return Ok(());
     }
 
     // TODO: determine what the line is
@@ -60,7 +73,7 @@ fn read_next_directive(line: &str) {
         // comments
         ';' | '#' | '*' | '|' => {
             // ignore
-            return;
+            return Ok(());
         }
 
         '-' => {
@@ -68,12 +81,12 @@ fn read_next_directive(line: &str) {
         }
 
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-            // Starts with date.
+            // Starts with date/number.
             let tokens = lex_xact_header(line);
-            // let date = tokens[0];
-            // TODO: create_xact(tokens);
-            // todo: try to read Posts directly here.
-            //reader
+            let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
+            // TODO: read the Posts here
+            let x = reader.read_line(line);
+            log::debug!("read: {:?}", x);
         }
 
         ' ' | '\t' => {
@@ -100,6 +113,8 @@ fn read_next_directive(line: &str) {
 
     // TODO: lexer - create model elements from tokens
     // TODO: store model elements in collections and link.
+
+    Ok(())
 }
 
 /// Parse Xact header record.
@@ -197,12 +212,8 @@ fn parse_aux_date(input: &str) -> (&str, &str) {
 /// Returns (payee, processed length)
 fn parse_payee(input: &str) -> (&str, &str) {
     match input.find("  ;") {
-        Some(index) => {
-            (&input[..index].trim(), &input[index..])
-        }
-        None => {
-            (input.trim(), "")
-        }
+        Some(index) => (&input[..index].trim(), &input[index..]),
+        None => (input.trim(), ""),
     }
 }
 

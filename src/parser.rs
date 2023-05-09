@@ -100,16 +100,14 @@ fn parse_line(context: &ParsingContext, line: &str) -> LineParseResult {
     }
 }
 
-fn parse_date(date_str: &str) -> NaiveDate {
+pub fn parse_date(date_str: &str) -> NaiveDate {
     // It should be enough to get the content until the first whitespace.
     // let ws_index = line.find(' ').expect("date end");
     // let date_str = &line[0..ws_index];
 
     // todo: support more date formats?
 
-    let date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d").expect("date parsed");
-
-    date
+    NaiveDate::parse_from_str(date_str, "%Y-%m-%d").expect("date parsed")
 }
 
 /// Parse a Posting.

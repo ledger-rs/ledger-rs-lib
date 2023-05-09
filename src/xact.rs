@@ -1,9 +1,10 @@
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, journal::Journal, post::Post};
+use crate::{amount::Amount, journal::Journal, parser, post::Post};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
+    pub aux_date: Option<NaiveDate>,
     pub payee: String,
     // pub posts: Vec<Post>,
     pub posts: Vec<usize>,
@@ -20,13 +21,45 @@ impl Xact {
             note,
             posts: vec![],
             date,
+            aux_date: None,
             // balance: Amount::null(),
         }
     }
 
-    // pub fn add_post(&mut self, post: Post) {
-    //     self.posts.push(post);
-    // }
+    pub fn create(date: &str, aux_date: &str, payee: &str, note: &str) -> Self {
+        let _date = if date.is_empty() {
+            None
+        } else {
+            Some(parser::parse_date(date))
+        };
+
+        let _aux_date = if aux_date.is_empty() {
+            None
+        } else {
+            Some(parser::parse_date(aux_date))
+        };
+
+        let _payee = if payee.is_empty() {
+            "Unknown Payee".to_string()
+        } else {
+            payee.to_string()
+        };
+
+        let _note = if note.is_empty() {
+            None
+        } else {
+            Some(note.to_string())
+        };
+
+        Self {
+            date: _date,
+            payee: _payee,
+            posts: vec![],
+            note: _note,
+            aux_date: _aux_date,
+        }
+    }
+
 }
 
 /// Finalize transaction.
