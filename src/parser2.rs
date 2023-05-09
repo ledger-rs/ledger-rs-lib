@@ -40,7 +40,7 @@ pub(crate) fn read<T: Read>(source: T) -> Journal {
             }
             Ok(_) => {
                 // Remove the trailing newline characters
-                let trimmed = &line.trim_end();
+                // let trimmed = &line.trim_end();
 
                 match read_next_directive(&mut line, &mut reader) {
                     Ok(_) => (), // continue
@@ -82,13 +82,14 @@ fn read_next_directive<T: Read>(
 
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
             // Starts with date/number.
-            let tokens = lex_xact_header(line);
+            // TODO: move all this into a function
+
+            let tokens = scan_xact_header(line);
             let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
 
-            // TODO: read the Posts 
-            line.clear(); // empty the buffer before reading
-            let x = reader.read_line(line).expect("read another line");
-            log::debug!("read: {:?}, {:?}", x, &line);
+            scan_xact_contents(reader, line);
+
+            todo!("put everything into the Journal")
         }
 
         ' ' | '\t' => {
@@ -132,7 +133,7 @@ fn read_next_directive<T: Read>(
 /// ```
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
-fn lex_xact_header(input: &str) -> [&str; 4] {
+fn scan_xact_header(input: &str) -> [&str; 4] {
     if input.is_empty() {
         panic!("Invalid input for Xact record.")
     }
@@ -153,6 +154,20 @@ fn lex_xact_header(input: &str) -> [&str; 4] {
     let note = parse_note(input);
 
     [date, aux_date, payee, note]
+}
+
+/// Scan / parse Xact contents: Posts & Comments
+/// Read lines from the source until a separator (empty line) is encountered.
+fn scan_xact_contents<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
+    // TODO: read the Xact contents (Posts, Comments)
+    line.clear(); // empty the buffer before reading
+    match reader.read_line(line) {
+        Ok(_) => todo!(),
+        Err(_) => todo!(),
+    }
+
+    // log::debug!("read: {:?}, {:?}", x, &line);
+    // TODO: read until separator (empty line)
 }
 
 /// Parse date from the input string.
@@ -279,7 +294,7 @@ mod full_tests {
 
 #[cfg(test)]
 mod lexer_tests {
-    use super::{lex_xact_header, parse_date};
+    use super::{parse_date, scan_xact_header};
 
     #[test]
     fn test_parsing_xact_header() {
@@ -287,7 +302,7 @@ mod lexer_tests {
 
         let input = "2023-05-01 Payee  ; Note";
 
-        let mut iter = lex_xact_header(input).into_iter();
+        let mut iter = scan_xact_header(input).into_iter();
         // let [date, aux_date, payee, note] = iter.as_slice();
 
         assert_eq!("2023-05-01", iter.next().unwrap());
@@ -300,7 +315,7 @@ mod lexer_tests {
     fn test_parsing_xact_header_aux_dates() {
         let input = "2023-05-02=2023-05-01 Payee  ; Note";
 
-        let mut iter = lex_xact_header(input).into_iter();
+        let mut iter = scan_xact_header(input).into_iter();
 
         assert_eq!("2023-05-02", iter.next().unwrap());
         assert_eq!("2023-05-01", iter.next().unwrap());
@@ -312,7 +327,7 @@ mod lexer_tests {
     fn test_parsing_xact_header_no_note() {
         let input = "2023-05-01 Payee";
 
-        let mut iter = lex_xact_header(input).into_iter();
+        let mut iter = scan_xact_header(input).into_iter();
 
         assert_eq!("2023-05-01", iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
@@ -324,7 +339,7 @@ mod lexer_tests {
     fn test_parsing_xact_header_no_payee_w_note() {
         let input = "2023-05-01  ; Note";
 
-        let mut iter = lex_xact_header(input).into_iter();
+        let mut iter = scan_xact_header(input).into_iter();
 
         assert_eq!("2023-05-01", iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
@@ -336,7 +351,7 @@ mod lexer_tests {
     fn test_parsing_xact_header_date_only() {
         let input = "2023-05-01";
 
-        let mut iter = lex_xact_header(input).into_iter();
+        let mut iter = scan_xact_header(input).into_iter();
 
         assert_eq!(input, iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());

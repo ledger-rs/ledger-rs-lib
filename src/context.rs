@@ -1,3 +1,5 @@
+use std::io::{BufReader, Read, Cursor};
+
 /**
  * Parsing context
  *
@@ -6,6 +8,7 @@
 use crate::{journal::Journal, post::Post, xact::Xact};
 
 pub(crate) struct ParsingContext {
+    // pub reader: BufReader<T>,
     pub journal: Journal,
 
     /// Transaction being parsed currently. If exist, we are in the process of parsing posts.
@@ -21,6 +24,7 @@ impl ParsingContext {
             // cache:
             xact: None,
             posts: None,
+            // reader: BufReader::new(Cursor::new("".to_string())),
         }
     }
 
