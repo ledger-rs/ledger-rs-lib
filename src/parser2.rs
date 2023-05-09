@@ -119,46 +119,68 @@ fn parse_xact_header(line: &str) -> [&str; 4] {
         panic!("Invalid input for Xact record.")
     }
 
-    let date: &str;
-    let aux_date: &str;
-    let payee: &str;
-    let note: &str;
-    // slice borders
-    let mut begin: usize = 0;
-    let mut end: usize;
+    let mut cursor: usize = 0;
 
     // Dates.
-    // Date has to be at the beginning
+    // Date has to be at the beginning.
 
-    match line.find(|c| c == '=' || c == ' ') {
+    let (date, offset) = parse_date(line);
+    cursor += offset;
+
+    // aux date
+    let (aux_date, offset) = parse_aux_date(&line[cursor..]);
+    cursor += offset;
+
+    // Payee
+
+    let (payee, offset) = parse_payee(&line[cursor..]);
+    cursor += offset;
+
+    // Note
+    let note = parse_note(&line[cursor..]);
+
+    [date, aux_date, payee, note]
+}
+
+/// Parse date from the input string.
+///
+/// returns the (date string, processed length)
+fn parse_date(input: &str) -> (&str, usize) {
+    let date: &str;
+    let offset: usize;
+
+    match input.find(|c| c == '=' || c == ' ') {
         Some(index) => {
-            end = index;
-            date = &line[begin..end];
-
-            begin = index;
+            offset = index;
+            date = &input[..offset];
         }
         None => {
-            date = &line;
-            return [date, "", "", ""];
+            offset = input.len();
+            date = &input;
+            // return [date, "", "", ""];
         }
     };
     log::debug!("date: {:?}", date);
+    (date, offset)
+}
 
-    // aux date
-    match line[begin..begin + 1].chars().next() {
+fn parse_aux_date(input: &str) -> (&str, usize) {
+    let aux_date: &str;
+    let mut cursor: usize = 0;
+
+    match input.chars().next() {
         Some(' ') => {
             // no aux date
             aux_date = "";
         }
         Some('=') => {
-            // have aux date
-            begin += 1;
+            // have aux date. Skip '=', increase the offset by 1.
 
-            end = match &line[begin..].find(' ') {
-                Some(i) => begin + i,
-                None => line.len(),
+            cursor = match input[1..].find(' ') {
+                Some(i) => 1 + i,
+                None => input.len(),
             };
-            aux_date = &line[begin..end]
+            aux_date = &input[1..cursor]
         }
         Some(_) => panic!("should not happen"),
         None => {
@@ -167,32 +189,7 @@ fn parse_xact_header(line: &str) -> [&str; 4] {
         }
     }
     log::debug!("aux_date: {:?}", aux_date);
-
-    // Payee
-
-    begin = end;
-    let (payee, offset) = parse_payee(&line[begin..]);
-
-    // Note
-
-    begin += offset;
-    note = match &line[begin..].is_empty() {
-        true => "",
-        false => {
-            begin += 3;
-            &line[begin..].trim()
-        }
-    };
-    log::debug!("note: {:?}", note);
-
-    [date, aux_date, payee, note]
-}
-
-/// Parse date from the input string.
-/// 
-/// returns the (date string, processed length)
-fn parse_date(input: &str) -> (&str, usize) {
-    todo!()
+    (aux_date, cursor)
 }
 
 /// Parse payee from the input string.
@@ -205,15 +202,27 @@ fn parse_payee(input: &str) -> (&str, usize) {
         Some(index) => {
             cursor = index;
             payee = &input[..cursor].trim();
-            // begin += index;
         }
         None => {
             // skip the ws
-            payee = &input[1..].trim();
+            let start = match next_non_ws(input) {
+                Some(i) => i,
+                None => 0,
+            };
+
+            payee = &input[start..].trim();
             cursor = input.len();
         }
     };
     (payee, cursor)
+}
+
+fn parse_note(input: &str) -> &str {
+    match input.is_empty() {
+        true => "",
+        false => &input[3..].trim(),
+    }
+    // log::debug!("note: {:?}", note);
 }
 
 /// Create Xact from tokens.
@@ -225,6 +234,11 @@ fn create_xact(tokens: [&str; 4]) {
 /// Parse tokens from a Post line.
 fn parse_post(line: &str) -> [&str; 1] {
     todo!("complete")
+}
+
+/// Find the index of the next non-ws character.
+fn next_non_ws(input: &str) -> Option<usize> {
+    input.find(|c| c != ' ' && c != '\t')
 }
 
 #[cfg(test)]
@@ -263,7 +277,7 @@ mod full_tests {
 
 #[cfg(test)]
 mod parser_tests {
-    use super::parse_xact_header;
+    use super::{parse_date, parse_xact_header};
 
     #[test]
     fn test_parsing_xact_header() {
@@ -326,6 +340,16 @@ mod parser_tests {
         assert_eq!("", iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
+    }
+
+    #[test]
+    fn test_date_w_aux() {
+        let input = "2023-05-01=2023";
+
+        let (date, offset) = parse_date(input);
+
+        assert_eq!("2023-05-01", date);
+        assert_eq!(10, offset);
     }
 }
 
