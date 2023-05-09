@@ -115,19 +115,23 @@ fn parse_xact_header(line: &str) -> (&str, &str, &str, &str) {
         panic!("Invalid input for Xact record.")
     }
 
-    let mut cursor: usize = 0;
     let date: &str;
     let aux_date: &str;
     let payee: &str;
     let note: &str;
+    // slice borders
+    let mut begin: usize = 0;
+    let mut end: usize;
 
     // Dates.
     // Date has to be at the beginning
 
     match line.find(|c| c == '=' || c == ' ') {
         Some(index) => {
-            date = &line[0..index];
-            cursor = index;
+            end = index;
+            date = &line[begin..end];
+
+            begin = index;
         }
         None => {
             date = &line;
@@ -136,40 +140,55 @@ fn parse_xact_header(line: &str) -> (&str, &str, &str, &str) {
     };
     log::debug!("date: {:?}", date);
 
-    // TODO: aux date
-    match line.chars().nth(cursor) {
+    // aux date
+    match line[begin..begin+1].chars().next() {
         Some(' ') => {
+            // no aux date
             aux_date = "";
-            // cursor += 1;
-        } // no aux date
-        Some('=') => todo!("have aux date"),
+        }
+        Some('=') => {
+            // have aux date
+            begin += 1;
+            
+            end = match &line[begin..].find(' ') {
+                Some(i) => begin + i,
+                None => line.len(),
+            };
+            aux_date = &line[begin..end]
+        },
         Some(_) => panic!("should not happen"),
         None => {
             // end of line.
             aux_date = "";
         }
     }
+    log::debug!("aux_date: {:?}", aux_date);
 
     // Payee
 
-    match line[cursor..].find("  ;") {
+    begin = end;
+    match line[begin..].find("  ;") {
         Some(index) => {
-            payee = &line[cursor..cursor+index];
-            cursor += index;
+            end = begin + index;
+            payee = &line[begin..end].trim();
+            // begin += index;
         }
         None => {
-            cursor += 1;    // skip the ws
-            payee = &line[cursor..];
-            cursor = line.len();
+            begin += 1;    // skip the ws
+            payee = &line[begin..].trim();
+            end = line.len();
         },
     };
     log::debug!("payee: {:?}", payee);
 
-    note = match &line[cursor..].is_empty() {
+    // Note
+
+    begin = end;
+    note = match &line[begin..].is_empty() {
         true => "",
         false => {
-            cursor += 3;
-            &line[cursor..].trim()
+            begin += 3;
+            &line[begin..].trim()
         },
     };
     log::debug!("note: {:?}", note);
