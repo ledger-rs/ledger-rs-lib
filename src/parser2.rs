@@ -17,7 +17,7 @@ use std::io::{BufRead, BufReader, Read};
 
 use crate::{context::ParsingContext, journal::Journal};
 
-pub(crate) fn parse<T: Read>(source: T) -> Journal {
+pub(crate) fn read<T: Read>(source: T) -> Journal {
     // iterate over lines
 
     let mut reader = BufReader::new(source);
@@ -70,9 +70,14 @@ fn read_next_directive(line: &str) {
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
             // Starts with date.
             let tokens = parse_xact_header(line);
+            // TODO: create_xact(tokens);
+            // todo: try to read Posts directly here.
+            //reader
         }
 
-        ' ' | '\t' => {}
+        ' ' | '\t' => {
+            todo!("complete")
+        }
 
         // The rest
         c => {
@@ -91,10 +96,7 @@ fn read_next_directive(line: &str) {
             todo!("the rest")
         }
     }
-    // TODO: parse line:
-    // TODO:   recognize tokens
-    // TODO:   create iterator over tokens
-    // TODO: iterate over line tokens
+
     // TODO: lexer - create model elements from tokens
     // TODO: store model elements in collections and link.
 }
@@ -103,7 +105,7 @@ fn read_next_directive(line: &str) {
 /// 2023-05-05=2023-05-01 Payee  ; Note
 ///
 /// returns [date, aux_date, payee, note]
-/// 
+///
 /// Check for .is_empty() after receiving the result and handle appropriately.
 ///
 /// Ledger's documentation specifies the following format
@@ -112,7 +114,7 @@ fn read_next_directive(line: &str) {
 /// ```
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
-fn parse_xact_header(line: &str) -> [&str;4] {
+fn parse_xact_header(line: &str) -> [&str; 4] {
     if line.is_empty() {
         panic!("Invalid input for Xact record.")
     }
@@ -143,7 +145,7 @@ fn parse_xact_header(line: &str) -> [&str;4] {
     log::debug!("date: {:?}", date);
 
     // aux date
-    match line[begin..begin+1].chars().next() {
+    match line[begin..begin + 1].chars().next() {
         Some(' ') => {
             // no aux date
             aux_date = "";
@@ -151,13 +153,13 @@ fn parse_xact_header(line: &str) -> [&str;4] {
         Some('=') => {
             // have aux date
             begin += 1;
-            
+
             end = match &line[begin..].find(' ') {
                 Some(i) => begin + i,
                 None => line.len(),
             };
             aux_date = &line[begin..end]
-        },
+        }
         Some(_) => panic!("should not happen"),
         None => {
             // end of line.
@@ -169,46 +171,66 @@ fn parse_xact_header(line: &str) -> [&str;4] {
     // Payee
 
     begin = end;
-    match line[begin..].find("  ;") {
-        Some(index) => {
-            end = begin + index;
-            payee = &line[begin..end].trim();
-            // begin += index;
-        }
-        None => {
-            begin += 1;    // skip the ws
-            payee = &line[begin..].trim();
-            end = line.len();
-        },
-    };
-    log::debug!("payee: {:?}", payee);
+    let (payee, offset) = parse_payee(&line[begin..]);
 
     // Note
 
-    begin = end;
+    begin += offset;
     note = match &line[begin..].is_empty() {
         true => "",
         false => {
             begin += 3;
             &line[begin..].trim()
-        },
+        }
     };
     log::debug!("note: {:?}", note);
 
     [date, aux_date, payee, note]
 }
 
+/// Parse date from the input string.
+/// 
+/// returns the (date string, processed length)
+fn parse_date(input: &str) -> (&str, usize) {
+    todo!()
+}
+
+/// Parse payee from the input string.
+/// Returns (payee, processed length)
+fn parse_payee(input: &str) -> (&str, usize) {
+    let payee: &str;
+    let cursor: usize;
+
+    match input.find("  ;") {
+        Some(index) => {
+            cursor = index;
+            payee = &input[..cursor].trim();
+            // begin += index;
+        }
+        None => {
+            // skip the ws
+            payee = &input[1..].trim();
+            cursor = input.len();
+        }
+    };
+    (payee, cursor)
+}
+
 /// Create Xact from tokens.
 /// Lexer function.
-fn create_xact() {
+fn create_xact(tokens: [&str; 4]) {
     todo!("create xact from tokens")
 }
 
+/// Parse tokens from a Post line.
+fn parse_post(line: &str) -> [&str; 1] {
+    todo!("complete")
+}
 
 #[cfg(test)]
 mod full_tests {
-    use std::io::Cursor;
     use crate::account::Account;
+    use std::io::Cursor;
 
     #[test]
     fn test_minimal_parsing() {
@@ -219,7 +241,7 @@ mod full_tests {
         "#;
         let cursor = Cursor::new(input);
 
-        let journal = super::parse(cursor);
+        let journal = super::read(cursor);
 
         assert_eq!(1, journal.xacts.len());
 
@@ -308,6 +330,4 @@ mod parser_tests {
 }
 
 #[cfg(test)]
-mod lexer_tests {
-    
-}
+mod lexer_tests {}
