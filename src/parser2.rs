@@ -114,8 +114,8 @@ fn read_next_directive(line: &str) {
 /// ```
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
-fn lex_xact_header(line: &str) -> [&str; 4] {
-    if line.is_empty() {
+fn lex_xact_header(input: &str) -> [&str; 4] {
+    if input.is_empty() {
         panic!("Invalid input for Xact record.")
     }
 
@@ -124,44 +124,46 @@ fn lex_xact_header(line: &str) -> [&str; 4] {
     // Dates.
     // Date has to be at the beginning.
 
-    let (date, offset) = parse_date(line);
-    cursor += offset;
+    let (date, input) = parse_date(input);
+    // cursor += offset;
 
     // aux date
-    let (aux_date, offset) = parse_aux_date(&line[cursor..]);
+    let (aux_date, offset) = parse_aux_date(&input[cursor..]);
     cursor += offset;
 
     // Payee
 
-    let (payee, offset) = parse_payee(&line[cursor..]);
+    let (payee, offset) = parse_payee(&input[cursor..]);
     cursor += offset;
 
     // Note
-    let note = parse_note(&line[cursor..]);
+    let note = parse_note(&input[cursor..]);
 
     [date, aux_date, payee, note]
 }
 
 /// Parse date from the input string.
 ///
-/// returns the (date string, processed length)
-fn parse_date(input: &str) -> (&str, usize) {
-    let date: &str;
-    let offset: usize;
+/// returns the (date string, remaining string)
+fn parse_date(input: &str) -> (&str, &str) {
+    // let date: &str;
+    // let offset: usize;
 
     match input.find(|c| c == '=' || c == ' ') {
         Some(index) => {
-            offset = index;
-            date = &input[..offset];
+            // offset = index;
+            //date = &input[..index];
+            return (&input[..index], &input[index..]);
         }
         None => {
-            offset = input.len();
-            date = &input;
+            // offset = input.len();
+            // date = &input;
             // return [date, "", "", ""];
+            return (&input, "");
         }
     };
-    log::debug!("date: {:?}", date);
-    (date, offset)
+    // log::debug!("date: {:?}", date);
+    // (date, offset)
 }
 
 fn parse_aux_date(input: &str) -> (&str, usize) {
@@ -346,10 +348,10 @@ mod lexer_tests {
     fn test_date_w_aux() {
         let input = "2023-05-01=2023";
 
-        let (date, offset) = parse_date(input);
+        let (date, remains) = parse_date(input);
 
         assert_eq!("2023-05-01", date);
-        assert_eq!(10, offset);
+        assert_eq!("=2023", remains);
     }
 }
 
