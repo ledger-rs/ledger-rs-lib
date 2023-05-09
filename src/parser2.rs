@@ -215,15 +215,16 @@ mod tests {
 
     #[test]
     fn test_parsing_xact_header() {
-        let _ = env_logger::builder()
-            .write_style(env_logger::WriteStyle::Always)
-            .is_test(true)
-            .try_init();
+        std::env::set_var("RUST_LOG", "trace");
+
         let input = "2023-05-01 Payee  ; Note";
 
         let (date, aux_date, payee, note) = parse_xact_header(input);
 
-        todo!("complete")
+        assert_eq!("2023-05-01", date);
+        assert_eq!("", aux_date);
+        assert_eq!("Payee", payee);
+        assert_eq!("Note", note);
     }
 
     #[test]
@@ -232,7 +233,10 @@ mod tests {
 
         let (date, aux_date, payee, note) = parse_xact_header(input);
 
-        todo!("complete")
+        assert_eq!("2023-05-02", date);
+        assert_eq!("2023-05-01", aux_date);
+        assert_eq!("Payee", payee);
+        assert_eq!("Note", note);
     }
 
     #[test]
