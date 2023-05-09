@@ -69,7 +69,7 @@ fn read_next_directive(line: &str) {
 
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
             // Starts with date.
-            parse_xact_header(line);
+            let tokens = parse_xact_header(line);
         }
 
         ' ' | '\t' => {}
@@ -102,7 +102,9 @@ fn read_next_directive(line: &str) {
 /// Parse Xact header record.
 /// 2023-05-05=2023-05-01 Payee  ; Note
 ///
-/// returns (date, aux_date, payee, note)
+/// returns [date, aux_date, payee, note]
+/// 
+/// Check for .is_empty() after receiving the result and handle appropriately.
 ///
 /// Ledger's documentation specifies the following format
 /// ```
@@ -196,13 +198,17 @@ fn parse_xact_header(line: &str) -> [&str;4] {
     [date, aux_date, payee, note]
 }
 
+/// Create Xact from tokens.
+/// Lexer function.
+fn create_xact() {
+    todo!("create xact from tokens")
+}
+
+
 #[cfg(test)]
-mod tests {
+mod full_tests {
     use std::io::Cursor;
-
     use crate::account::Account;
-
-    use super::parse_xact_header;
 
     #[test]
     fn test_minimal_parsing() {
@@ -231,6 +237,11 @@ mod tests {
         let post2 = &journal.posts[xact.posts[1]];
         assert_eq!(Account::new("Assets"), post2.account);
     }
+}
+
+#[cfg(test)]
+mod parser_tests {
+    use super::parse_xact_header;
 
     #[test]
     fn test_parsing_xact_header() {
@@ -294,4 +305,9 @@ mod tests {
         assert_eq!("", iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
     }
+}
+
+#[cfg(test)]
+mod lexer_tests {
+    
 }
