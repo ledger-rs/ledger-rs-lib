@@ -196,28 +196,14 @@ fn parse_aux_date(input: &str) -> (&str, &str) {
 /// Parse payee from the input string.
 /// Returns (payee, processed length)
 fn parse_payee(input: &str) -> (&str, &str) {
-    // let input = input.trim_start();
-
-    let payee: &str;
-    // let cursor: usize;
-
     match input.find("  ;") {
         Some(index) => {
-            // cursor = index;
-            return (&input[..index].trim(), &input[index..]);
+            (&input[..index].trim(), &input[index..])
         }
         None => {
-            // skip the ws
-            // let start = match next_non_ws(input) {
-            //     Some(i) => i,
-            //     None => 0,
-            // };
-
-            return (input.trim(), "");
-            // cursor = input.len();
+            (input.trim(), "")
         }
-    };
-    // (payee, cursor)
+    }
 }
 
 fn parse_note(input: &str) -> &str {
