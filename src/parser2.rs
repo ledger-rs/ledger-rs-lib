@@ -103,55 +103,76 @@ fn read_next_directive(line: &str) {
 /// 2023-05-05=2023-05-01 Payee  ; Note
 ///
 /// returns (date, aux_date, payee, note)
-/// 
+///
 /// Ledger's documentation specifies the following format
 /// ```
 /// DATE[=EDATE] [*|!] [(CODE)] DESC
 /// ```
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
-fn parse_xact_header(line: &str) -> (&str, Option<&str>, Option<&str>, Option<&str>) {
+fn parse_xact_header(line: &str) -> (&str, &str, &str, &str) {
     if line.is_empty() {
         panic!("Invalid input for Xact record.")
     }
 
     let mut cursor: usize = 0;
     let date: &str;
-    let aux_date: Option<&str>;
-    let payee: Option<&str>;
-    let note: Option<&str>;
+    let aux_date: &str;
+    let payee: &str;
+    let note: &str;
 
     // Dates.
     // Date has to be at the beginning
 
-    cursor = match line.find(|c| c == '=' || c == ' ') {
-        Some(index) => index,
-        None => line.len(),
+    match line.find(|c| c == '=' || c == ' ') {
+        Some(index) => {
+            date = &line[0..index];
+            cursor = index;
+        }
+        None => {
+            date = &line;
+            return (date, "", "", "");
+        }
     };
-    date = &line[0..cursor];
     log::debug!("date: {:?}", date);
 
-    // aux date
+    // TODO: aux date
     match line.chars().nth(cursor) {
-        Some(' ') => (), // no aux date
+        Some(' ') => {
+            aux_date = "";
+            // cursor += 1;
+        } // no aux date
         Some('=') => todo!("have aux date"),
         Some(_) => panic!("should not happen"),
-        None => (), // skip
+        None => {
+            // end of line.
+            aux_date = "";
+        }
     }
 
     // Payee
 
-    cursor = match line.find("  ;") {
-        Some(index) => index,
-        None => line.len(),
+    match line[cursor..].find("  ;") {
+        Some(index) => {
+            payee = &line[cursor..cursor+index];
+            cursor += index;
+        }
+        None => {
+            cursor += 1;    // skip the ws
+            payee = &line[cursor..];
+            cursor = line.len();
+        },
     };
-    // payee = &line[];
-    payee = None;
+    log::debug!("payee: {:?}", payee);
 
-    let note_str = match line.find("  ;") {
-        Some(index) => todo!(),
-        None => todo!(),
+    note = match &line[cursor..].is_empty() {
+        true => "",
+        false => {
+            cursor += 3;
+            &line[cursor..].trim()
+        },
     };
+    log::debug!("note: {:?}", note);
 
     (date, aux_date, payee, note)
 }
@@ -194,7 +215,10 @@ mod tests {
 
     #[test]
     fn test_parsing_xact_header() {
-        let _ = env_logger::builder().write_style(env_logger::WriteStyle::Always).is_test(true).try_init();
+        let _ = env_logger::builder()
+            .write_style(env_logger::WriteStyle::Always)
+            .is_test(true)
+            .try_init();
         let input = "2023-05-01 Payee  ; Note";
 
         let (date, aux_date, payee, note) = parse_xact_header(input);
@@ -217,25 +241,22 @@ mod tests {
 
         let (date, aux_date, payee, note) = parse_xact_header(input);
 
-        todo!("complete")
+        assert_eq!("2023-05-01", date);
+        assert_eq!("", aux_date);
+        assert_eq!("Payee", payee);
+        assert_eq!("", note);
     }
 
     #[test]
-    fn test_parsing_xact_header_no_payee() {
-        let input = "2023-05-01 Payee  ; Note";
-
-        let (date, aux_date, payee, note) = parse_xact_header(input);
-
-        todo!("complete")
-    }
-
-    #[test]
-    fn test_parsing_xact_header_no_payee_note() {
+    fn test_parsing_xact_header_no_payee_w_note() {
         let input = "2023-05-01  ; Note";
 
         let (date, aux_date, payee, note) = parse_xact_header(input);
 
-        todo!("complete")
+        assert_eq!("2023-05-01", date);
+        assert_eq!("", aux_date);
+        assert_eq!("", payee);
+        assert_eq!("Note", note);
     }
 
     #[test]
@@ -245,8 +266,8 @@ mod tests {
         let (date, aux_date, payee, note) = parse_xact_header(input);
 
         assert_eq!(input, date);
-        assert_eq!(None, aux_date);
-        assert_eq!(None, payee);
-        assert_eq!(None, note);
+        assert_eq!("", aux_date);
+        assert_eq!("", payee);
+        assert_eq!("", note);
     }
 }
