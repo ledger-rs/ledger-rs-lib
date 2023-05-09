@@ -70,6 +70,7 @@ fn read_next_directive(line: &str) {
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
             // Starts with date.
             let tokens = lex_xact_header(line);
+            // let date = tokens[0];
             // TODO: create_xact(tokens);
             // todo: try to read Posts directly here.
             //reader
@@ -119,25 +120,20 @@ fn lex_xact_header(input: &str) -> [&str; 4] {
         panic!("Invalid input for Xact record.")
     }
 
-    let mut cursor: usize = 0;
-
     // Dates.
     // Date has to be at the beginning.
 
     let (date, input) = parse_date(input);
-    // cursor += offset;
 
     // aux date
-    let (aux_date, offset) = parse_aux_date(&input[cursor..]);
-    cursor += offset;
+    let (aux_date, input) = parse_aux_date(input);
 
     // Payee
 
-    let (payee, offset) = parse_payee(&input[cursor..]);
-    cursor += offset;
+    let (payee, input) = parse_payee(input);
 
     // Note
-    let note = parse_note(&input[cursor..]);
+    let note = parse_note(input);
 
     [date, aux_date, payee, note]
 }
@@ -166,57 +162,62 @@ fn parse_date(input: &str) -> (&str, &str) {
     // (date, offset)
 }
 
-fn parse_aux_date(input: &str) -> (&str, usize) {
+/// Parse auxillary date.
+/// Returns the (date_str, remains).
+fn parse_aux_date(input: &str) -> (&str, &str) {
     let aux_date: &str;
-    let mut cursor: usize = 0;
+    // let mut cursor: usize = 0;
+    // skip ws
+    // let input = input.trim_start();
 
     match input.chars().next() {
-        Some(' ') => {
-            // no aux date
-            aux_date = "";
-        }
         Some('=') => {
-            // have aux date. Skip '=', increase the offset by 1.
+            // have aux date.
+            // skip '=' sign
+            let input = input.trim_start_matches('=');
 
-            cursor = match input[1..].find(' ') {
-                Some(i) => 1 + i,
-                None => input.len(),
+            // find the next separator
+            match input.find(' ') {
+                Some(i) => return (&input[..i], &input[i..]),
+                None => return (input, ""),
             };
-            aux_date = &input[1..cursor]
         }
-        Some(_) => panic!("should not happen"),
-        None => {
-            // end of line.
-            aux_date = "";
+        // Some(c) => {
+        //     print!("{:?}", c);
+        //     panic!("should not happen");
+        // },
+        _ => {
+            // end of line, or character other than '='
+            return ("", input);
         }
     }
-    log::debug!("aux_date: {:?}", aux_date);
-    (aux_date, cursor)
 }
 
 /// Parse payee from the input string.
 /// Returns (payee, processed length)
-fn parse_payee(input: &str) -> (&str, usize) {
+fn parse_payee(input: &str) -> (&str, &str) {
+    // let input = input.trim_start();
+
     let payee: &str;
-    let cursor: usize;
+    // let cursor: usize;
 
     match input.find("  ;") {
         Some(index) => {
-            cursor = index;
-            payee = &input[..cursor].trim();
+            // cursor = index;
+            return (&input[..index].trim(), &input[index..]);
         }
         None => {
             // skip the ws
-            let start = match next_non_ws(input) {
-                Some(i) => i,
-                None => 0,
-            };
+            // let start = match next_non_ws(input) {
+            //     Some(i) => i,
+            //     None => 0,
+            // };
 
-            payee = &input[start..].trim();
-            cursor = input.len();
+            return (input.trim(), "");
+            // cursor = input.len();
         }
     };
-    (payee, cursor)
+    // (payee, cursor)
 }
 
 fn parse_note(input: &str) -> &str {
@@ -279,7 +280,7 @@ mod full_tests {
 
 #[cfg(test)]
 mod lexer_tests {
-    use super::{parse_date, lex_xact_header};
+    use super::{lex_xact_header, parse_date};
 
     #[test]
     fn test_parsing_xact_header() {
@@ -352,6 +353,18 @@ mod lexer_tests {
 
         assert_eq!("2023-05-01", date);
         assert_eq!("=2023", remains);
+    }
+
+    // test built-in ws removal with .trim()
+    #[test]
+    fn test_ws_skip() {
+        // see if trim removes tabs
+        let input = "\t \t Text \t";
+        let actual = input.trim();
+
+        assert_eq!("Text", actual);
+
+        // This confirms that .trim() and variants can be used for skipping whitespace.
     }
 }
 
