@@ -4,6 +4,23 @@ use crate::{journal::Journal, filters::calc_posts};
  * Reports
  */
 
+/// Accounts report. Command: `accounts`.
+/// 
+/// void report_t::posts_report(post_handler_ptr handler)
+/// in output.cc
+/// report_accounts
+fn report_accounts() {
+    todo!()
+}
+
+fn report_commodities() {
+    todo!()
+}
+
+fn report_payees() {
+    todo!()
+}
+
 /// Balance report. Invoked with 'b' command.
 /// Or accounts_report in ledger.
 fn balance_report(journal: Journal) -> Vec<String> {

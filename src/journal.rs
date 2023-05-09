@@ -18,6 +18,8 @@ impl Journal {
             xacts: vec![],
             posts: vec![],
             accounts: vec![],
+
+            // sources: Vec<fileinfo?>
         }
     }
 

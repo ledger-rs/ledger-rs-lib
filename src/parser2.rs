@@ -83,13 +83,7 @@ fn read_next_directive<T: Read>(
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
             // Starts with date/number.
             // TODO: move all this into a function
-
-            let tokens = scan_xact_header(line);
-            let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
-
-            scan_xact_contents(reader, line);
-
-            todo!("put everything into the Journal")
+            xact_directive(reader, line);
         }
 
         ' ' | '\t' => {
@@ -118,6 +112,15 @@ fn read_next_directive<T: Read>(
     // TODO: store model elements in collections and link.
 
     Ok(())
+}
+
+fn xact_directive<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
+    let tokens = scan_xact_header(line);
+    let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
+
+    scan_xact_contents(reader, line);
+
+    todo!("put everything into the Journal")
 }
 
 /// Parse Xact header record.
