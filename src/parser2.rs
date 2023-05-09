@@ -69,7 +69,7 @@ fn read_next_directive(line: &str) {
 
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
             // Starts with date.
-            let tokens = parse_xact_header(line);
+            let tokens = lex_xact_header(line);
             // TODO: create_xact(tokens);
             // todo: try to read Posts directly here.
             //reader
@@ -114,7 +114,7 @@ fn read_next_directive(line: &str) {
 /// ```
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
-fn parse_xact_header(line: &str) -> [&str; 4] {
+fn lex_xact_header(line: &str) -> [&str; 4] {
     if line.is_empty() {
         panic!("Invalid input for Xact record.")
     }
@@ -276,8 +276,8 @@ mod full_tests {
 }
 
 #[cfg(test)]
-mod parser_tests {
-    use super::{parse_date, parse_xact_header};
+mod lexer_tests {
+    use super::{parse_date, lex_xact_header};
 
     #[test]
     fn test_parsing_xact_header() {
@@ -285,7 +285,7 @@ mod parser_tests {
 
         let input = "2023-05-01 Payee  ; Note";
 
-        let mut iter = parse_xact_header(input).into_iter();
+        let mut iter = lex_xact_header(input).into_iter();
         // let [date, aux_date, payee, note] = iter.as_slice();
 
         assert_eq!("2023-05-01", iter.next().unwrap());
@@ -298,7 +298,7 @@ mod parser_tests {
     fn test_parsing_xact_header_aux_dates() {
         let input = "2023-05-02=2023-05-01 Payee  ; Note";
 
-        let mut iter = parse_xact_header(input).into_iter();
+        let mut iter = lex_xact_header(input).into_iter();
 
         assert_eq!("2023-05-02", iter.next().unwrap());
         assert_eq!("2023-05-01", iter.next().unwrap());
@@ -310,7 +310,7 @@ mod parser_tests {
     fn test_parsing_xact_header_no_note() {
         let input = "2023-05-01 Payee";
 
-        let mut iter = parse_xact_header(input).into_iter();
+        let mut iter = lex_xact_header(input).into_iter();
 
         assert_eq!("2023-05-01", iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
@@ -322,7 +322,7 @@ mod parser_tests {
     fn test_parsing_xact_header_no_payee_w_note() {
         let input = "2023-05-01  ; Note";
 
-        let mut iter = parse_xact_header(input).into_iter();
+        let mut iter = lex_xact_header(input).into_iter();
 
         assert_eq!("2023-05-01", iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
@@ -334,7 +334,7 @@ mod parser_tests {
     fn test_parsing_xact_header_date_only() {
         let input = "2023-05-01";
 
-        let mut iter = parse_xact_header(input).into_iter();
+        let mut iter = lex_xact_header(input).into_iter();
 
         assert_eq!(input, iter.next().unwrap());
         assert_eq!("", iter.next().unwrap());
@@ -354,4 +354,4 @@ mod parser_tests {
 }
 
 #[cfg(test)]
-mod lexer_tests {}
+mod parser_tests {}
