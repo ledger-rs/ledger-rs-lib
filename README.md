@@ -33,4 +33,22 @@ These should provide insights into Ledger's inner workings and concepts.
 # Documentation
 
 - [Ledger for Developers](https://ledger-cli.org/doc/ledger3.html#Ledger-for-Developers)
+- [Journal Format](https://ledger-cli.org/doc/ledger3.html#Journal-Format)
 - Ledger source code [repo](https://github.com/ledger/ledger/)
+
+## Formats
+
+Transaction header
+```
+DATE[=EDATE] [*|!] [(CODE)] DESC
+```
+
+Posting
+```
+  ACCOUNT  AMOUNT  [; NOTE]
+```
+
+Price
+```
+P DATE SYMBOL PRICE
+```

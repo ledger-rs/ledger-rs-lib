@@ -3,7 +3,7 @@
  *
  * Parses textual input into the model structure.
  */
-use std::{io::{BufRead, BufReader, Read}};
+use std::io::{BufRead, BufReader, Read};
 
 use chrono::NaiveDate;
 
@@ -54,11 +54,11 @@ pub(crate) fn parse<T: Read>(source: T) -> Journal {
                 let result = parse_line(&context, &trimmed);
                 // Do something with the parsed element.
                 process_parsed_element(&mut context, result);
-
-                // clear the buffer before reading the next line.
-                line.clear();
             }
         }
+        
+        // clear the buffer before reading the next line.
+        line.clear();
     }
 
     context.journal
