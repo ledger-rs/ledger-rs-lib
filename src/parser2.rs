@@ -84,9 +84,11 @@ fn read_next_directive<T: Read>(
             // Starts with date/number.
             let tokens = lex_xact_header(line);
             let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
-            // TODO: read the Posts here
-            let x = reader.read_line(line);
-            log::debug!("read: {:?}", x);
+
+            // TODO: read the Posts 
+            line.clear(); // empty the buffer before reading
+            let x = reader.read_line(line).expect("read another line");
+            log::debug!("read: {:?}, {:?}", x, &line);
         }
 
         ' ' | '\t' => {
@@ -249,10 +251,10 @@ mod full_tests {
     #[test]
     fn test_minimal_parsing() {
         let input = r#"; Minimal transaction
-        2023-04-10 Supermarket
-            Expenses  20
-            Assets
-        "#;
+2023-04-10 Supermarket
+    Expenses  20
+    Assets
+"#;
         let cursor = Cursor::new(input);
 
         let journal = super::read(cursor);
