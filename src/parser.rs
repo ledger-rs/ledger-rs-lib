@@ -23,7 +23,7 @@ enum LineParseResult {
 }
 
 /// parse textual input
-pub fn parse<T: Read>(source: T) -> Journal {
+pub(crate) fn parse<T: Read>(source: T) -> Journal {
     let mut reader = BufReader::new(source);
     let mut context = ParsingContext::new();
     // To avoid allocation, reuse the String variable.
@@ -357,7 +357,6 @@ mod tests {
 2023-04-10 Supermarket
     Expenses  20
     Assets
-
 "#;
         let cursor = Cursor::new(input);
 
