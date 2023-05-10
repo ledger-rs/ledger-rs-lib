@@ -118,7 +118,7 @@ fn xact_directive<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
     let tokens = tokenize_xact_header(line);
     let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
 
-    scan_xact_contents(reader, line);
+    tokenize_xact_contents(reader, line);
 
     todo!("put everything into the Journal")
 }
@@ -159,9 +159,9 @@ fn tokenize_xact_header(input: &str) -> [&str; 4] {
     [date, aux_date, payee, note]
 }
 
-/// Scan / parse Xact contents: Posts & Comments
+/// Tokenize / parse Xact contents: Posts & Comments
 /// Read lines from the source until a separator (empty line) is encountered.
-fn scan_xact_contents<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
+fn tokenize_xact_contents<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
     // TODO: read the Xact contents (Posts, Comments)
     line.clear(); // empty the buffer before reading
     match reader.read_line(line) {
@@ -205,7 +205,7 @@ fn parse_aux_date(input: &str) -> (&str, &str) {
     // skip ws
     // let input = input.trim_start();
 
-    match input.chars().next() {
+    match input.chars().peekable().peek() {
         Some('=') => {
             // have aux date.
             // skip '=' sign
@@ -217,10 +217,6 @@ fn parse_aux_date(input: &str) -> (&str, &str) {
                 None => return (input, ""),
             };
         }
-        // Some(c) => {
-        //     print!("{:?}", c);
-        //     panic!("should not happen");
-        // },
         _ => {
             // end of line, or character other than '='
             return ("", input);
