@@ -6,21 +6,24 @@ use crate::{amount::Amount, account::Account};
 
  #[derive(Debug, PartialEq)]
 pub struct Post {
-    // pub xact: Option<&'a Xact<'a>>,
-    pub xact_index: Option<usize>,
+    /// Pointer to the Account.
+    pub account: usize,
+    /// Pointer to the Xact.
+    pub xact: usize,
 
-    pub account: Account,
-    pub amount: Option<Amount>,
+    // TODO: remove this temp field
+    pub account_temp: Account,
+    pub amount: Amount,
 }
 
 impl Post {
     pub fn new(account: &str, amount: Option<Amount>) -> Self {
         Self {
-            // xact: None,
-            xact_index: None,
-            
-            account: Account::new(account),
-            amount,
+            account: usize::MAX,
+            xact: usize::MAX,
+
+            account_temp: Account::new(account),
+            amount: Amount::null(),
         }
     }
 

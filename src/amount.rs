@@ -95,6 +95,16 @@ impl Amount {
         };
         Amount::new(new_quantity, new_commodity)
     }
+
+    /// Indicates whether the amount is initialized.
+    /// This is a 0 quantity and no Commodity.
+    pub fn is_null(&self) -> bool {
+        if self.quantity.is_zero() {
+            return self.commodity.is_none()
+        } else {
+            false
+        }
+    }
 }
 
 impl std::ops::Add<Amount> for Amount {

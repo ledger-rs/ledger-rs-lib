@@ -18,13 +18,12 @@ use std::{
     io::{BufRead, BufReader, Read},
 };
 
-use crate::{context::ParsingContext, journal::Journal, xact::Xact};
+use crate::{context::ParsingContext, journal::Journal, xact::Xact, post::Post};
 
 pub(crate) fn read<T: Read>(source: T) -> Journal {
     // iterate over lines
 
     let mut parser = Parser::new(source);
-
     parser.parse();
 
     todo!("return journal")
@@ -33,6 +32,8 @@ pub(crate) fn read<T: Read>(source: T) -> Journal {
 struct Parser<T: Read> {
     reader: BufReader<T>,
     buffer: String,
+
+    journal: Journal
 }
 
 impl<T: Read> Parser<T> {
@@ -41,7 +42,7 @@ impl<T: Read> Parser<T> {
         // To avoid allocation, reuse the String variable.
         let buffer = String::new();
 
-        Self { reader, buffer }
+        Self { reader, buffer, journal: Journal::new() }
     }
 
     pub fn parse(&mut self) {
@@ -58,7 +59,7 @@ impl<T: Read> Parser<T> {
                 Ok(_) => {
                     // Remove the trailing newline characters
                     // let trimmed = &line.trim_end();
-    
+
                     match self.read_next_directive() {
                         Ok(_) => (), // continue
                         Err(err) => {
@@ -69,12 +70,11 @@ impl<T: Read> Parser<T> {
                     };
                 }
             }
-    
+
             // clear the buffer before reading the next line.
             self.buffer.clear();
         }
     }
-
 
     fn read_next_directive(&mut self) -> Result<(), String> {
         if self.buffer.is_empty() {
@@ -146,7 +146,7 @@ impl<T: Read> Parser<T> {
                 }
                 Ok(_) => {
                     if self.buffer.is_empty() {
-                        todo!("finalize the transaction")
+                        panic!("Unexpected whitespace at the beginning of line!")
                     }
 
                     // parse
@@ -161,14 +161,14 @@ impl<T: Read> Parser<T> {
                                 }
                                 _ => {
                                     let tokens = tokenize_post(input);
+                                    // Create Account, add to collection
+                                    // Create Commodity, add to collection
+                                    // Create Post, link Xact, Account, Commodity
+                                    
+                                    // Post::new(account, amount)
                                     todo!("create post")
                                 }
                             }
-
-                            todo!("process")
-                            // Create Account, add to collection
-                            // Create Commodity, add to collection
-                            // Create Post, link Xact, Account, Commodity
                         }
                         _ => {
                             panic!("should not happen")
@@ -338,13 +338,13 @@ mod full_tests {
 
         // let post_1 = xact.posts.iter().nth(0).unwrap();
         let post1 = &journal.posts[xact.posts[0]];
-        assert_eq!(Account::new("Expenses"), post1.account);
-        assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
-        assert_eq!(None, post1.amount.as_ref().unwrap().commodity);
+        assert_eq!(Account::new("Expenses"), post1.account_temp);
+        assert_eq!("20", post1.amount.quantity.to_string());
+        assert_eq!(None, post1.amount.commodity);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];
-        assert_eq!(Account::new("Assets"), post2.account);
+        assert_eq!(Account::new("Assets"), post2.account_temp);
     }
 }
 
