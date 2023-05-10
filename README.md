@@ -30,23 +30,27 @@ The immediate goals are:
 - [ ] Create a minimal working reports:
   - [ ] Accounts
   - [ ] Balance
-- [ ] Compile a working WASM version that interacts with JavaScript
+- [ ] Compile a working WASM version
+  - [ ] that interacts with JavaScript
+  - [x] that works in console
 
 These should provide insights into Ledger's inner workings and concepts.
 
-# WASM
+# WASI
 
-To compile to Wasm, run
+To compile to Wasm for execution in WASI, run
 ```
 cargo build --target wasm32-wasi
 ```
 then go to the `target/wasm32-wasi/debug` folder and run
 ```
-wasmer run ledger-rs-lib.wasm
+wasmer run --dir tests target/wasm32-wasi/debug/ledger-rs-lib.wasm -- -f tests/minimal.ledger
 ```
 
-This will run the CLI main().
-You need to have the prerequisites - the compilation target and a Wasm runtime.
+This will run the CLI's main() method. With WASI, the filesystem access permission has to be given explicitly. This is done with `--dir` argument.
+Note that Wasmer is using `--` to separate application switches like `-f`.
+
+You need to have the prerequisites install - the compilation target (wasm32-wasi) and a Wasm runtime (i.e. wasmer).
 
 # Documentation
 

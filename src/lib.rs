@@ -84,12 +84,11 @@ pub fn parse(file_path: &str) -> Journal {
 mod tests {
     use crate::{run, get_filename_argument};
 
-    //#[test]
+    #[test]
     fn test_minimal() {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).expect("arguments parsed");
-        // let args = args_string.iter().map(AsRef::as_ref).collect();
 
         let actual = run(args);
 
