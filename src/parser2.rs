@@ -118,8 +118,40 @@ fn xact_directive<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
     let tokens = tokenize_xact_header(line);
     let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
 
-    tokenize_xact_contents(reader, line);
+    // TODO: read the Xact contents (Posts, Comments, etc.)
+    // TODO: read until separator (empty line)
+    loop {
+        line.clear(); // empty the buffer before reading
+        match reader.read_line(line) {
+            Err(e) => {
+                println!("Error: {:?}", e);
+                break;
+            }
+            Ok(0) => {
+                // end of file
+                break;
+            }
+            Ok(_) => {
+                if line.is_empty() {
+                    todo!("finalize the transaction")
+                }
 
+                // parse
+                match line.chars().peekable().peek() {
+                    Some(' ') => {
+                        // valid line
+                        todo!()
+                    }
+                    _ => {
+                        panic!("should not happen")
+                    }
+                }
+            }
+        }
+
+        // log::debug!("read: {:?}, {:?}", x, &line);
+        line.clear(); // empty the buffer before reading
+    }
     todo!("put everything into the Journal")
 }
 
@@ -144,10 +176,10 @@ fn tokenize_xact_header(input: &str) -> [&str; 4] {
     // Dates.
     // Date has to be at the beginning.
 
-    let (date, input) = parse_date(input);
+    let (date, input) = tokenize_date(input);
 
     // aux date
-    let (aux_date, input) = parse_aux_date(input);
+    let (aux_date, input) = tokenize_aux_date(input);
 
     // Payee
 
@@ -159,24 +191,10 @@ fn tokenize_xact_header(input: &str) -> [&str; 4] {
     [date, aux_date, payee, note]
 }
 
-/// Tokenize / parse Xact contents: Posts & Comments
-/// Read lines from the source until a separator (empty line) is encountered.
-fn tokenize_xact_contents<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
-    // TODO: read the Xact contents (Posts, Comments)
-    line.clear(); // empty the buffer before reading
-    match reader.read_line(line) {
-        Ok(_) => todo!(),
-        Err(_) => todo!(),
-    }
-
-    // log::debug!("read: {:?}, {:?}", x, &line);
-    // TODO: read until separator (empty line)
-}
-
 /// Parse date from the input string.
 ///
 /// returns the (date string, remaining string)
-fn parse_date(input: &str) -> (&str, &str) {
+fn tokenize_date(input: &str) -> (&str, &str) {
     // let date: &str;
     // let offset: usize;
 
@@ -199,7 +217,7 @@ fn parse_date(input: &str) -> (&str, &str) {
 
 /// Parse auxillary date.
 /// Returns the (date_str, remains).
-fn parse_aux_date(input: &str) -> (&str, &str) {
+fn tokenize_aux_date(input: &str) -> (&str, &str) {
     let aux_date: &str;
     // let mut cursor: usize = 0;
     // skip ws
@@ -292,8 +310,8 @@ mod full_tests {
 }
 
 #[cfg(test)]
-mod lexer_tests {
-    use super::{parse_date, tokenize_xact_header};
+mod lexer_tests_xact {
+    use super::{tokenize_date, tokenize_xact_header};
 
     #[test]
     fn test_parsing_xact_header() {
@@ -362,7 +380,7 @@ mod lexer_tests {
     fn test_date_w_aux() {
         let input = "2023-05-01=2023";
 
-        let (date, remains) = parse_date(input);
+        let (date, remains) = tokenize_date(input);
 
         assert_eq!("2023-05-01", date);
         assert_eq!("=2023", remains);
@@ -378,6 +396,16 @@ mod lexer_tests {
         assert_eq!("Text", actual);
 
         // This confirms that .trim() and variants can be used for skipping whitespace.
+    }
+}
+
+#[cfg(test)]
+mod lexer_tests_post {
+    #[test]
+    fn tokenize_post_quantity_only() {
+        let input = "  Assets  20";
+
+        todo!()
     }
 }
 

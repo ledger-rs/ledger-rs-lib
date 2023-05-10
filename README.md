@@ -38,6 +38,12 @@ These should provide insights into Ledger's inner workings and concepts.
 
 ## Formats
 
+I will try to document the Ledger's Journal format in a [syntax diagram](http://www.plantuml.com/plantuml/duml/SoWkIImgIKtAI-FooYyjoalCKR1LY4XCBh7cSaZDIm590000).
+
+![diagram](http://www.plantuml.com/plantuml/dsvg/LP1FIqCn3C3l-HIn7dJmla4PT0n4nCF4owwrZV9WRQ4l1MM-xsxIJdIN_CdlbnJg5lQLwIs_0yzy8doc-47rRi6dqchs9tmeDNa6-EstUDwNb2ZpEk7vw0El5a2peECZ-KXr-kySoi8oqAIcPZ5t8PIM5UoI5glkgFAtgtQ7whyqdtdchmikKMeHzkFQeSw1y1jVMx8mcYtU6sSc71Ss5eIDuTKKBezrP8tSCBSztlJep6P2faz6KHtbg5_r0m00)
+
+The original specs from Ledger's documentation:
+
 Transaction header
 ```
 DATE[=EDATE] [*|!] [(CODE)] DESC
