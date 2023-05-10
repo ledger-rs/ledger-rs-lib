@@ -140,7 +140,8 @@ fn xact_directive<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
                 match line.chars().peekable().peek() {
                     Some(' ') => {
                         // valid line
-                        todo!()
+                        tokenize_xact_content(line);
+                        todo!("process")
                     }
                     _ => {
                         panic!("should not happen")
@@ -265,9 +266,29 @@ fn create_xact(tokens: [&str; 4]) {
     todo!("create xact from tokens")
 }
 
+/// Process the Xact content line. Could be a Comment or a Post.
+fn tokenize_xact_content(input: &str) -> [&str; 2] {
+    let input = input.trim_start();
+
+    match input.chars().peekable().peek() {
+        Some(';') => todo!("trailing note"),
+        _ => tokenize_post(input)
+    }
+}
+
 /// Parse tokens from a Post line.
-fn parse_post(line: &str) -> [&str; 1] {
-    todo!("complete")
+///   ACCOUNT  AMOUNT  [; NOTE]
+/// 
+/// input: &str  trimmed Post content
+/// returns [account, amount]
+fn tokenize_post(input: &str) -> [&str; 2] {
+    // two spaces is a separator betweer the account and amount.
+    // Eventually, also support the tab as a separator:
+    // |p| p == "  " || p  == '\t'
+    match input.find("  ") {
+        Some(i) => return [&input[..i], &input[i+2..]],
+        None => [input, ""],
+    }
 }
 
 /// Find the index of the next non-ws character.
@@ -401,11 +422,77 @@ mod lexer_tests_xact {
 
 #[cfg(test)]
 mod lexer_tests_post {
+    use super::tokenize_xact_content;
+    use super::tokenize_post;
+
     #[test]
-    fn tokenize_post_quantity_only() {
+    fn test_tokenize_post_full() {
+        let input = "  Assets  20 VEUR @ 25.6 EUR";
+
+        // Act
+        let tokens = tokenize_xact_content(input);
+
+        // Assert        
+        let mut iterator = tokens.into_iter();
+
+        assert_eq!("Assets", iterator.next().unwrap());
+        assert_eq!("20 VEUR @ 25.6 EUR", iterator.next().unwrap());
+    }
+
+    #[test]
+    fn test_tokenize_post_w_amount() {
+        let input = "  Assets  20 EUR";
+
+        // Act
+        let tokens = tokenize_xact_content(input);
+
+        // Assert        
+        let mut iterator = tokens.into_iter();
+
+        assert_eq!("Assets", iterator.next().unwrap());
+        assert_eq!("20 EUR", iterator.next().unwrap());
+    }
+
+    #[test]
+    fn tokenize_xact_post_quantity_only() {
         let input = "  Assets  20";
 
-        todo!()
+        // Act
+        let tokens = tokenize_xact_content(input);
+
+        // Assert        
+        let mut iterator = tokens.into_iter();
+
+        assert_eq!("Assets", iterator.next().unwrap());
+        assert_eq!("20", iterator.next().unwrap());
+    }
+
+    #[test]
+    fn tokenize_post_quantity_only() {
+        let input = "Assets  20";
+
+        // Act
+        let tokens = tokenize_post(input);
+
+        // Assert        
+        let mut iterator = tokens.into_iter();
+
+        assert_eq!("Assets", iterator.next().unwrap());
+        assert_eq!("20", iterator.next().unwrap());
+    }
+
+    #[test]
+    fn test_tokenize_post_account() {
+        let input = "Assets";
+
+        // Act
+        let tokens = tokenize_post(input);
+
+        // Assert        
+        let mut iterator = tokens.into_iter();
+
+        assert_eq!("Assets", iterator.next().unwrap());
+        assert_eq!("", iterator.next().unwrap());
     }
 }
 
