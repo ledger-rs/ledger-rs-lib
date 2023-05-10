@@ -34,6 +34,20 @@ The immediate goals are:
 
 These should provide insights into Ledger's inner workings and concepts.
 
+# WASM
+
+To compile to Wasm, run
+```
+cargo build --target wasm32-wasi
+```
+then go to the `target/wasm32-wasi/debug` folder and run
+```
+wasmer run ledger-rs-lib.wasm
+```
+
+This will run the CLI main().
+You need to have the prerequisites - the compilation target and a Wasm runtime.
+
 # Documentation
 
 - [Ledger for Developers](https://ledger-cli.org/doc/ledger3.html#Ledger-for-Developers)

@@ -3,7 +3,6 @@
  * 
  * Implements all the logic and provides an entry point to 3rd-party code.
  */
-
 use std::fs::File;
 
 use journal::Journal;
