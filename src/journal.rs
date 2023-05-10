@@ -6,6 +6,7 @@ use crate::{xact::Xact, account::Account, post::Post};
 
 pub struct Journal {
     // pub master: Account,
+    
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
@@ -15,6 +16,7 @@ impl Journal {
     pub fn new() -> Self {
         Journal {
             // master: Account::new(),
+
             xacts: vec![],
             posts: vec![],
             accounts: vec![],

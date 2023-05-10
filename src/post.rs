@@ -27,6 +27,14 @@ impl Post {
         }
     }
 
+    /// Creates a Post from post tokens.
+    pub fn create(tokens: [&str; 2]) -> Self {
+        // parse account?
+        // parse amount
+        
+        todo!()
+    }
+
     pub fn empty() -> Self {
         Self::new("", None)
     }

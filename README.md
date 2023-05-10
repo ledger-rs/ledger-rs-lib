@@ -1,14 +1,16 @@
-# ledger-rs-prototype
-Brand new attempt at Ledger from blank slate
+# ledger-rs-lib
+Ledger-cli functionality implemented in Rust library
 
-Work In Progress
+Brand new attempt at Ledger from blank slate.
+
+[Work In Progress!]
 
 # Background
 
-After a few attempts at rewriting (pieces of) Ledger, some conclusions were made:
+A few attempts at rewriting (pieces of) Ledger resulted in the following conclusions:
 
 1. Whole package.
-While trying to create a separate parser, it became clear that there is no need to separate the parser from the rest of the application. The parser will be available for use independently, however.
+While trying to create a parser, it became clear that there is no need to separate the parser from the rest of the application (model, reports). They can coexist in the same crate. The parser can be used independently, however.
 The model and the reports are easier to include in the same crate from the beginning.
 
 2. Clean Rust.
@@ -25,7 +27,9 @@ Trying to rewrite the whole application seems a neverending task. Rather, define
 The immediate goals are:
 
 - [ ] Parse a minimal working transaction sample
-- [ ] Create a minimal working Balance report
+- [ ] Create a minimal working reports:
+  - [ ] Accounts
+  - [ ] Balance
 - [ ] Compile a working WASM version that interacts with JavaScript
 
 These should provide insights into Ledger's inner workings and concepts.

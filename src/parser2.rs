@@ -14,26 +14,23 @@
  * It also creates links among the models. This functionality is from finalize() function.
  */
 use std::{
-    error::Error,
     io::{BufRead, BufReader, Read},
 };
 
-use crate::{context::ParsingContext, journal::Journal, xact::Xact, post::Post};
+use crate::{journal::Journal, xact::Xact, post::Post};
 
 pub(crate) fn read<T: Read>(source: T) -> Journal {
-    // iterate over lines
-
     let mut parser = Parser::new(source);
     parser.parse();
 
-    todo!("return journal")
+    parser.journal
 }
 
 struct Parser<T: Read> {
+    pub journal: Journal,
+    
     reader: BufReader<T>,
     buffer: String,
-
-    journal: Journal
 }
 
 impl<T: Read> Parser<T> {
@@ -146,7 +143,8 @@ impl<T: Read> Parser<T> {
                 }
                 Ok(_) => {
                     if self.buffer.is_empty() {
-                        panic!("Unexpected whitespace at the beginning of line!")
+                        // panic!("Unexpected whitespace at the beginning of line!")
+                        todo!("Check what happens here")
                     }
 
                     // parse
@@ -161,11 +159,18 @@ impl<T: Read> Parser<T> {
                                 }
                                 _ => {
                                     let tokens = tokenize_post(input);
+                                    // parse_post
+                                    
+                                    // add_post
+
                                     // Create Account, add to collection
                                     // Create Commodity, add to collection
                                     // Create Post, link Xact, Account, Commodity
                                     
                                     // Post::new(account, amount)
+                                    let post = Post::create(tokens);
+
+                                    // TODO: Add xact to the journal
                                     todo!("create post")
                                 }
                             }

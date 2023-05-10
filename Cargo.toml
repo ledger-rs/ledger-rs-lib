@@ -1,12 +1,11 @@
 [package]
-name = "ledger-rs-prototype"
+name = "ledger-rs-lib"
 description="A Ledger implementation in Rust"
 version = "0.1.0"
 edition = "2021"
 authors = ["Alen Šiljak <dev@alensiljak.eu.org>"]
 license="AGPL-3.0"
-license-file = "LICENSE"
-repository = 'https://github.com/ledger-rs/ledger-rs-prototype'
+repository = 'https://github.com/ledger-rs/ledger-rs-lib'
 categories = ['finance']
 keywords = ["library", "finance"]
 
