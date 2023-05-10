@@ -38,9 +38,9 @@ These should provide insights into Ledger's inner workings and concepts.
 
 ## Formats
 
-I will try to document the Ledger's Journal format in a [syntax diagram](http://www.plantuml.com/plantuml/duml/SoWkIImgIKtAI-FooYyjoalCKR1LY4XCBh7cSaZDIm590000).
+I will try to document the Ledger's Journal format in a [syntax diagram](http://www.plantuml.com/plantuml/duml/LP71IiGm48RlUOen7coN-WAMXPOL4V6mucLl4jjHkpQ9f5FOPUsx-3A-bpDf5kmbcSnytz-1LWEPGFZgtXHrr2CyOlkEuMg01py6Ptguyy4QKXzeMWnGz-ZWzwVhz-QpIF1r6E0h-3qsfDHPMyDfuwr5HrC1fvrfQ2gLobOW9Qno9JTJk_iONFp7jtuWRiWbKa8OlZM4FAZ7mukKaq3cY58aNGJn6AwRne-EXBTIpD10IrXM4a5MIiR2pVIDBixld8NQ9kPfD8uwEgOuttBDyytyzMte6eHlU1vjgUR76Z9TIPYDMQNYsTnST5LQBevApHdwCfuNyQnqNW3XWO3H2bqhF-yF).
 
-![diagram](http://www.plantuml.com/plantuml/dsvg/LP1FIqCn3C3l-HIn7dJmla4PT0n4nCF4owwrZV9WRQ4l1MM-xsxIJdIN_CdlbnJg5lQLwIs_0yzy8doc-47rRi6dqchs9tmeDNa6-EstUDwNb2ZpEk7vw0El5a2peECZ-KXr-kySoi8oqAIcPZ5t8PIM5UoI5glkgFAtgtQ7whyqdtdchmikKMeHzkFQeSw1y1jVMx8mcYtU6sSc71Ss5eIDuTKKBezrP8tSCBSztlJep6P2faz6KHtbg5_r0m00)
+![diagram](http://www.plantuml.com/plantuml/dsvg/LP71IiGm48RlUOen7coN-WAMXPOL4V6mucLl4jjHkpQ9f5FOPUsx-3A-bpDf5kmbcSnytz-1LWEPGFZgtXHrr2CyOlkEuMg01py6Ptguyy4QKXzeMWnGz-ZWzwVhz-QpIF1r6E0h-3qsfDHPMyDfuwr5HrC1fvrfQ2gLobOW9Qno9JTJk_iONFp7jtuWRiWbKa8OlZM4FAZ7mukKaq3cY58aNGJn6AwRne-EXBTIpD10IrXM4a5MIiR2pVIDBixld8NQ9kPfD8uwEgOuttBDyytyzMte6eHlU1vjgUR76Z9TIPYDMQNYsTnST5LQBevApHdwCfuNyQnqNW3XWO3H2bqhF-yF)
 
 The original specs from Ledger's documentation:
 
