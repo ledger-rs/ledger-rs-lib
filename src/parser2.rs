@@ -23,137 +23,165 @@ use crate::{context::ParsingContext, journal::Journal, xact::Xact};
 pub(crate) fn read<T: Read>(source: T) -> Journal {
     // iterate over lines
 
-    let mut reader = BufReader::new(source);
-    // let mut context = ParsingContext::new();
-    // To avoid allocation, reuse the String variable.
-    let mut line = String::new();
+    let mut parser = Parser::new(source);
 
-    loop {
-        match reader.read_line(&mut line) {
-            Err(err) => {
-                println!("Error: {:?}", err);
-                break;
-            }
-            Ok(0) => {
-                // end of file
-                break;
-            }
-            Ok(_) => {
-                // Remove the trailing newline characters
-                // let trimmed = &line.trim_end();
-
-                match read_next_directive(&mut line, &mut reader) {
-                    Ok(_) => (), // continue
-                    Err(err) => {
-                        log::error!("Error: {:?}", err);
-                        println!("Error: {:?}", err);
-                        break;
-                    }
-                };
-            }
-        }
-
-        // clear the buffer before reading the next line.
-        line.clear();
-    }
+    parser.parse();
 
     todo!("return journal")
 }
 
-fn read_next_directive<T: Read>(
-    line: &mut String,
-    reader: &mut BufReader<T>,
-) -> Result<(), String> {
-    if line.is_empty() {
-        return Ok(());
+struct Parser<T: Read> {
+    reader: BufReader<T>,
+    buffer: String,
+}
+
+impl<T: Read> Parser<T> {
+    pub fn new(source: T) -> Self {
+        let reader = BufReader::new(source);
+        // To avoid allocation, reuse the String variable.
+        let buffer = String::new();
+
+        Self { reader, buffer }
     }
 
-    // TODO: determine what the line is
-    match line.chars().nth(0).unwrap() {
-        // comments
-        ';' | '#' | '*' | '|' => {
-            // ignore
+    pub fn parse(&mut self) {
+        loop {
+            match self.reader.read_line(&mut self.buffer) {
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    break;
+                }
+                Ok(0) => {
+                    // end of file
+                    break;
+                }
+                Ok(_) => {
+                    // Remove the trailing newline characters
+                    // let trimmed = &line.trim_end();
+    
+                    match self.read_next_directive() {
+                        Ok(_) => (), // continue
+                        Err(err) => {
+                            log::error!("Error: {:?}", err);
+                            println!("Error: {:?}", err);
+                            break;
+                        }
+                    };
+                }
+            }
+    
+            // clear the buffer before reading the next line.
+            self.buffer.clear();
+        }
+    }
+
+
+    fn read_next_directive(&mut self) -> Result<(), String> {
+        if self.buffer.is_empty() {
             return Ok(());
         }
 
-        '-' => {
-            // option_directive
-        }
-
-        '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-            // Starts with date/number.
-            // TODO: move all this into a function
-            xact_directive(reader, line);
-        }
-
-        ' ' | '\t' => {
-            todo!("complete")
-        }
-
-        // The rest
-        c => {
-            // 4.7.2 command directives
-
-            // if !general_directive()
-            match c {
-                'P' => {
-                    // price
-                }
-
-                _ => {
-                    todo!("handle other directives");
-                }
+        // TODO: determine what the line is
+        match self.buffer.chars().nth(0).unwrap() {
+            // comments
+            ';' | '#' | '*' | '|' => {
+                // ignore
+                return Ok(());
             }
-            todo!("the rest")
-        }
-    }
 
-    // TODO: lexer - create model elements from tokens
-    // TODO: store model elements in collections and link.
-
-    Ok(())
-}
-
-fn xact_directive<T: Read>(reader: &mut BufReader<T>, line: &mut String) {
-    let tokens = tokenize_xact_header(line);
-    let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
-
-    // TODO: read the Xact contents (Posts, Comments, etc.)
-    // TODO: read until separator (empty line)
-    loop {
-        line.clear(); // empty the buffer before reading
-        match reader.read_line(line) {
-            Err(e) => {
-                println!("Error: {:?}", e);
-                break;
+            '-' => {
+                // option_directive
             }
-            Ok(0) => {
-                // end of file
-                break;
-            }
-            Ok(_) => {
-                if line.is_empty() {
-                    todo!("finalize the transaction")
-                }
 
-                // parse
-                match line.chars().peekable().peek() {
-                    Some(' ') => {
-                        // valid line
-                        tokenize_xact_content(line);
-                        todo!("process")
+            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+                // Starts with date/number.
+                // TODO: move all this into a function
+                self.xact_directive();
+            }
+
+            ' ' | '\t' => {
+                todo!("complete")
+            }
+
+            // The rest
+            c => {
+                // 4.7.2 command directives
+
+                // if !general_directive()
+                match c {
+                    'P' => {
+                        // price
                     }
+
                     _ => {
-                        panic!("should not happen")
+                        todo!("handle other directives");
                     }
                 }
+                todo!("the rest")
             }
         }
 
-        // log::debug!("read: {:?}, {:?}", x, &line);
-        line.clear(); // empty the buffer before reading
+        // TODO: lexer - create model elements from tokens
+        // TODO: store model elements in collections and link.
+
+        Ok(())
     }
-    todo!("put everything into the Journal")
+
+    fn xact_directive(&mut self) {
+        let tokens = tokenize_xact_header(&self.buffer);
+        let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
+
+        // TODO: read the Xact contents (Posts, Comments, etc.)
+        // TODO: read until separator (empty line)
+        loop {
+            self.buffer.clear(); // empty the buffer before reading
+            match self.reader.read_line(&mut self.buffer) {
+                Err(e) => {
+                    println!("Error: {:?}", e);
+                    break;
+                }
+                Ok(0) => {
+                    // end of file
+                    break;
+                }
+                Ok(_) => {
+                    if self.buffer.is_empty() {
+                        todo!("finalize the transaction")
+                    }
+
+                    // parse
+                    match self.buffer.chars().peekable().peek() {
+                        Some(' ') => {
+                            // valid line
+                            let input = self.buffer.trim_start();
+                            // Process the Xact content line. Could be a Comment or a Post.
+                            match input.chars().peekable().peek() {
+                                Some(';') => {
+                                    todo!("trailing note")
+                                }
+                                _ => {
+                                    let tokens = tokenize_post(input);
+                                    todo!("create post")
+                                }
+                            }
+
+                            todo!("process")
+                            // Create Account, add to collection
+                            // Create Commodity, add to collection
+                            // Create Post, link Xact, Account, Commodity
+                        }
+                        _ => {
+                            panic!("should not happen")
+                        }
+                    }
+                }
+            }
+
+            // log::debug!("read: {:?}, {:?}", x, &line);
+            self.buffer.clear(); // empty the buffer before reading
+        }
+        todo!("put everything into the Journal")
+    }
 }
 
 /// Parse Xact header record.
@@ -266,19 +294,9 @@ fn create_xact(tokens: [&str; 4]) {
     todo!("create xact from tokens")
 }
 
-/// Process the Xact content line. Could be a Comment or a Post.
-fn tokenize_xact_content(input: &str) -> [&str; 2] {
-    let input = input.trim_start();
-
-    match input.chars().peekable().peek() {
-        Some(';') => todo!("trailing note"),
-        _ => tokenize_post(input)
-    }
-}
-
 /// Parse tokens from a Post line.
 ///   ACCOUNT  AMOUNT  [; NOTE]
-/// 
+///
 /// input: &str  trimmed Post content
 /// returns [account, amount]
 fn tokenize_post(input: &str) -> [&str; 2] {
@@ -286,7 +304,7 @@ fn tokenize_post(input: &str) -> [&str; 2] {
     // Eventually, also support the tab as a separator:
     // |p| p == "  " || p  == '\t'
     match input.find("  ") {
-        Some(i) => return [&input[..i], &input[i+2..]],
+        Some(i) => return [&input[..i], &input[i + 2..]],
         None => [input, ""],
     }
 }
@@ -422,17 +440,16 @@ mod lexer_tests_xact {
 
 #[cfg(test)]
 mod lexer_tests_post {
-    use super::tokenize_xact_content;
     use super::tokenize_post;
 
     #[test]
     fn test_tokenize_post_full() {
-        let input = "  Assets  20 VEUR @ 25.6 EUR";
+        let input = "Assets  20 VEUR @ 25.6 EUR";
 
         // Act
-        let tokens = tokenize_xact_content(input);
+        let tokens = tokenize_post(input);
 
-        // Assert        
+        // Assert
         let mut iterator = tokens.into_iter();
 
         assert_eq!("Assets", iterator.next().unwrap());
@@ -441,12 +458,12 @@ mod lexer_tests_post {
 
     #[test]
     fn test_tokenize_post_w_amount() {
-        let input = "  Assets  20 EUR";
+        let input = "Assets  20 EUR";
 
         // Act
-        let tokens = tokenize_xact_content(input);
+        let tokens = tokenize_post(input);
 
-        // Assert        
+        // Assert
         let mut iterator = tokens.into_iter();
 
         assert_eq!("Assets", iterator.next().unwrap());
@@ -454,27 +471,13 @@ mod lexer_tests_post {
     }
 
     #[test]
-    fn tokenize_xact_post_quantity_only() {
-        let input = "  Assets  20";
-
-        // Act
-        let tokens = tokenize_xact_content(input);
-
-        // Assert        
-        let mut iterator = tokens.into_iter();
-
-        assert_eq!("Assets", iterator.next().unwrap());
-        assert_eq!("20", iterator.next().unwrap());
-    }
-
-    #[test]
-    fn tokenize_post_quantity_only() {
+    fn test_tokenize_post_quantity_only() {
         let input = "Assets  20";
 
         // Act
         let tokens = tokenize_post(input);
 
-        // Assert        
+        // Assert
         let mut iterator = tokens.into_iter();
 
         assert_eq!("Assets", iterator.next().unwrap());
@@ -488,7 +491,7 @@ mod lexer_tests_post {
         // Act
         let tokens = tokenize_post(input);
 
-        // Assert        
+        // Assert
         let mut iterator = tokens.into_iter();
 
         assert_eq!("Assets", iterator.next().unwrap());
