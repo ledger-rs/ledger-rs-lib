@@ -18,6 +18,7 @@ mod parser2;
 mod pool;
 mod post;
 mod report;
+mod scanner;
 mod utils;
 mod xact;
 
