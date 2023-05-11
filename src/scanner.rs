@@ -108,7 +108,7 @@ fn tokenize_payee(input: &str) -> (&str, &str) {
 ///
 /// input: &str  trimmed Post content
 /// returns [account, amount]
-pub(crate) fn scan_post(input: &str) -> [&str; 3] {
+pub(crate) fn scan_post(input: &str) -> [&str; 5] {
     // two spaces is a separator betweer the account and amount.
     // Eventually, also support the tab as a separator:
     // |p| p == "  " || p  == '\t'
@@ -119,9 +119,11 @@ pub(crate) fn scan_post(input: &str) -> [&str; 3] {
                 &input[..i], // account
                 amount_tokens[0],
                 amount_tokens[1],
+                amount_tokens[2],
+                amount_tokens[3],
             ];
         }
-        None => [input, "", ""],
+        None => [input, "", "", "", ""],
     }
 }
 
@@ -145,13 +147,9 @@ fn scan_amount_full(input: &str) -> [&str; 4] {
     // Check the next character
     let c = *input.chars().peekable().peek().expect("A valid character");
     if c.is_digit(10) || c == '-' || c == '.' || c == ',' {
-        let (quantity, input) = scan_quantity(input);
-        
-        todo!("scan symbol")
-
-        //scan_amount_number_first(input)
+        scan_amount_number_first(input)
     } else {
-        todo!("symbol first")
+        scan_amount_symbol_first(input)
     }
 }
 
@@ -188,16 +186,32 @@ fn scan_symbol(input: &str) -> (&str, &str) {
 /// Scan Amount.
 /// Returns [quantity, commodity]
 ///
-fn scan_amount_number_first(input: &str) -> [&str; 2] {
-    // default
-    ["", ""]
+fn scan_amount_number_first(input: &str) -> [&str; 4] {
+    let (quantity, input) = scan_quantity(input);
+    let (symbol, input) = scan_symbol(input);
+    
+    if input.is_empty() {
+        return [quantity, symbol, "", ""];
+    }
+
+    // @ or () or @@
+    todo!("handle the cost")
+// default
+    // ["", "", "", ""]
 }
 
 /// Scan Amount.
 /// Returns [quantity, commodity]
 ///
-fn scan_amount_symbol_first(input: &str) -> [&str; 2] {
-    todo!()
+fn scan_amount_symbol_first(input: &str) -> [&str; 4] {
+    let (symbol, input) = scan_symbol(input);
+    let (quantity, input) = scan_quantity(input);
+
+    if input.is_empty() {
+        return [quantity, symbol, "", ""];
+    }
+
+    todo!("handle the cost")
 }
 
 #[cfg(test)]

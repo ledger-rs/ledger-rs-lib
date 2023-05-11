@@ -14,6 +14,14 @@ pub(crate) struct CommodityPool {
     // default_commodity
 }
 
+impl CommodityPool {
+    pub fn create() -> Commodity {
+        todo!()
+
+        // add price history
+    }
+}
+
 #[cfg(test)]
 mod tests {
 

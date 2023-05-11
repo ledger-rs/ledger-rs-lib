@@ -158,19 +158,19 @@ impl<T: Read> Parser<T> {
                                     todo!("trailing note")
                                 }
                                 _ => {
-                                    let post_tokens = scanner::scan_post(input);
-                                    //let amount_tokens = scanner::
+                                    let tokens = scanner::scan_post(input);
 
-                                    // parse_post
-                                    
-                                    // add_post
+                                    // TODO: Create Account, add to collection
 
-                                    // Create Account, add to collection
-                                    // Create Commodity, add to collection
-                                    // Create Post, link Xact, Account, Commodity
+                                    // TODO: Create Commodity, add to collection
+                                    // tokens[1], tokens[2]
+                                    // commodity_pool.find(symbol)
+                                    // pool.create(symbol)
+
+                                    // TODO: Create Post, link Xact, Account, Commodity
                                     
                                     // Post::new(account, amount)
-                                    let post = Post::create(post_tokens);
+                                    //let post = Post::create(tokens);
 
                                     // TODO: Add xact to the journal
 
