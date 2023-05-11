@@ -157,13 +157,15 @@ fn scan_amount_full(input: &str) -> [&str; 4] {
 /// Returns [quantity, remainder]
 fn scan_quantity(input: &str) -> (&str, &str) {
     for (i, c) in input.char_indices() {
+        // stop if an invalid number character encountered.
         if c.is_digit(10) || c == '-' || c == '.' || c == ',' {
             // continue
         } else {
             return (&input[..i], &input[i..].trim_start());
         }
     }
-    ("", "")
+    // else, return the full input.
+    (input, "")
 }
 
 /// Scans the symbol in the input string.
@@ -174,13 +176,13 @@ fn scan_symbol(input: &str) -> (&str, &str) {
     // TODO: check for valid double quotes
 
     for (i, c) in input.char_indices() {
-        if c.is_whitespace() || c == '@' {
+        // Return when a separator or a number is found.
+        if c.is_whitespace() || c == '@' || c.is_digit(10) || c == '-' {
             return (&input[..i], &input[i..].trim_start())
-        } else {
-            // continue
         }
     }
-    ("", "")
+    // else return the whole input.
+    (input, "")
 }
 
 /// Scan Amount.
@@ -306,6 +308,8 @@ mod scanner_tests_xact {
 
 #[cfg(test)]
 mod scanner_tests_post {
+    use crate::scanner::scan_amount_symbol_first;
+
     use super::{scan_amount_full, scan_amount_number_first, scan_post, scan_quantity, scan_symbol};
 
     #[test]
@@ -445,7 +449,7 @@ mod scanner_tests_post {
     #[test]
     fn test_scan_amount_symbol_first_ws() {
         let input = "EUR 25,0.01";
-        let actual = scan_amount_number_first(input);
+        let actual = scan_amount_symbol_first(input);
 
         assert_eq!("25,0.01", actual[0]);
         assert_eq!("EUR", actual[1]);
@@ -454,10 +458,21 @@ mod scanner_tests_post {
     #[test]
     fn test_scan_amount_symbol_first() {
         let input = "EUR25,0.01";
-        let actual = scan_amount_number_first(input);
+        let actual = scan_amount_symbol_first(input);
 
         assert_eq!("25,0.01", actual[0]);
         assert_eq!("EUR", actual[1]);
+    }
+
+    #[test]
+    fn test_scan_amount_symbol_first_neg() {
+        let input = "EUR-25,0.01";
+        let actual = scan_amount_symbol_first(input);
+
+        assert_eq!("-25,0.01", actual[0]);
+        assert_eq!("EUR", actual[1]);
+        assert_eq!("", actual[2]);
+        assert_eq!("", actual[3]);
     }
 
     #[test]
@@ -499,5 +514,18 @@ mod scanner_tests_post {
 
         assert_eq!("VECP", actual);
         assert_eq!("", remainder);
+    }
+
+    #[test]
+    fn test_scanning_cost() {
+        let input = "5 VAS @ 13.21 AUD";
+
+        let actual = scan_amount_full(input);
+
+        // Check that the cost has been scanned
+        assert_eq!("5", actual[0]);
+        assert_eq!("VAS", actual[1]);
+        assert_eq!("13.21", actual[2]);
+        assert_eq!("AUD", actual[3]);
     }
 }
