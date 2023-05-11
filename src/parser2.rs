@@ -158,7 +158,9 @@ impl<T: Read> Parser<T> {
                                     todo!("trailing note")
                                 }
                                 _ => {
-                                    let tokens = scanner::tokenize_post(input);
+                                    let post_tokens = scanner::scan_post(input);
+                                    //let amount_tokens = scanner::
+
                                     // parse_post
                                     
                                     // add_post
@@ -168,9 +170,10 @@ impl<T: Read> Parser<T> {
                                     // Create Post, link Xact, Account, Commodity
                                     
                                     // Post::new(account, amount)
-                                    let post = Post::create(tokens);
+                                    let post = Post::create(post_tokens);
 
                                     // TODO: Add xact to the journal
+
                                     todo!("create post")
                                 }
                             }

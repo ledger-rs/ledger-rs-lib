@@ -28,9 +28,10 @@ impl Post {
     }
 
     /// Creates a Post from post tokens.
-    pub fn create(tokens: [&str; 2]) -> Self {
+    pub fn create(tokens: [&str; 3]) -> Self {
         // parse account?
-        // parse amount
+        // parse amount quantity
+        // parse amount commodity symbol
         
         todo!()
     }
