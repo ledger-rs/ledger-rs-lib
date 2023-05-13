@@ -9,8 +9,8 @@ use crate::{journal::Journal, filters::calc_posts};
 /// void report_t::posts_report(post_handler_ptr handler)
 /// in output.cc
 /// report_accounts
-fn report_accounts() {
-    todo!()
+pub fn report_accounts(journal: &Journal) -> impl Iterator<Item = String> + '_ {
+    journal.accounts.iter().map(|account| account.name.to_string())
 }
 
 fn report_commodities() {

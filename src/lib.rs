@@ -38,11 +38,11 @@ pub fn run(args: Vec<String>) -> Vec<String> {
         None => panic!("No filename passed as argument"),
     };
     // parse the file
-    let journal = parse(file_path);
+    let journal = parse_file(file_path);
 
     // TODO: which report?
     // for now just use the balance report
-    let output = report(journal);
+    let output = report(&journal).collect();
 
     output
 }
@@ -64,7 +64,7 @@ fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
 }
 
 /// Entry point for a report?
-fn report(journal: Journal) -> Vec<String> {
+fn report(journal: &Journal) -> impl Iterator<Item = String> + '_ {
     // identify which report
 
     // iterate over Journal
@@ -72,7 +72,8 @@ fn report(journal: Journal) -> Vec<String> {
 
     // get the output
 
-    vec![]
+    // TODO: replace this temporary report
+    report::report_accounts(journal)
 }
 
 /// Parse input and return the model structure.
