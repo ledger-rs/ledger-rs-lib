@@ -323,7 +323,10 @@ mod scanner_tests_post {
         let mut iterator = tokens.into_iter();
 
         assert_eq!("Assets", iterator.next().unwrap());
-        assert_eq!("20 VEUR @ 25.6 EUR", iterator.next().unwrap());
+        assert_eq!("20", iterator.next().unwrap());
+        assert_eq!("VEUR", iterator.next().unwrap());
+        assert_eq!("25.6", iterator.next().unwrap());
+        assert_eq!("EUR", iterator.next().unwrap());
     }
 
     #[test]
@@ -337,7 +340,11 @@ mod scanner_tests_post {
         let mut iterator = tokens.into_iter();
 
         assert_eq!("Assets", iterator.next().unwrap());
-        assert_eq!("20 EUR", iterator.next().unwrap());
+        assert_eq!("20", iterator.next().unwrap());
+        assert_eq!("EUR", iterator.next().unwrap());
+        assert_eq!("", iterator.next().unwrap());
+        assert_eq!("", iterator.next().unwrap());
+        assert_eq!(None, iterator.next());
     }
 
     #[test]
