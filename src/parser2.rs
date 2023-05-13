@@ -161,6 +161,7 @@ impl<T: Read> Parser<T> {
                                     let tokens = scanner::scan_post(input);
 
                                     // TODO: Create Account, add to collection
+                                    
 
                                     // TODO: Create Commodity, add to collection
                                     // tokens[1], tokens[2]
