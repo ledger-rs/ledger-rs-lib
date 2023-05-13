@@ -37,10 +37,14 @@ impl Journal {
         self.accounts.len() - 1
     }
 
+    pub fn add_commodity(&mut self, commodity: Commodity) -> CommodityIndex {
+        self.commodities.push(commodity);
+        self.commodities.len() - 1
+    }
+
     pub fn add_xact(&mut self, xact: Xact) -> XactIndex {
-        let i = self.xacts.len();
         self.xacts.push(xact);
-        i
+        self.xacts.len() - 1
     }
 
     pub fn add_post(&mut self, post: Post) -> PostIndex {

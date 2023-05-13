@@ -13,11 +13,12 @@
  * the collections in the Journal.
  * It also creates links among the models. This functionality is from finalize() function.
  */
-use std::{
-    io::{BufRead, BufReader, Read},
-};
+use std::io::{BufRead, BufReader, Read};
 
-use crate::{journal::Journal, xact::Xact, post::Post, scanner, account::Account, amount::Amount};
+use crate::{
+    account::Account, amount::Amount, commodity::Commodity, journal::Journal, post::Post, scanner,
+    xact::Xact,
+};
 
 pub(crate) fn read<T: Read>(source: T) -> Journal {
     let mut parser = Parser::new(source);
@@ -28,7 +29,7 @@ pub(crate) fn read<T: Read>(source: T) -> Journal {
 
 struct Parser<T: Read> {
     pub journal: Journal,
-    
+
     reader: BufReader<T>,
     buffer: String,
 }
@@ -39,7 +40,11 @@ impl<T: Read> Parser<T> {
         // To avoid allocation, reuse the String variable.
         let buffer = String::new();
 
-        Self { reader, buffer, journal: Journal::new() }
+        Self {
+            reader,
+            buffer,
+            journal: Journal::new(),
+        }
     }
 
     pub fn parse(&mut self) {
@@ -127,10 +132,11 @@ impl<T: Read> Parser<T> {
     fn xact_directive(&mut self) {
         let tokens = scanner::tokenize_xact_header(&self.buffer);
         let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
+        // Add xact to the journal
         let xact_index = self.journal.add_xact(xact);
 
         // TODO: read the Xact contents (Posts, Comments, etc.)
-        // TODO: read until separator (empty line)
+        // Read until separator (empty line).
         loop {
             self.buffer.clear(); // empty the buffer before reading
             match self.reader.read_line(&mut self.buffer) {
@@ -169,14 +175,15 @@ impl<T: Read> Parser<T> {
                                     // tokens[1], tokens[2]
                                     // commodity_pool.find(symbol)
                                     // pool.create(symbol)
+                                    let commodity = Commodity::new(tokens[2]);
+                                    let commodity_index = self.journal.add_commodity(commodity);
 
                                     // create amount
                                     let amount = Amount::parse(input);
 
                                     // TODO: Create Post, link Xact, Account, Commodity
-                                    let post = Post::create_indexed(account_index, xact_index, amount);
-
-                                    // TODO: Add xact to the journal
+                                    let post =
+                                        Post::create_indexed(account_index, xact_index, amount);
 
                                     todo!("create post")
                                 }
@@ -194,12 +201,6 @@ impl<T: Read> Parser<T> {
         }
         todo!("put everything into the Journal")
     }
-}
-
-/// Create Xact from tokens.
-/// Lexer function.
-fn create_xact(tokens: [&str; 4]) {
-    todo!("create xact from tokens")
 }
 
 /// Find the index of the next non-ws character.

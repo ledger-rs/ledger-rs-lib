@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use crate::commodity::Commodity;
+use crate::{commodity::Commodity, journal::CommodityIndex};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
@@ -16,7 +16,7 @@ pub struct Amount {
     pub quantity: Decimal,
     // TODO: Remove the direct child.
     pub commodity: Option<Commodity>,
-    pub commodity_index: Option<usize>,
+    pub commodity_index: Option<CommodityIndex>,
 }
 
 impl Amount {
@@ -26,6 +26,11 @@ impl Amount {
             commodity,
             commodity_index
         }
+    }
+
+    pub fn parse2(amount: &str, commodity_index: Option<CommodityIndex>) -> Self {
+        Self { quantity: Decimal::from_str_exact(amount).unwrap(), 
+            commodity: None, commodity_index }
     }
 
     pub fn copy_from(other: &Amount) -> Self {
@@ -54,6 +59,7 @@ impl Amount {
         }
     }
 
+    /// Used only in the initial parser! TODO: remove
     /// Parses the amount from string.
     /// Currently just accept a simple format "[-]NUM[ SYM]"
     ///

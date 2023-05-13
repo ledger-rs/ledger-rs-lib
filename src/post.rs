@@ -1,10 +1,14 @@
-use crate::{amount::Amount, account::Account, journal::{AccountIndex, XactIndex}};
+use crate::{
+    account::Account,
+    amount::Amount,
+    journal::{AccountIndex, XactIndex},
+};
 
 /**
  * Posting
  */
 
- #[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Post {
     /// Pointer to the Account.
     pub account: AccountIndex,
@@ -29,7 +33,17 @@ impl Post {
     }
 
     /// Creates a Post from post tokens.
-    pub fn create_indexed(account_index: AccountIndex, xact_index: XactIndex, amount: Option<Amount>) -> Self {
-        Self { account: account_index, xact: xact_index, amount, account_temp: Account::new("???") }
+    pub fn create_indexed(
+        account_index: AccountIndex,
+        xact_index: XactIndex,
+        amount: Option<Amount>,
+    ) -> Self {
+        Self {
+            account: account_index,
+            xact: xact_index,
+            amount,
+            //
+            account_temp: Account::new("???"),
+        }
     }
 }
