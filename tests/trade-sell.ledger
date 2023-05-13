@@ -1,0 +1,9 @@
+; a sale trade
+
+2023-04-21 Buy Trade
+    Assets:Stocks  10 VEUR @ 20 EUR
+    Assets:Cash
+
+2023-04-21 Sell Trade
+    Assets:Stocks  -10 VEUR @ 25 EUR
+    Assets:Cash
