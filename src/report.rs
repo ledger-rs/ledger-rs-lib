@@ -41,12 +41,6 @@ fn balance_report(journal: Journal) -> Vec<String> {
     todo!()
 }
 
-fn accounts_flusher_operator() {
-    // create accounts iterator
-    // pass_down_accounts
-    todo!()
-}
-
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;

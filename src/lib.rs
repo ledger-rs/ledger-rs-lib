@@ -42,9 +42,7 @@ pub fn run(args: Vec<String>) -> Vec<String> {
 
     // TODO: which report?
     // for now just use the balance report
-    let output = report(&journal).collect();
-
-    output
+    report(&journal)
 }
 
 fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
@@ -64,7 +62,7 @@ fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
 }
 
 /// Entry point for a report?
-fn report(journal: &Journal) -> impl Iterator<Item = String> + '_ {
+fn report(journal: &Journal) -> Vec<String> {
     // identify which report
 
     // iterate over Journal
@@ -73,7 +71,9 @@ fn report(journal: &Journal) -> impl Iterator<Item = String> + '_ {
     // get the output
 
     // TODO: replace this temporary report
-    report::report_accounts(journal)
+    let mut output = report::report_accounts(journal).collect::<Vec<String>>();
+    output.sort();
+    output
 }
 
 /// Parse input and return the model structure.

@@ -92,6 +92,7 @@ impl Amount {
 
     pub fn add(&mut self, other: &Amount) {
         if self.commodity_index != other.commodity_index {
+            log::error!("different commodities");
             panic!("don't know yet how to handle this")
         }
         if other.quantity.is_zero() {
