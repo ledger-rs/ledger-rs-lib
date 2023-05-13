@@ -59,7 +59,6 @@ impl Xact {
             aux_date: _aux_date,
         }
     }
-
 }
 
 /// Finalize transaction.
@@ -158,7 +157,7 @@ mod tests {
     fn setup() -> (Xact, Vec<Post>) {
         let xact = Xact::new(None, "payee", None);
 
-        let post1 = Post::new("Expenses", Some(Amount::new(dec!(25), None)));
+        let post1 = Post::new("Expenses", Some(Amount::new(dec!(25), None, None)));
         let post2 = Post::new("Assets", None);
         let posts = vec![post1, post2];
 

@@ -3,7 +3,7 @@
  * 
  * Implements all the logic and provides an entry point to 3rd-party code.
  */
-use std::fs::File;
+use std::{fs::File, io::Cursor};
 
 use journal::Journal;
 
@@ -12,7 +12,7 @@ mod amount;
 mod commodity;
 mod context;
 mod filters;
-mod journal;
+pub mod journal;
 mod parser;
 mod parser2;
 mod pool;
@@ -76,8 +76,14 @@ fn report(journal: Journal) -> Vec<String> {
 }
 
 /// Parse input and return the model structure.
-pub fn parse(file_path: &str) -> Journal {
-    parser::parse(File::open(file_path).expect("file opened"))
+pub fn parse_file(file_path: &str) -> Journal {
+    let file = File::open(file_path).expect("file opened");
+    parser::parse(file)
+}
+
+pub fn parse(text: &str) -> Journal {
+    let source = Cursor::new(text);
+    parser::parse(source)
 }
 
 
