@@ -79,12 +79,17 @@ impl<T: Read> Parser<T> {
     }
 
     fn read_next_directive(&mut self) -> Result<(), String> {
-        if self.buffer.is_empty() {
+        // if self.buffer.is_empty() {
+        //     return Ok(());
+        // }
+        // let length = self.buffer.len();
+        // log::debug!("line length: {:?}", length);
+        if self.buffer == "\r\n" {
             return Ok(());
         }
 
-        // TODO: determine what the line is
-        match self.buffer.chars().nth(0).unwrap() {
+        // determine what the line is
+        match self.buffer.chars().peekable().peek().unwrap() {
             // comments
             ';' | '#' | '*' | '|' => {
                 // ignore
@@ -97,7 +102,6 @@ impl<T: Read> Parser<T> {
 
             '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
                 // Starts with date/number.
-                // TODO: move all this into a function
                 self.xact_directive();
             }
 
@@ -115,7 +119,8 @@ impl<T: Read> Parser<T> {
                         // price
                     }
 
-                    _ => {
+                    c => {
+                        log::warn!("not handled: {:?}", c);
                         todo!("handle other directives");
                     }
                 }
@@ -135,7 +140,7 @@ impl<T: Read> Parser<T> {
         // Add xact to the journal
         let xact_index = self.journal.add_xact(xact);
 
-        // TODO: read the Xact contents (Posts, Comments, etc.)
+        // Read the Xact contents (Posts, Comments, etc.)
         // Read until separator (empty line).
         loop {
             self.buffer.clear(); // empty the buffer before reading
@@ -172,7 +177,6 @@ impl<T: Read> Parser<T> {
                                     let account_index = self.journal.add_account(account);
 
                                     // Create Commodity, add to collection
-                                    // tokens[1], tokens[2]
                                     // commodity_pool.find(symbol)
                                     // pool.create(symbol)
                                     let commodity = Commodity::parse(tokens[2]);
@@ -187,11 +191,8 @@ impl<T: Read> Parser<T> {
                                     // TODO: handle cost (2nd amount)
 
                                     // Create Post, link Xact, Account, Commodity
-                                    let post = Post::create_indexed(
-                                        account_index,
-                                        xact_index,
-                                        amount,
-                                    );
+                                    let post =
+                                        Post::create_indexed(account_index, xact_index, amount);
                                     let post_index = self.journal.add_post(post);
 
                                     let xact = self.journal.xacts.get_mut(xact_index).unwrap();
@@ -199,22 +200,22 @@ impl<T: Read> Parser<T> {
                                 }
                             }
                         }
-                        _ => {
+                        Some('\r') => {
+                            // empty line. Exit.
+                            break;
+                        }
+                        c => {
+                            log::warn!("we have {:?}", c);
                             panic!("should not happen")
                         }
                     }
                 }
             }
 
-            // log::debug!("read: {:?}, {:?}", x, &line);
-            self.buffer.clear(); // empty the buffer before reading
+            // empty the buffer before reading
+            self.buffer.clear();
         }
     }
-}
-
-/// Find the index of the next non-ws character.
-fn next_non_ws(input: &str) -> Option<usize> {
-    input.find(|c| c != ' ' && c != '\t')
 }
 
 #[cfg(test)]
@@ -239,15 +240,20 @@ mod full_tests {
         assert_eq!("Supermarket", xact.payee);
         assert_eq!(2, xact.posts.len());
 
-        // let post_1 = xact.posts.iter().nth(0).unwrap();
         let post1 = &journal.posts[xact.posts[0]];
-        assert_eq!(Account::new("Expenses"), *journal.get_account(post1.account_index));
+        assert_eq!(
+            Account::new("Expenses"),
+            *journal.get_account(post1.account_index)
+        );
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().commodity);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];
-        assert_eq!(Account::new("Assets"), *journal.get_account(post2.account_index));
+        assert_eq!(
+            Account::new("Assets"),
+            *journal.get_account(post2.account_index)
+        );
     }
 }
 

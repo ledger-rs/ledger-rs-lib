@@ -6,9 +6,9 @@ use rust_decimal_macros::dec;
  */
 
 #[test]
-fn test_parsing() {
+fn smoke_test_parsing() {
     let file_path = "tests/minimal.ledger";
-    let journal = ledger_rs_lib::parse(file_path);
+    let journal = ledger_rs_lib::parse_file(file_path);
 
     assert_eq!(1, journal.xacts.len());
     assert_eq!(2, journal.posts.len());
@@ -18,7 +18,7 @@ fn test_parsing() {
 #[test]
 fn test_parsing_two_xact() {
     let file_path = "tests/two_xact.ledger";
-    let journal = ledger_rs_lib::parse(file_path);
+    let journal = ledger_rs_lib::parse_file(file_path);
 
     assert_eq!(2, journal.xacts.len());
     assert_eq!(4, journal.posts.len());
@@ -29,7 +29,7 @@ fn detailed_basic_test() {
     let file_path = "tests/basic.ledger";
     
     // Act
-    let journal = ledger_rs_lib::parse(file_path);
+    let journal = ledger_rs_lib::parse_file(file_path);
 
     // Assert
     assert_eq!(1, journal.xacts.len());

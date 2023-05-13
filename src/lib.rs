@@ -78,12 +78,12 @@ fn report(journal: Journal) -> Vec<String> {
 /// Parse input and return the model structure.
 pub fn parse_file(file_path: &str) -> Journal {
     let file = File::open(file_path).expect("file opened");
-    parser::parse(file)
+    parser2::read(file)
 }
 
 pub fn parse(text: &str) -> Journal {
     let source = Cursor::new(text);
-    parser::parse(source)
+    parser2::read(source)
 }
 
 
