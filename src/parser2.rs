@@ -171,7 +171,7 @@ impl<T: Read> Parser<T> {
                                     let account = Account::parse(tokens[0]);
                                     let account_index = self.journal.add_account(account);
 
-                                    // TODO: Create Commodity, add to collection
+                                    // Create Commodity, add to collection
                                     // tokens[1], tokens[2]
                                     // commodity_pool.find(symbol)
                                     // pool.create(symbol)
@@ -186,7 +186,7 @@ impl<T: Read> Parser<T> {
 
                                     // TODO: handle cost (2nd amount)
 
-                                    // TODO: Create Post, link Xact, Account, Commodity
+                                    // Create Post, link Xact, Account, Commodity
                                     let post = Post::create_indexed(
                                         account_index,
                                         xact_index,

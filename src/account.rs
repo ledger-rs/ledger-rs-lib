@@ -30,6 +30,8 @@ impl Account {
     }
 
     pub fn parse(input: &str) -> Self {
+        let input = input.trim();
+        
         if input.is_empty() {
             panic!("Invalid account")
         }
