@@ -14,17 +14,17 @@ use rust_decimal_macros::dec;
 #[derive(Debug, PartialEq)]
 pub struct Amount {
     pub quantity: Decimal,
-    // TODO: Remove the direct child.
-    pub commodity: Option<Commodity>,
     pub commodity_index: Option<CommodityIndex>,
 }
 
 impl Amount {
-    pub fn new(quantity: Decimal, commodity: Option<Commodity>, commodity_index: Option<usize>) -> Self {
+    pub fn new(
+        quantity: Decimal,
+        commodity_index: Option<usize>,
+    ) -> Self {
         Self {
             quantity,
-            commodity,
-            commodity_index
+            commodity_index,
         }
     }
 
@@ -33,27 +33,27 @@ impl Amount {
             return None;
         }
 
-        let amount = Self { 
-            quantity: Decimal::from_str_exact(amount).unwrap(), 
-            commodity: None, commodity_index };
+        let amount = Self {
+            quantity: Decimal::from_str_exact(amount).unwrap(),
+            commodity_index,
+        };
 
         Some(amount)
     }
 
     pub fn copy_from(other: &Amount) -> Self {
-        let com = match &other.commodity {
-            Some(other_commodity) => {
-                //let symbol = &other.commodity.as_ref().unwrap().symbol;
-                let s = &other_commodity.symbol;
-                let c = Commodity::new(s);
-                Some(c)
-            },
-            None => None,
-        };
-        
+        // let com = match &other.commodity {
+        //     Some(other_commodity) => {
+        //         //let symbol = &other.commodity.as_ref().unwrap().symbol;
+        //         let s = &other_commodity.symbol;
+        //         let c = Commodity::new(s);
+        //         Some(c)
+        //     }
+        //     None => None,
+        // };
+
         Self {
             quantity: other.quantity,
-            commodity: com,
             commodity_index: other.commodity_index,
         }
     }
@@ -61,7 +61,6 @@ impl Amount {
     pub fn null() -> Self {
         Self {
             quantity: dec!(0),
-            commodity: None,
             commodity_index: None,
         }
     }
@@ -92,7 +91,7 @@ impl Amount {
     }
 
     pub fn add(&mut self, other: &Amount) {
-        if self.commodity != other.commodity {
+        if self.commodity_index != other.commodity_index {
             panic!("don't know yet how to handle this")
         }
         if other.quantity.is_zero() {
@@ -107,18 +106,18 @@ impl Amount {
     /// Normally it is a quantity with the opposite sign.
     pub fn inverse(&self) -> Amount {
         let new_quantity = self.quantity.mul(dec!(-1));
-        let new_commodity = match &self.commodity {
-            Some(c) => Some(Commodity::new(&c.symbol)),
-            None => None,
-        };
-        Amount::new(new_quantity, new_commodity, self.commodity_index)
+        // let new_commodity = match &self.commodity {
+        //     Some(c) => Some(Commodity::new(&c.symbol)),
+        //     None => None,
+        // };
+        Amount::new(new_quantity, self.commodity_index)
     }
 
     /// Indicates whether the amount is initialized.
     /// This is a 0 quantity and no Commodity.
     pub fn is_null(&self) -> bool {
         if self.quantity.is_zero() {
-            return self.commodity.is_none()
+            return self.commodity_index.is_none();
         } else {
             false
         }
@@ -129,19 +128,19 @@ impl std::ops::Add<Amount> for Amount {
     type Output = Amount;
 
     fn add(self, rhs: Amount) -> Self::Output {
-        if self.commodity != rhs.commodity {
+        if self.commodity_index != rhs.commodity_index {
             panic!("don't know yet how to handle this")
         }
 
         let sum = self.quantity + rhs.quantity;
 
-        Amount::new(sum, self.commodity, self.commodity_index)
+        Amount::new(sum, self.commodity_index)
     }
 }
 
 impl AddAssign<Amount> for Amount {
     fn add_assign(&mut self, other: Amount) {
-        if self.commodity != other.commodity {
+        if self.commodity_index != other.commodity_index {
             panic!("don't know yet how to handle this")
         }
 
@@ -183,7 +182,8 @@ fn parse_number_first(input: &str) -> Option<Amount> {
     if quantity.is_some() {
         // TODO: fix the commodity index.
         // Move parsing outside the struct implementation?
-        return Some(Amount::new(quantity.unwrap(), commodity, None));
+        todo!("fix this case if still active")
+        // return Some(Amount::new(quantity.unwrap(), commodity, None));
     } else {
         return None;
     }
@@ -209,7 +209,8 @@ fn parse_symbol_first(input: &str) -> Option<Amount> {
 
     if quantity.is_some() {
         // TODO: fix for commodity index
-        return Some(Amount::new(quantity.unwrap(), commodity, None));
+        todo!("fix if still active")
+        // return Some(Amount::new(quantity.unwrap(), commodity, None));
     } else {
         return None;
     }
@@ -237,7 +238,6 @@ mod tests {
     fn test_positive_no_commodity() {
         let expected = Amount {
             quantity: dec!(20),
-            commodity: None,
             commodity_index: None,
         };
         let actual = Amount::parse("20").unwrap();
@@ -250,7 +250,6 @@ mod tests {
         let actual = Amount::parse("-20").unwrap();
         let expected = Amount {
             quantity: dec!(-20),
-            commodity: None,
             commodity_index: None,
         };
 
@@ -261,7 +260,7 @@ mod tests {
     fn test_pos_w_commodity_separated() {
         let expected = Amount {
             quantity: dec!(20),
-            commodity: Some(Commodity::new("EUR")),
+            // commodity: Some(Commodity::new("EUR")),
             commodity_index: None,
         };
 
@@ -275,7 +274,7 @@ mod tests {
         let actual = Amount::parse("-20 EUR").unwrap();
         let expected = Amount {
             quantity: dec!(-20),
-            commodity: Some(Commodity::new("EUR")),
+            // commodity: Some(Commodity::new("EUR")),
             commodity_index: None,
         };
 
@@ -286,9 +285,9 @@ mod tests {
     fn test_full_w_commodity_separated() {
         let expected = Amount {
             quantity: dec!(-20000),
-            commodity: Some(Commodity::new("EUR")),
             commodity_index: None,
         };
+        // commodity: Some(Commodity::new("EUR")),
 
         let actual = Amount::parse("-20000.00 EUR").unwrap();
 
@@ -299,7 +298,7 @@ mod tests {
     fn test_full_commodity_first() {
         let expected = Amount {
             quantity: dec!(-20000),
-            commodity: Some(Commodity::new("A$")),
+            // commodity: Some(Commodity::new("A$")),
             commodity_index: None,
         };
 
@@ -319,24 +318,24 @@ mod tests {
 
     #[test]
     fn test_addition() {
-        let c1 = Commodity::new("EUR");
-        let left = Amount::new(dec!(10), Some(c1), None);
-        let c2 = Commodity::new("EUR");
-        let right = Amount::new(dec!(15), Some(c2), None);
+        //let c1 = Commodity::new("EUR");
+        let left = Amount::new(dec!(10), None);
+        // let c2 = Commodity::new("EUR");
+        let right = Amount::new(dec!(15), None);
 
         let actual = left + right;
 
         assert_eq!(dec!(25), actual.quantity);
-        assert!(actual.commodity.is_some());
-        assert_eq!("EUR", actual.commodity.unwrap().symbol);
+        // assert!(actual.commodity.is_some());
+        // assert_eq!("EUR", actual.commodity.unwrap().symbol);
     }
 
     #[test]
     fn test_add_assign() {
-        let c1 = Commodity::new("EUR");
-        let mut actual = Amount::new(dec!(21), Some(c1), None);
-        let c2 = Commodity::new("EUR");
-        let other = Amount::new(dec!(13), Some(c2), None);
+        // let c1 = Commodity::new("EUR");
+        let mut actual = Amount::new(dec!(21), None);
+        // let c2 = Commodity::new("EUR");
+        let other = Amount::new(dec!(13), None);
 
         // actual += addition;
         actual.add(&other);
@@ -354,10 +353,10 @@ mod tests {
 
     #[test]
     fn test_copy_from_no_commodity() {
-        let other = Amount::new(dec!(10), None, None);
+        let other = Amount::new(dec!(10), None);
         let actual = Amount::copy_from(&other);
 
         assert_eq!(dec!(10), actual.quantity);
-        assert_eq!(None, actual.commodity);
+        // assert_eq!(None, actual.commodity);
     }
 }

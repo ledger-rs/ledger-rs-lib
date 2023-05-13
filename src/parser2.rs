@@ -246,7 +246,7 @@ mod full_tests {
             *journal.get_account(post1.account_index)
         );
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
-        assert_eq!(None, post1.amount.as_ref().unwrap().commodity);
+        assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];

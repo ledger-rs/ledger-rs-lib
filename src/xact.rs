@@ -182,7 +182,7 @@ mod tests {
         assert_eq!(Account::new("Expenses"), *context.journal.get_account(post1.account_index));
         let amount = &post1.amount;
         assert_eq!(dec!(25), amount.as_ref().unwrap().quantity);
-        assert_eq!(None, amount.as_ref().unwrap().commodity);
+        assert_eq!(None, amount.as_ref().unwrap().commodity_index);
 
         let post2 = &context.journal.posts[1];
         assert_eq!(Account::new("Assets"), *context.journal.get_account(post2.account_index));
@@ -190,6 +190,6 @@ mod tests {
         // The amount has been automatically recalculated to offset the first one.
         let amount = &post2.amount;
         assert_eq!(dec!(-25), amount.as_ref().unwrap().quantity);
-        assert_eq!(None, amount.as_ref().unwrap().commodity);
+        assert_eq!(None, amount.as_ref().unwrap().commodity_index);
     }
 }
