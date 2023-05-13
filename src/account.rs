@@ -26,4 +26,9 @@ impl Account {
             post_indices: vec![],
         }
     }
+
+    pub fn parse(input: &str) -> Self {
+        todo!("handle account hierarchy")
+        // Self { parent_index: None, name: (), accounts: (), post_indices: () }
+    }
 }

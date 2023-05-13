@@ -60,6 +60,7 @@ impl Journal {
     pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
         &self.commodities[index]
     }
+
 }
 
 #[cfg(test)]

@@ -28,9 +28,16 @@ impl Amount {
         }
     }
 
-    pub fn parse2(amount: &str, commodity_index: Option<CommodityIndex>) -> Self {
-        Self { quantity: Decimal::from_str_exact(amount).unwrap(), 
-            commodity: None, commodity_index }
+    pub fn parse2(amount: &str, commodity_index: Option<CommodityIndex>) -> Option<Self> {
+        if amount.is_empty() {
+            return None;
+        }
+
+        let amount = Self { 
+            quantity: Decimal::from_str_exact(amount).unwrap(), 
+            commodity: None, commodity_index };
+
+        Some(amount)
     }
 
     pub fn copy_from(other: &Amount) -> Self {

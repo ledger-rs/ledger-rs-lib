@@ -168,24 +168,34 @@ impl<T: Read> Parser<T> {
                                     let tokens = scanner::scan_post(input);
 
                                     // Create Account, add to collection
-                                    let account = Account::new(tokens[0]);
+                                    let account = Account::parse(tokens[0]);
                                     let account_index = self.journal.add_account(account);
 
                                     // TODO: Create Commodity, add to collection
                                     // tokens[1], tokens[2]
                                     // commodity_pool.find(symbol)
                                     // pool.create(symbol)
-                                    let commodity = Commodity::new(tokens[2]);
-                                    let commodity_index = self.journal.add_commodity(commodity);
+                                    let commodity = Commodity::parse(tokens[2]);
+                                    let commodity_index = match commodity {
+                                        Some(c) => Some(self.journal.add_commodity(c)),
+                                        None => None,
+                                    };
 
                                     // create amount
-                                    let amount = Amount::parse(input);
+                                    let amount = Amount::parse2(tokens[1], commodity_index);
+
+                                    // TODO: handle cost (2nd amount)
 
                                     // TODO: Create Post, link Xact, Account, Commodity
-                                    let post =
-                                        Post::create_indexed(account_index, xact_index, amount);
+                                    let post = Post::create_indexed(
+                                        account_index,
+                                        xact_index,
+                                        amount,
+                                    );
+                                    let post_index = self.journal.add_post(post);
 
-                                    todo!("create post")
+                                    let xact = self.journal.xacts.get_mut(xact_index).unwrap();
+                                    xact.posts.push(post_index);
                                 }
                             }
                         }
@@ -199,7 +209,6 @@ impl<T: Read> Parser<T> {
             // log::debug!("read: {:?}, {:?}", x, &line);
             self.buffer.clear(); // empty the buffer before reading
         }
-        todo!("put everything into the Journal")
     }
 }
 

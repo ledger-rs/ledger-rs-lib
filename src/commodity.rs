@@ -22,6 +22,14 @@ impl Commodity {
     pub fn new(symbol: &str) -> Self {
         Self { symbol: symbol.to_owned() }
     }
+
+    pub fn parse(symbol: &str) -> Option<Self> {
+        if symbol.is_empty() {
+            return None;
+        }
+
+        Some(Commodity::new(symbol))
+    }
 }
 
 /// Parse symbol from the input string.

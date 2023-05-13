@@ -1,13 +1,13 @@
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, journal::Journal, parser, post::Post};
+use crate::{amount::Amount, journal::{Journal, PostIndex}, parser, post::Post};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
     // pub posts: Vec<Post>,
-    pub posts: Vec<usize>,
+    pub posts: Vec<PostIndex>,
     pub note: Option<String>,
     // pub balance: Amount,
 }
