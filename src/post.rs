@@ -11,12 +11,13 @@ use crate::{
 #[derive(Debug, PartialEq)]
 pub struct Post {
     /// Pointer to the Account.
-    pub account: AccountIndex,
+    // pub account: AccountIndex,
+    pub account_index: AccountIndex,
     /// Pointer to the Xact.
     pub xact: XactIndex,
 
     // TODO: remove this temp field. Used just for testing.
-    pub account_temp: Account,
+    // pub account_temp: Account,
 
     pub amount: Option<Amount>,
 }
@@ -24,10 +25,9 @@ pub struct Post {
 impl Post {
     pub fn new(account: &str) -> Self {
         Self {
-            account: usize::MAX,
+            account_index: usize::MAX,
             xact: usize::MAX,
 
-            account_temp: Account::new(account),
             amount: None,
         }
     }
@@ -39,11 +39,9 @@ impl Post {
         amount: Option<Amount>,
     ) -> Self {
         Self {
-            account: account_index,
+            account_index,
             xact: xact_index,
             amount,
-            //
-            account_temp: Account::new("???"),
         }
     }
 }
