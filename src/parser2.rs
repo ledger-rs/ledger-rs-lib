@@ -17,7 +17,7 @@ use std::{
     io::{BufRead, BufReader, Read},
 };
 
-use crate::{journal::Journal, xact::Xact, post::Post, scanner};
+use crate::{journal::Journal, xact::Xact, post::Post, scanner, account::Account, amount::Amount};
 
 pub(crate) fn read<T: Read>(source: T) -> Journal {
     let mut parser = Parser::new(source);
@@ -127,6 +127,7 @@ impl<T: Read> Parser<T> {
     fn xact_directive(&mut self) {
         let tokens = scanner::tokenize_xact_header(&self.buffer);
         let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
+        let xact_index = self.journal.add_xact(xact);
 
         // TODO: read the Xact contents (Posts, Comments, etc.)
         // TODO: read until separator (empty line)
@@ -160,18 +161,20 @@ impl<T: Read> Parser<T> {
                                 _ => {
                                     let tokens = scanner::scan_post(input);
 
-                                    // TODO: Create Account, add to collection
-                                    
+                                    // Create Account, add to collection
+                                    let account = Account::new(tokens[0]);
+                                    let account_index = self.journal.add_account(account);
 
                                     // TODO: Create Commodity, add to collection
                                     // tokens[1], tokens[2]
                                     // commodity_pool.find(symbol)
                                     // pool.create(symbol)
 
+                                    // create amount
+                                    let amount = Amount::parse(input);
+
                                     // TODO: Create Post, link Xact, Account, Commodity
-                                    
-                                    // Post::new(account, amount)
-                                    //let post = Post::create(tokens);
+                                    let post = Post::create_indexed(account_index, xact_index, amount);
 
                                     // TODO: Add xact to the journal
 
@@ -229,8 +232,8 @@ mod full_tests {
         // let post_1 = xact.posts.iter().nth(0).unwrap();
         let post1 = &journal.posts[xact.posts[0]];
         assert_eq!(Account::new("Expenses"), post1.account_temp);
-        assert_eq!("20", post1.amount.quantity.to_string());
-        assert_eq!(None, post1.amount.commodity);
+        assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
+        assert_eq!(None, post1.amount.as_ref().unwrap().commodity);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];

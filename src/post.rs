@@ -1,4 +1,4 @@
-use crate::{amount::Amount, account::Account};
+use crate::{amount::Amount, account::Account, journal::{AccountIndex, XactIndex}};
 
 /**
  * Posting
@@ -7,36 +7,29 @@ use crate::{amount::Amount, account::Account};
  #[derive(Debug, PartialEq)]
 pub struct Post {
     /// Pointer to the Account.
-    pub account: usize,
+    pub account: AccountIndex,
     /// Pointer to the Xact.
-    pub xact: usize,
+    pub xact: XactIndex,
 
-    // TODO: remove this temp field
+    // TODO: remove this temp field. Used just for testing.
     pub account_temp: Account,
-    pub amount: Amount,
+
+    pub amount: Option<Amount>,
 }
 
 impl Post {
-    pub fn new(account: &str, amount: Option<Amount>) -> Self {
+    pub fn new(account: &str) -> Self {
         Self {
             account: usize::MAX,
             xact: usize::MAX,
 
             account_temp: Account::new(account),
-            amount: Amount::null(),
+            amount: None,
         }
     }
 
     /// Creates a Post from post tokens.
-    pub fn create(tokens: [&str; 3]) -> Self {
-        // parse account?
-        // parse amount quantity
-        // parse amount commodity symbol
-        
-        todo!()
-    }
-
-    pub fn empty() -> Self {
-        Self::new("", None)
+    pub fn create_indexed(account_index: AccountIndex, xact_index: XactIndex, amount: Option<Amount>) -> Self {
+        Self { account: account_index, xact: xact_index, amount, account_temp: Account::new("???") }
     }
 }

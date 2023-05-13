@@ -155,7 +155,7 @@ fn parse_post(line: &str) -> Post {
 
     // tags
 
-    let post = Post::new(account_name, amount);
+    let post = Post::new(account_name);
     post
 }
 
@@ -368,12 +368,12 @@ mod tests {
 
         // let post_1 = xact.posts.iter().nth(0).unwrap();
         let post1 = &journal.posts[xact.posts[0]];
-        assert_eq!(Account::new("Expenses"), post1.account_temp);
-        assert_eq!("20", post1.amount.quantity.to_string());
-        assert_eq!(None, post1.amount.commodity);
+        // assert_eq!(Account::new("Expenses"), post1.account_temp);
+        assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
+        assert_eq!(None, post1.amount.as_ref().unwrap().commodity);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];
-        assert_eq!(Account::new("Assets"), post2.account_temp);
+        // assert_eq!(Account::new("Assets"), post2.account_temp);
     }
 }

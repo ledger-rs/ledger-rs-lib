@@ -79,12 +79,12 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
 
         // amount = post.cost ? post.amount
         // for now, just use the amount
-        if !post.amount.is_null() {
+        if !post.amount.as_ref().unwrap().is_null() {
             if balance.is_none() {
-                let initial_amount = Amount::copy_from(&post.amount);
+                let initial_amount = Amount::copy_from(&post.amount.as_ref().unwrap());
                 balance = Some(initial_amount);
             } else {
-                balance.as_mut().unwrap().add(&post.amount);
+                balance.as_mut().unwrap().add(&post.amount.as_ref().unwrap());
             }
         } else if null_post.is_some() {
             todo!()
@@ -105,7 +105,7 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
 
         let post = null_post.unwrap();
         // use inverse amount
-        post.amount = balance.unwrap().inverse();
+        post.amount = Some(balance.unwrap().inverse());
         null_post = None;
     }
 
@@ -157,8 +157,10 @@ mod tests {
     fn setup() -> (Xact, Vec<Post>) {
         let xact = Xact::new(None, "payee", None);
 
-        let post1 = Post::new("Expenses", Some(Amount::new(dec!(25), None, None)));
-        let post2 = Post::new("Assets", None);
+        let post1 = Post::new("Expenses");
+        // Some(Amount::new(dec!(25), None, None)
+        let post2 = Post::new("Assets");
+        // None
         let posts = vec![post1, post2];
 
         (xact, posts)
@@ -179,15 +181,15 @@ mod tests {
         let post1 = &context.journal.posts[0];
         assert_eq!(Account::new("Expenses"), post1.account_temp);
         let amount = &post1.amount;
-        assert_eq!(dec!(25), amount.quantity);
-        assert_eq!(None, amount.commodity);
+        assert_eq!(dec!(25), amount.as_ref().unwrap().quantity);
+        assert_eq!(None, amount.as_ref().unwrap().commodity);
 
         let post2 = &context.journal.posts[1];
         assert_eq!(Account::new("Assets"), post2.account_temp);
         // assert_eq!(None, post2.amount);
         // The amount has been automatically recalculated to offset the first one.
         let amount = &post2.amount;
-        assert_eq!(dec!(-25), amount.quantity);
-        assert_eq!(None, amount.commodity);
+        assert_eq!(dec!(-25), amount.as_ref().unwrap().quantity);
+        assert_eq!(None, amount.as_ref().unwrap().commodity);
     }
 }

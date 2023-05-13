@@ -4,7 +4,10 @@ use crate::{xact::Xact, account::Account, post::Post, commodity::Commodity};
  * Journal
  */
 
+pub type AccountIndex = usize;
 pub type CommodityIndex = usize;
+pub type PostIndex = usize;
+pub type XactIndex = usize;
 
 pub struct Journal {
     // pub master: Account,
@@ -29,18 +32,18 @@ impl Journal {
         }
     }
 
-    pub fn add_account(&mut self, acct: Account) -> usize {
+    pub fn add_account(&mut self, acct: Account) -> AccountIndex {
         self.accounts.push(acct);
         self.accounts.len() - 1
     }
 
-    pub fn add_xact(&mut self, xact: Xact) -> usize {
+    pub fn add_xact(&mut self, xact: Xact) -> XactIndex {
         let i = self.xacts.len();
         self.xacts.push(xact);
         i
     }
 
-    pub fn add_post(&mut self, post: Post) -> usize {
+    pub fn add_post(&mut self, post: Post) -> PostIndex {
         let i = self.posts.len();
         self.posts.push(post);
         i
