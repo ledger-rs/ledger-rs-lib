@@ -151,6 +151,7 @@ impl<T: Read> Parser<T> {
                 }
                 Ok(0) => {
                     // end of file
+                    log::debug!("0-length buffer");
                     break;
                 }
                 Ok(_) => {
@@ -173,7 +174,7 @@ impl<T: Read> Parser<T> {
                                     let tokens = scanner::scan_post(input);
 
                                     // Create Account, add to collection
-                                    let account = Account::parse(tokens[0]);
+                                    let mut account = Account::parse(tokens[0]);
                                     let account_index = self.journal.add_account(account);
 
                                     // Create Commodity, add to collection
@@ -195,24 +196,37 @@ impl<T: Read> Parser<T> {
                                         Post::create_indexed(account_index, xact_index, amount);
                                     let post_index = self.journal.add_post(post);
 
-                                    let xact = self.journal.xacts.get_mut(xact_index).unwrap();
-                                    xact.posts.push(post_index);
+                                    // TODO: add Post to Account.posts
+                                    {
+                                        let account =
+                                            self.journal.accounts.get_mut(account_index).unwrap();
+                                        account.post_indices.push(post_index);
+                                    }
+
+                                    {
+                                        // add Post to Xact.
+                                        let xact = self.journal.xacts.get_mut(xact_index).unwrap();
+                                        xact.posts.push(post_index);
+                                    }
                                 }
                             }
                         }
                         Some('\r') => {
-                            // empty line. Exit.
+                            // empty line "\r\n". Exit.
                             break;
                         }
-                        c => {
-                            log::warn!("we have {:?}", c);
+                        _ => {
+                            // log::warn!("we have {:?}", c);
                             panic!("should not happen")
                         }
                     }
                 }
             }
 
-            // empty the buffer before reading
+            // "finalize" transaction
+            crate::xact::finalize_indexed(xact_index, &mut self.journal);
+
+            // empty the buffer before exiting.
             self.buffer.clear();
         }
     }
@@ -241,19 +255,13 @@ mod full_tests {
         assert_eq!(2, xact.posts.len());
 
         let post1 = &journal.posts[xact.posts[0]];
-        assert_eq!(
-            Account::new("Expenses"),
-            *journal.get_account(post1.account_index)
-        );
+        assert_eq!("Expenses", journal.get_account(post1.account_index).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];
-        assert_eq!(
-            Account::new("Assets"),
-            *journal.get_account(post2.account_index)
-        );
+        assert_eq!("Assets", journal.get_account(post2.account_index).name);
     }
 }
 

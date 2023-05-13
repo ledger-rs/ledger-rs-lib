@@ -345,8 +345,6 @@ fn skip_ws(line: &str, start: &usize) -> Option<usize> {
 mod tests {
     use std::io::Cursor;
 
-    use crate::account::Account;
-
     use super::parse;
 
     #[test]

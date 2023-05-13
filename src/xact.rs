@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, journal::{Journal, PostIndex}, parser, post::Post};
+use crate::{amount::Amount, journal::{Journal, PostIndex, XactIndex}, parser, post::Post};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
@@ -142,6 +142,56 @@ pub fn finalize(xact: Xact, mut posts: Vec<Post>, journal: &mut Journal) {
         // post.borrow_mut().account.posts.borrow_mut().push(post.borrow());
         // todo!("handle account")
     }
+}
+
+pub fn finalize_indexed(xact_index: XactIndex, journal: &mut Journal) {
+    let mut balance: Option<Amount> = None;
+    // The pointer to the post that has no amount.
+    let mut null_post: Option<PostIndex> = None;
+    let xact = journal.xacts.get(xact_index).expect("xact");
+
+    // Balance
+    for post_index in xact.posts.iter() {
+        // must balance?
+
+        let post = journal.posts.get(*post_index).expect("post");
+
+        // amount = post.cost ? post.amount
+        // for now, just use the amount
+        //if !post.amount.as_ref().unwrap().is_null() {
+        if post.amount.is_some() {
+            if balance.is_none() {
+                let initial_amount = Amount::copy_from(&post.amount.as_ref().unwrap());
+                balance = Some(initial_amount);
+            } else {
+                balance.as_mut().unwrap().add(&post.amount.as_ref().unwrap());
+            }
+        } else if null_post.is_some() {
+            todo!()
+        } else {
+            null_post = Some(*post_index);
+        }
+    }
+
+    // If there is only one post, balance against the default account if one has
+    // been set.
+
+    // Handle null-amount post.
+    if null_post.is_some() {
+        // If one post has no value at all, its value will become the inverse of
+        // the rest.  If multiple commodities are involved, multiple posts are
+        // generated to balance them all.
+        log::debug!("There was a null posting");
+
+        let post = journal.posts.get_mut(null_post.unwrap()).unwrap();
+        // use inverse amount
+        post.amount = Some(balance.unwrap().inverse());
+        null_post = None;
+    }
+
+    // TODO: Process Commodities?
+    // TODO: Process Account records from Posts.
+
 }
 
 #[cfg(test)]
