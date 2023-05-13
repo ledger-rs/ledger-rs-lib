@@ -5,11 +5,17 @@ pub struct Commodity {
     pub symbol: String,
     // graph_index: Option
     // precision
-    // name: Option
-    // note: Option
+    // name: Option<String>
+    // note: Option<String>
     // smaller: Option
     // larger: Option
     // value_expr: Option
+
+    // commodity_pool
+    // annotated_commodity
+    // parent
+    // qualified_symbol: Option<String>
+    // annotated: bool
 }
 
 impl Commodity {

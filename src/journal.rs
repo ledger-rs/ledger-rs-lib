@@ -1,12 +1,15 @@
-use crate::{xact::Xact, account::Account, post::Post};
+use crate::{xact::Xact, account::Account, post::Post, commodity::Commodity};
 
 /**
  * Journal
  */
 
+pub type CommodityIndex = usize;
+
 pub struct Journal {
     // pub master: Account,
     
+    pub commodities: Vec<Commodity>,
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
@@ -17,6 +20,7 @@ impl Journal {
         Journal {
             // master: Account::new(),
 
+            commodities: vec![],
             xacts: vec![],
             posts: vec![],
             accounts: vec![],
@@ -35,5 +39,9 @@ impl Journal {
         let i = self.posts.len();
         self.posts.push(post);
         i
+    }
+
+    pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
+        &self.commodities[index]
     }
 }

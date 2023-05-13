@@ -8,7 +8,7 @@ use crate::commodity::Commodity;
 
 pub(crate) struct CommodityPool {
     commodities: HashMap<String, Commodity>,
-    // annotated_commodities
+    // annotated_commodities: HashMap<String, Commodity>,
     // commodity_price_history
     // null_commodity
     // default_commodity
