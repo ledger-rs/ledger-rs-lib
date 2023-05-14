@@ -45,7 +45,7 @@ fn balance_report(journal: Journal) -> Vec<String> {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{journal::Journal, parser};
+    use crate::{journal::Journal, parser2};
 
     use super::balance_report;
 
@@ -57,7 +57,7 @@ mod tests {
 
 "#;
         let source = Cursor::new(src);
-        let journal = parser::parse(source);
+        let journal = parser2::read(source);
         journal
     }
 

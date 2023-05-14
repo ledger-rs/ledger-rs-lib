@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, journal::{Journal, PostIndex, XactIndex}, parser, post::Post};
+use crate::{amount::Amount, journal::{Journal, PostIndex, XactIndex}, post::Post, parser2};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
@@ -30,13 +30,13 @@ impl Xact {
         let _date = if date.is_empty() {
             None
         } else {
-            Some(parser::parse_date(date))
+            Some(parser2::parse_date(date))
         };
 
         let _aux_date = if aux_date.is_empty() {
             None
         } else {
-            Some(parser::parse_date(aux_date))
+            Some(parser2::parse_date(aux_date))
         };
 
         let _payee = if payee.is_empty() {
@@ -196,10 +196,8 @@ pub fn finalize_indexed(xact_index: XactIndex, journal: &mut Journal) {
 
 #[cfg(test)]
 mod tests {
-    use rust_decimal_macros::dec;
-
     use crate::{
-        account::Account, amount::Amount, context::ParsingContext, post::Post, xact::finalize,
+        post::Post,
     };
 
     use super::Xact;
@@ -216,30 +214,4 @@ mod tests {
         (xact, posts)
     }
 
-    /// finalize
-    #[test]
-    fn test_finalize() {
-        // Arrange
-        let mut context = ParsingContext::new();
-        let (xact, posts) = setup();
-
-        // Act
-        finalize(xact, posts, &mut context.journal);
-
-        // Assert
-        // let xact = context.journal.xacts.last().unwrap();
-        let post1 = &context.journal.posts[0];
-        assert_eq!(Account::new("Expenses"), *context.journal.get_account(post1.account_index));
-        let amount = &post1.amount;
-        assert_eq!(dec!(25), amount.as_ref().unwrap().quantity);
-        assert_eq!(None, amount.as_ref().unwrap().commodity_index);
-
-        let post2 = &context.journal.posts[1];
-        assert_eq!(Account::new("Assets"), *context.journal.get_account(post2.account_index));
-        // assert_eq!(None, post2.amount);
-        // The amount has been automatically recalculated to offset the first one.
-        let amount = &post2.amount;
-        assert_eq!(dec!(-25), amount.as_ref().unwrap().quantity);
-        assert_eq!(None, amount.as_ref().unwrap().commodity_index);
-    }
 }

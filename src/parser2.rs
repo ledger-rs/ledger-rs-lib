@@ -15,6 +15,8 @@
  */
 use std::io::{BufRead, BufReader, Read};
 
+use chrono::NaiveDate;
+
 use crate::{
     account::Account, amount::Amount, commodity::Commodity, journal::Journal, post::Post, scanner,
     xact::Xact,
@@ -25,6 +27,12 @@ pub(crate) fn read<T: Read>(source: T) -> Journal {
     parser.parse();
 
     parser.journal
+}
+
+pub fn parse_date(date_str: &str) -> NaiveDate {
+    // todo: support more date formats?
+
+    NaiveDate::parse_from_str(date_str, "%Y-%m-%d").expect("date parsed")
 }
 
 struct Parser<T: Read> {
@@ -286,6 +294,39 @@ mod full_tests {
 mod parser_tests {
     use std::io::Cursor;
 
+    use crate::parser2;
+
+    #[test]
+    fn test_minimal_parser() {
+        let input = r#"; Minimal transaction
+2023-04-10 Supermarket
+    Expenses  20
+    Assets
+"#;
+        let cursor = Cursor::new(input);
+
+        // Act
+        let journal = parser2::read(cursor);
+
+        // Assert
+
+        assert_eq!(1, journal.xacts.len());
+
+        let xact = journal.xacts.first().unwrap();
+        assert_eq!("Supermarket", xact.payee);
+        assert_eq!(2, xact.posts.len());
+
+        // let exp_account = journal.get
+        let post1 = &journal.posts[xact.posts[0]];
+        // assert_eq!(Account::new("Expenses"), post1.account_temp);
+        assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
+        assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
+
+        // let post_2 = xact.posts.iter().nth(1).unwrap();
+        let post2 = &journal.posts[xact.posts[1]];
+        // assert_eq!(Account::new("Assets"), post2.account_temp);
+    }
+
     #[test]
     fn parse_standard_xact() {
         let input = r#"; Standard transaction
@@ -312,6 +353,8 @@ mod parser_tests {
             
             let acc1 = journal.get_account(posts[0].account_index);
             assert_eq!("Expenses", acc1.name);
+            let acc2 = journal.get_account(posts[1].account_index);
+            assert_eq!("Assets", acc2.name);
         } else {
             assert!(false);
         }
