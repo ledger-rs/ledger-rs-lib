@@ -366,4 +366,19 @@ mod parser_tests {
             assert!(false);
         }
     }
+
+    #[test]
+    fn parse_trade_xact() {
+        let input = r#"; Standard transaction
+2023-04-10 Supermarket
+    Assets:Investment  20 VEUR @ 10 EUR
+    Assets
+"#;
+        let cursor = Cursor::new(input);
+
+        let journal = super::read(cursor);
+
+        // Assert
+
+    }
 }

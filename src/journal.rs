@@ -13,6 +13,7 @@ pub struct Journal {
     // pub master: Account,
     
     pub commodities: Vec<Commodity>,
+    // todo: commodity_pool
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
@@ -51,6 +52,10 @@ impl Journal {
         let i = self.posts.len();
         self.posts.push(post);
         i
+    }
+
+    pub fn find_commodity(&self, symbol: &str) -> Option<&Commodity> {
+        self.commodities.iter().find(|c| c.symbol == symbol)
     }
 
     pub fn get_account(&self, index: usize) -> &Account {
