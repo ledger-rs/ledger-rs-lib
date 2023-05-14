@@ -173,30 +173,48 @@ impl<T: Read> Parser<T> {
                                 _ => {
                                     let tokens = scanner::scan_post(input);
 
-                                    // Create Account, add to collection
-                                    let mut account = Account::parse(tokens[0]);
-                                    let account_index = self.journal.add_account(account);
+                                    let account_index;
+                                    {
+                                        // Create Account, add to collection
+                                        let account = Account::parse(tokens[0]);
+                                        account_index = self.journal.add_account(account);
+                                    }
 
-                                    // Create Commodity, add to collection
-                                    // commodity_pool.find(symbol)
-                                    // pool.create(symbol)
-                                    let commodity = Commodity::parse(tokens[2]);
-                                    let commodity_index = match commodity {
-                                        Some(c) => Some(self.journal.add_commodity(c)),
-                                        None => None,
-                                    };
+                                    let commodity_index;
+                                    {
+                                        // Create Commodity, add to collection
+                                        // commodity_pool.find(symbol)
+                                        // pool.create(symbol)
+                                        let commodity = Commodity::parse(tokens[2]);
+                                        commodity_index = match commodity {
+                                            Some(c) => Some(self.journal.add_commodity(c)),
+                                            None => None,
+                                        };
+                                    }
 
                                     // create amount
                                     let amount = Amount::parse2(tokens[1], commodity_index);
 
                                     // TODO: handle cost (2nd amount)
+                                    let price_commodity_index;
+                                    {
+                                        let commodity = Commodity::parse(tokens[4]);
+                                        price_commodity_index = match commodity {
+                                            Some(c) => Some(self.journal.add_commodity(c)),
+                                            None => None,
+                                        }
+                                    }
+                                    let cost = Amount::parse2(tokens[3], price_commodity_index);
 
-                                    // Create Post, link Xact, Account, Commodity
-                                    let post =
-                                        Post::create_indexed(account_index, xact_index, amount);
-                                    let post_index = self.journal.add_post(post);
+                                    let post_index;
+                                    {
+                                        // Create Post, link Xact, Account, Commodity
+                                        let post =
+                                            Post::create_indexed(account_index, xact_index, amount);
+                                        post_index = self.journal.add_post(post);
+                                    }
 
-                                    // TODO: add Post to Account.posts
+                                    // add Post to Account.posts
                                     {
                                         let account =
                                             self.journal.accounts.get_mut(account_index).unwrap();
@@ -234,7 +252,6 @@ impl<T: Read> Parser<T> {
 
 #[cfg(test)]
 mod full_tests {
-    use crate::account::Account;
     use std::io::Cursor;
 
     #[test]
@@ -266,4 +283,20 @@ mod full_tests {
 }
 
 #[cfg(test)]
-mod parser_tests {}
+mod parser_tests {
+    use std::io::Cursor;
+
+    #[test]
+    fn parse_standard_xact() {
+        let input = r#"; Standard transaction
+2023-04-10 Supermarket
+    Expenses  20 EUR
+    Assets
+"#;
+        let cursor = Cursor::new(input);
+
+        let journal = super::read(cursor);
+
+        assert_eq!(1, journal.xacts.len());
+    }
+}
