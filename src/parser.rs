@@ -232,7 +232,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     }
 
     // create amount
-    let amount = Amount::parse2(tokens[1], commodity_index);
+    let amount = Amount::parse(tokens[1], commodity_index);
 
     // TODO: handle cost (2nd amount)
     let price_commodity_index;
@@ -243,12 +243,12 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
             None => None,
         }
     }
-    let cost = Amount::parse2(tokens[3], price_commodity_index);
+    let cost = Amount::parse(tokens[3], price_commodity_index);
 
     let post_index;
     {
         // Create Post, link Xact, Account, Commodity
-        let post = Post::new(account_index, xact_index, amount);
+        let post = Post::new(account_index, xact_index, amount, cost);
         post_index = journal.add_post(post);
     }
 
@@ -380,5 +380,174 @@ mod parser_tests {
 
         // Assert
 
+    }
+}
+
+#[cfg(test)]
+mod amount_parsing_tests {
+    use rust_decimal_macros::dec;
+
+    use crate::{journal::Journal, xact::Xact, parser::parse_post};
+
+    use super::Amount;
+
+    fn setup() -> Journal {
+        let mut journal = Journal::new();
+        let xact = Xact::create("2023-05-02", "", "Supermarket", "");
+        let xact_index = journal.add_xact(xact);
+
+        journal
+    }
+
+    #[test]
+    fn test_positive_no_commodity() {
+        let expected = Amount {
+            quantity: dec!(20),
+            commodity_index: None,
+        };
+        let actual = Amount::parse("20", None).unwrap();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_negative_no_commodity() {
+        let actual = Amount::parse("-20", None).unwrap();
+        let expected = Amount {
+            quantity: dec!(-20),
+            commodity_index: None,
+        };
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_pos_w_commodity_separated() {
+        let expected = Amount {
+            quantity: dec!(20),
+            commodity_index: Some(0),
+        };
+        let mut journal = setup();
+
+        // Act
+        
+        parse_post("  Assets  20 EUR", 0, &mut journal);
+        let post = journal.posts.first().unwrap();
+        let Some(amount) = &post.amount else { todo!() }; // else None;
+
+        // assert!(actual.is_some());
+        assert_eq!(expected, *amount);
+
+        // commodity
+        let c = journal.get_commodity(amount.commodity_index.unwrap());
+        assert_eq!("EUR", c.symbol);
+    }
+
+    #[test]
+    fn test_neg_commodity_separated() {
+        let expected = Amount {
+            quantity: dec!(-20),
+            commodity_index: Some(5),
+        };
+        let mut journal = setup();
+
+        // Act
+        parse_post("  Assets  -20 EUR", 0, &mut journal);
+
+        // Assert
+        let post = journal.posts.first().unwrap();
+        let Some(a) = &post.amount else { panic!() };
+        let q = a.quantity;
+        assert_eq!(dec!(-20), q);
+
+        let commodity = journal.get_commodity(a.commodity_index.unwrap());
+        assert_eq!("EUR", commodity.symbol);
+    }
+
+    #[test]
+    fn test_full_w_commodity_separated() {
+        // Arrange
+        let mut journal = setup();
+
+        // Act
+        parse_post("  Assets  -20000.00 EUR", 0, &mut journal);
+        let post = journal.posts.first().unwrap();
+        let Some(ref amount) = post.amount else { panic!()};
+
+        // Assert
+        assert_eq!("-20000.00", amount.quantity.to_string());
+        assert_eq!("EUR", journal.get_commodity(amount.commodity_index.unwrap()).symbol);
+    }
+
+    #[test]
+    fn test_full_commodity_first() {
+        // Arrange
+        let mut journal = setup();
+
+        // Act
+        parse_post("  Assets  A$-20000.00", 0, &mut journal);
+        let post = journal.posts.first().unwrap();
+        let Some(ref amount) = post.amount else { panic!()};
+
+        // Assert
+        assert_eq!("-20000.00", amount.quantity.to_string());
+        assert_eq!("A$", journal.get_commodity(amount.commodity_index.unwrap()).symbol);
+    }
+
+    #[test]
+    fn test_quantity_separators() {
+        let input = "-1000000.00";
+        let expected = dec!(-1_000_000);
+
+        let amount = Amount::parse(input, None);
+        assert!(amount.is_some());
+
+        let actual = amount.unwrap().quantity;
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_addition() {
+        //let c1 = Commodity::new("EUR");
+        let left = Amount::new(dec!(10), None);
+        // let c2 = Commodity::new("EUR");
+        let right = Amount::new(dec!(15), None);
+
+        let actual = left + right;
+
+        assert_eq!(dec!(25), actual.quantity);
+        // assert!(actual.commodity.is_some());
+        // assert_eq!("EUR", actual.commodity.unwrap().symbol);
+    }
+
+    #[test]
+    fn test_add_assign() {
+        // let c1 = Commodity::new("EUR");
+        let mut actual = Amount::new(dec!(21), None);
+        // let c2 = Commodity::new("EUR");
+        let other = Amount::new(dec!(13), None);
+
+        // actual += addition;
+        actual.add(&other);
+
+        assert_eq!(dec!(34), actual.quantity);
+    }
+
+    #[test]
+    fn test_null_amount() {
+        let input = " ";
+        let actual = Amount::parse(input, None);
+
+        assert_eq!(None, actual);
+    }
+
+    #[test]
+    fn test_copy_from_no_commodity() {
+        let other = Amount::new(dec!(10), None);
+        let actual = Amount::copy_from(&other);
+
+        assert_eq!(dec!(10), actual.quantity);
+        // assert_eq!(None, actual.commodity);
     }
 }

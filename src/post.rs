@@ -16,10 +16,12 @@ pub struct Post {
     /// Pointer to the Xact.
     pub xact: XactIndex,
 
-    // TODO: remove this temp field. Used just for testing.
-    // pub account_temp: Account,
-
     pub amount: Option<Amount>,
+    pub cost: Option<Amount>,
+    // given_cost
+    // assigned_amount
+    // checkin
+    // checkout
 }
 
 impl Post {
@@ -28,11 +30,13 @@ impl Post {
         account_index: AccountIndex,
         xact_index: XactIndex,
         amount: Option<Amount>,
+        cost: Option<Amount>
     ) -> Self {
         Self {
             account_index,
             xact: xact_index,
             amount,
+            cost,
         }
     }
 }

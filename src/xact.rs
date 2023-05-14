@@ -26,6 +26,7 @@ impl Xact {
         }
     }
 
+    /// Creates a new Transaction from the scanned tokens.
     pub fn create(date: &str, aux_date: &str, payee: &str, note: &str) -> Self {
         let _date = if date.is_empty() {
             None
@@ -191,27 +192,5 @@ pub fn finalize_indexed(xact_index: XactIndex, journal: &mut Journal) {
 
     // TODO: Process Commodities?
     // TODO: Process Account records from Posts.
-
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{
-        post::Post,
-    };
-
-    use super::Xact;
-
-    fn setup() -> (Xact, Vec<Post>) {
-        let xact = Xact::new(None, "payee", None);
-
-        let post1 = Post::new(10, 11, None);
-        // Some(Amount::new(dec!(25), None, None)
-        let post2 = Post::new(20, 11, None);
-        // None
-        let posts = vec![post1, post2];
-
-        (xact, posts)
-    }
 
 }

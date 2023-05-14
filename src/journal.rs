@@ -102,9 +102,9 @@ mod tests {
     #[test]
     fn test_getting_multiple_posts() {
         let mut journal = Journal::new();
-        let p1 = Post::new(10, 11, None);
+        let p1 = Post::new(10, 11, None, None);
         let i1 = journal.add_post(p1);
-        let p2 = Post::new(20, 11, None);
+        let p2 = Post::new(20, 11, None, None);
         let i2 = journal.add_post(p2);
 
         let actual = journal.get_posts(&vec![i1, i2]);
