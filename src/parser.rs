@@ -18,7 +18,12 @@ use std::io::{BufRead, BufReader, Read};
 use chrono::NaiveDate;
 
 use crate::{
-    account::Account, amount::Amount, commodity::Commodity, journal::Journal, post::Post, scanner,
+    account::Account,
+    amount::Amount,
+    commodity::Commodity,
+    journal::{Journal, XactIndex},
+    post::Post,
+    scanner,
     xact::Xact,
 };
 
@@ -179,61 +184,7 @@ impl<T: Read> Parser<T> {
                                     todo!("trailing note")
                                 }
                                 _ => {
-                                    let tokens = scanner::scan_post(input);
-
-                                    let account_index;
-                                    {
-                                        // Create Account, add to collection
-                                        let account = Account::parse(tokens[0]);
-                                        account_index = self.journal.add_account(account);
-                                    }
-
-                                    let commodity_index;
-                                    {
-                                        // Create Commodity, add to collection
-                                        // commodity_pool.find(symbol)
-                                        // pool.create(symbol)
-                                        let commodity = Commodity::parse(tokens[2]);
-                                        commodity_index = match commodity {
-                                            Some(c) => Some(self.journal.add_commodity(c)),
-                                            None => None,
-                                        };
-                                    }
-
-                                    // create amount
-                                    let amount = Amount::parse2(tokens[1], commodity_index);
-
-                                    // TODO: handle cost (2nd amount)
-                                    let price_commodity_index;
-                                    {
-                                        let commodity = Commodity::parse(tokens[4]);
-                                        price_commodity_index = match commodity {
-                                            Some(c) => Some(self.journal.add_commodity(c)),
-                                            None => None,
-                                        }
-                                    }
-                                    let cost = Amount::parse2(tokens[3], price_commodity_index);
-
-                                    let post_index;
-                                    {
-                                        // Create Post, link Xact, Account, Commodity
-                                        let post =
-                                            Post::new(account_index, xact_index, amount);
-                                        post_index = self.journal.add_post(post);
-                                    }
-
-                                    // add Post to Account.posts
-                                    {
-                                        let account =
-                                            self.journal.accounts.get_mut(account_index).unwrap();
-                                        account.post_indices.push(post_index);
-                                    }
-
-                                    {
-                                        // add Post to Xact.
-                                        let xact = self.journal.xacts.get_mut(xact_index).unwrap();
-                                        xact.posts.push(post_index);
-                                    }
+                                    parse_post(input, xact_index, &mut self.journal);
                                 }
                             }
                         }
@@ -255,6 +206,62 @@ impl<T: Read> Parser<T> {
             // empty the buffer before exiting.
             self.buffer.clear();
         }
+    }
+}
+
+fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
+    let tokens = scanner::scan_post(input);
+
+    let account_index;
+    {
+        // Create Account, add to collection
+        let account = Account::parse(tokens[0]);
+        account_index = journal.add_account(account);
+    }
+
+    let commodity_index;
+    {
+        // Create Commodity, add to collection
+        // commodity_pool.find(symbol)
+        // pool.create(symbol)
+        let commodity = Commodity::parse(tokens[2]);
+        commodity_index = match commodity {
+            Some(c) => Some(journal.add_commodity(c)),
+            None => None,
+        };
+    }
+
+    // create amount
+    let amount = Amount::parse2(tokens[1], commodity_index);
+
+    // TODO: handle cost (2nd amount)
+    let price_commodity_index;
+    {
+        let commodity = Commodity::parse(tokens[4]);
+        price_commodity_index = match commodity {
+            Some(c) => Some(journal.add_commodity(c)),
+            None => None,
+        }
+    }
+    let cost = Amount::parse2(tokens[3], price_commodity_index);
+
+    let post_index;
+    {
+        // Create Post, link Xact, Account, Commodity
+        let post = Post::new(account_index, xact_index, amount);
+        post_index = journal.add_post(post);
+    }
+
+    // add Post to Account.posts
+    {
+        let account = journal.accounts.get_mut(account_index).unwrap();
+        account.post_indices.push(post_index);
+    }
+
+    {
+        // add Post to Xact.
+        let xact = journal.xacts.get_mut(xact_index).unwrap();
+        xact.posts.push(post_index);
     }
 }
 
@@ -350,7 +357,7 @@ mod parser_tests {
             // Posts
             let posts = journal.get_posts(&xact.posts);
             assert_eq!(2, posts.len());
-            
+
             let acc1 = journal.get_account(posts[0].account_index);
             assert_eq!("Expenses", acc1.name);
             let acc2 = journal.get_account(posts[1].account_index);
