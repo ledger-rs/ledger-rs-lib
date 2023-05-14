@@ -155,8 +155,9 @@ fn parse_post(line: &str) -> Post {
 
     // tags
 
-    let post = Post::new(account_name);
-    post
+    // let post = Post::new(account_name);
+    todo!()
+    // post
 }
 
 /// Finds the start of the next text element.

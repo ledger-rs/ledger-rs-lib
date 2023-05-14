@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_adding_posts() {
-        let post = Post::new("acct");
+        let post = Post::new(10, 11, None);
         let mut context = ParsingContext::new();
 
         context.add_post(post);

@@ -207,9 +207,9 @@ mod tests {
     fn setup() -> (Xact, Vec<Post>) {
         let xact = Xact::new(None, "payee", None);
 
-        let post1 = Post::new("Expenses");
+        let post1 = Post::new(10, 11, None);
         // Some(Amount::new(dec!(25), None, None)
-        let post2 = Post::new("Assets");
+        let post2 = Post::new(20, 11, None);
         // None
         let posts = vec![post1, post2];
 

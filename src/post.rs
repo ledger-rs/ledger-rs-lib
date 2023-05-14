@@ -23,17 +23,8 @@ pub struct Post {
 }
 
 impl Post {
-    pub fn new(account: &str) -> Self {
-        Self {
-            account_index: usize::MAX,
-            xact: usize::MAX,
-
-            amount: None,
-        }
-    }
-
     /// Creates a Post from post tokens.
-    pub fn create_indexed(
+    pub fn new(
         account_index: AccountIndex,
         xact_index: XactIndex,
         amount: Option<Amount>,

@@ -210,7 +210,7 @@ impl<T: Read> Parser<T> {
                                     {
                                         // Create Post, link Xact, Account, Commodity
                                         let post =
-                                            Post::create_indexed(account_index, xact_index, amount);
+                                            Post::new(account_index, xact_index, amount);
                                         post_index = self.journal.add_post(post);
                                     }
 
@@ -297,6 +297,23 @@ mod parser_tests {
 
         let journal = super::read(cursor);
 
+        // Assert
+        // Xact
         assert_eq!(1, journal.xacts.len());
+
+        if let Some(xact) = journal.xacts.first() {
+            // assert!(xact.is_some());
+
+            assert_eq!("Supermarket", xact.payee);
+
+            // Posts
+            let posts = journal.get_posts(&xact.posts);
+            assert_eq!(2, posts.len());
+            
+            let acc1 = journal.get_account(posts[0].account_index);
+            assert_eq!("Expenses", acc1.name);
+        } else {
+            assert!(false);
+        }
     }
 }

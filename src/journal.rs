@@ -61,11 +61,15 @@ impl Journal {
         &self.commodities[index]
     }
 
+    pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
+        indices.iter().map(|i| &self.posts[*i]).collect()
+    }
+
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::account::Account;
+    use crate::{account::Account, post::Post};
 
     use super::Journal;
 
@@ -88,5 +92,20 @@ mod tests {
         let actual = journal.get_account(index);
         
         assert_eq!(expected, *actual);
+    }
+
+    #[test]
+    fn test_getting_multiple_posts() {
+        let mut journal = Journal::new();
+        let p1 = Post::new(10, 11, None);
+        let i1 = journal.add_post(p1);
+        let p2 = Post::new(20, 11, None);
+        let i2 = journal.add_post(p2);
+
+        let actual = journal.get_posts(&vec![i1, i2]);
+
+        assert_eq!(2, actual.len());
+        assert_eq!(10, actual[0].account_index);
+        assert_eq!(20, actual[1].account_index);
     }
 }
