@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, journal::{Journal, PostIndex, XactIndex}, post::Post, parser2};
+use crate::{amount::Amount, journal::{Journal, PostIndex, XactIndex}, post::Post, parser};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
@@ -30,13 +30,13 @@ impl Xact {
         let _date = if date.is_empty() {
             None
         } else {
-            Some(parser2::parse_date(date))
+            Some(parser::parse_date(date))
         };
 
         let _aux_date = if aux_date.is_empty() {
             None
         } else {
-            Some(parser2::parse_date(aux_date))
+            Some(parser::parse_date(aux_date))
         };
 
         let _payee = if payee.is_empty() {

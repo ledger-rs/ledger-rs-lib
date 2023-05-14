@@ -12,7 +12,7 @@ mod amount;
 mod commodity;
 mod filters;
 pub mod journal;
-mod parser2;
+mod parser;
 mod pool;
 mod post;
 mod report;
@@ -77,12 +77,12 @@ fn report(journal: &Journal) -> Vec<String> {
 /// Parse input and return the model structure.
 pub fn parse_file(file_path: &str) -> Journal {
     let file = File::open(file_path).expect("file opened");
-    parser2::read(file)
+    parser::read(file)
 }
 
 pub fn parse(text: &str) -> Journal {
     let source = Cursor::new(text);
-    parser2::read(source)
+    parser::read(source)
 }
 
 

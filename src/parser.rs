@@ -294,7 +294,7 @@ mod full_tests {
 mod parser_tests {
     use std::io::Cursor;
 
-    use crate::parser2;
+    use crate::parser;
 
     #[test]
     fn test_minimal_parser() {
@@ -306,7 +306,7 @@ mod parser_tests {
         let cursor = Cursor::new(input);
 
         // Act
-        let journal = parser2::read(cursor);
+        let journal = parser::read(cursor);
 
         // Assert
 
