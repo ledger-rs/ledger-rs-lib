@@ -325,13 +325,13 @@ mod parser_tests {
 
         // let exp_account = journal.get
         let post1 = &journal.posts[xact.posts[0]];
-        // assert_eq!(Account::new("Expenses"), post1.account_temp);
+        assert_eq!("Expenses", journal.get_account(post1.account_index).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];
-        // assert_eq!(Account::new("Assets"), post2.account_temp);
+        assert_eq!("Assets", journal.get_account(post2.account_index).name);
     }
 
     #[test]
