@@ -38,8 +38,7 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     // parse the file
     let journal = parse_file(file_path);
 
-    // TODO: which report?
-    // for now just use the balance report
+    // for now just use a pre-defined report
     report(&journal)
 }
 
@@ -61,7 +60,7 @@ fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
 
 /// Entry point for a report?
 fn report(journal: &Journal) -> Vec<String> {
-    // identify which report
+    // TODO: identify which report
 
     // iterate over Journal
     // apply filters, etc.
@@ -80,14 +79,14 @@ pub fn parse_file(file_path: &str) -> Journal {
     parser::read(file)
 }
 
-pub fn parse(text: &str) -> Journal {
+pub fn parse_text(text: &str) -> Journal {
     let source = Cursor::new(text);
     parser::read(source)
 }
 
 
 #[cfg(test)]
-mod tests {
+mod lib_tests {
     use crate::{run, get_filename_argument};
 
     #[test]

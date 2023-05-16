@@ -1,5 +1,4 @@
 use crate::{
-    account::Account,
     amount::Amount,
     journal::{AccountIndex, XactIndex},
 };
