@@ -82,8 +82,8 @@ pub fn process_arguments(args: Vec<String>) -> (Vec<String>, Vec<String>) {
                     // whence.push(arg.chars().nth(0).unwrap());
 
                     // TODO: check for validity, etc.
+                    // the magic seems to be happening here.
                     // process_option(whence, Some(value.to_owned()));
-                    // options.push(whence);
 
                     // for now, just add
                     options.push(option);
