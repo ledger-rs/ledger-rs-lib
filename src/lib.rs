@@ -18,7 +18,6 @@ mod pool;
 mod post;
 mod report;
 mod scanner;
-mod session;
 mod utils;
 mod xact;
 
