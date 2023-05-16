@@ -126,6 +126,7 @@ mod lib_tests {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).expect("arguments parsed");
+        let expected = r#""#;
 
         let actual = run(args);
 

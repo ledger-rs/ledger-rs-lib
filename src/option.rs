@@ -184,9 +184,28 @@ fn lookup_report(kind: Kind, letter: char) {
                     // or budget
                 },
                 'p' => {
-                    // print, prices, pricedb, pricemap, payees
+                    // print, 
+                    // POSTS_REPORTER(print_xacts)
+
+                    // prices, 
+                    // pricedb, 
+                    // FORMATTED_COMMODITIES_REPORTER(pricedb_format_)
+
+                    // pricemap, 
+                    // report_t::pricemap_command
+
+                    // payees
+                    // POSTS_REPORTER(report_payees)
                 }
-                'r' => todo!("register"),
+                'r' => {
+                    // r, reg, register
+                    // FORMATTED_POSTS_REPORTER(register_format_)
+
+                    // reload
+                    // report_t::reload_command
+
+                    todo!("register")
+                },
                 // cdelpstx
                 _ => todo!("the rest")
             }
