@@ -27,5 +27,4 @@ fn execute_command(args: Vec<String>) {
     let output = ledger_rs_lib::run(args);
     // output_to_stdin(output);
     println!("{:?}", output);
-
 }

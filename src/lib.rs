@@ -29,18 +29,18 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     // - filters
 
     // stick to Ledger-compatible arguments.
+    let (commands, options) = read_command_arguments(args);
 
     // Minimalistic approach:
     // get the file input
-    let file_path = match get_filename_argument(&args) {
+    let file_path = match get_filename_argument(&options) {
         Some(filename) => filename,
         None => panic!("No filename passed as argument"),
     };
     // parse the file
     let journal = parse_file(file_path);
 
-    // for now just use a pre-defined report
-    report(&journal)
+    run_command(commands, &journal)
 }
 
 pub enum Kind {
@@ -56,21 +56,16 @@ pub enum Kind {
 /// separates commands from the options
 /// returns (commands, options)
 fn read_command_arguments(args: Vec<String>) -> (Vec<String>, Vec<String>) {
-    let options: Vec<String> = vec![];
-    let commands: Vec<String> = vec![];
-
-    option::process_arguments(args);
-
-    todo!()
+    option::process_arguments(args)
 }
 
 fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
-    if !args.contains(&"-f".to_string()) {
-        return None;
-    }
-
     // Find the position of the -f arg
-    let index = args.iter().position(|a| a == &"-f").expect("the position of -f arg");
+    let Some(index) = args.iter().position(|a| a == &"-f")
+    else {
+        return None;
+    };
+
     // now take the filename
     let filename = match args.iter().nth(index + 1) {
         Some(file) => Some(file.as_str()),
@@ -95,6 +90,13 @@ fn report(journal: &Journal) -> Vec<String> {
     output
 }
 
+fn run_command(commands: Vec<String>, journal: &Journal) -> Vec<String> {
+    // TODO: check the command(s)
+
+    // for now just use a pre-defined report
+    report(&journal)
+}
+
 /// Parse input and return the model structure.
 pub fn parse_file(file_path: &str) -> Journal {
     let file = File::open(file_path).expect("file opened");
@@ -109,7 +111,7 @@ pub fn parse_text(text: &str) -> Journal {
 
 #[cfg(test)]
 mod lib_tests {
-    use crate::{run, get_filename_argument};
+    use crate::run;
 
     #[test]
     fn test_minimal() {
@@ -121,6 +123,11 @@ mod lib_tests {
 
         todo!("get output back")
     }
+}
+
+#[cfg(test)]
+mod arg_tests {
+    use crate::{read_command_arguments, get_filename_argument};
 
     #[test]
     fn test_get_file_arg() {
@@ -132,17 +139,10 @@ mod lib_tests {
 
         assert_eq!(expected, actual);
     }
-}
-
-#[cfg(test)]
-mod arg_tests {
-    use shell_words::split;
-
-    use crate::read_command_arguments;
 
     #[test]
     fn test_extracting_command_arguments() {
-        let args = split("accounts -f basic.ledger").unwrap();
+        let args: Vec<String> = shell_words::split("accounts -f basic.ledger").unwrap();
 
         let (commands, options) = read_command_arguments(args);
 
@@ -150,5 +150,19 @@ mod arg_tests {
         assert_eq!("accounts", commands[0]);
 
         // TODO: check options?
+        assert_eq!(2, options.len());
+        assert_eq!("-f", options[0]);
+        assert_eq!("basic.ledger", options[1]);
+    }
+
+    #[test]
+    fn test_multiple_commands() {
+        let args: Vec<String> = shell_words::split("accounts b -f tests/minimal.ledger").unwrap();
+
+        let (commands, options) = read_command_arguments(args);
+
+        assert_eq!(2, commands.len());
+        assert_eq!("accounts", commands[0]);
+        assert_eq!("b", commands[1]);
     }
 }

@@ -8,8 +8,7 @@ fn split_args(command: &str) -> Vec<String> {
 
 // todo: #[test]
 fn minimal_test_b() {
-    let command = "b -f tests/minimal.ledger";
-    let args: Vec<String> = shell_words::split(command).unwrap();
+    let args: Vec<String> = shell_words::split("b -f tests/minimal.ledger").unwrap();
     
     let actual = ledger_rs_lib::run(args);
 
