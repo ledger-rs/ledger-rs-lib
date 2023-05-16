@@ -29,11 +29,18 @@ fn test_accounts() {
     assert_eq!(expected, actual);
 }
 
+/// Test Balance report, without any parameters.
+/// Just two accounts.
 #[test]
 fn test_balance_plain() {
     let args = split_args("b -f tests/basic.ledger");
+    let expected = r#"Account Balances
+   -20 Assets
+    20 Expenses
+"#;
 
     let actual = ledger_rs_lib::run(args);
 
-    todo!("assert the output")
+    todo!("assert")
+    // assert_eq!(expected, actual);
 }

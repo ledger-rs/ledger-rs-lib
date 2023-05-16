@@ -12,11 +12,13 @@ mod amount;
 mod commodity;
 mod filters;
 pub mod journal;
+pub mod option;
 mod parser;
 mod pool;
 mod post;
 mod report;
 mod scanner;
+mod session;
 mod utils;
 mod xact;
 
@@ -27,7 +29,7 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     // - input data (files/string)
     // - filters
 
-    // stick to Ledger-compatible arguments?
+    // stick to Ledger-compatible arguments.
 
     // Minimalistic approach:
     // get the file input
@@ -40,6 +42,27 @@ pub fn run(args: Vec<String>) -> Vec<String> {
 
     // for now just use a pre-defined report
     report(&journal)
+}
+
+pub enum Kind {
+    UNKNOWN,
+    FUNCTION,
+    OPTION,
+    PRECOMMAND,
+    COMMAND,
+    DIRECTIVE,
+    FORMAT
+}
+
+/// separates commands from the options
+/// returns (commands, options)
+fn read_command_arguments(args: Vec<String>) -> (Vec<String>, Vec<String>) {
+    let options: Vec<String> = vec![];
+    let commands: Vec<String> = vec![];
+
+    option::process_arguments(args);
+
+    todo!()
 }
 
 fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
@@ -109,5 +132,24 @@ mod lib_tests {
         let actual = get_filename_argument(&args);
 
         assert_eq!(expected, actual);
+    }
+}
+
+#[cfg(test)]
+mod arg_tests {
+    use shell_words::split;
+
+    use crate::read_command_arguments;
+
+    #[test]
+    fn test_extracting_command_arguments() {
+        let args = split("accounts -f basic.ledger").unwrap();
+
+        let (commands, options) = read_command_arguments(args);
+
+        assert_eq!(1, commands.len());
+        assert_eq!("accounts", commands[0]);
+
+        // TODO: check options?
     }
 }
