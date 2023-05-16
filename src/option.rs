@@ -96,9 +96,16 @@ fn find_option(letter: char) {
 }
 
 /// find_option() from global.cc
-fn lookup_option_global(option_name_char: char) {
+fn lookup_option_global(kind: Kind, letter: char) {
+    match kind {
+        Kind::PRECOMMAND => {
+            // p => push, pop
+        }
+        _ => todo!()
+    }
+
     // adhiostv
-    match option_name_char {
+    match letter {
         's' => todo!("script"),
         't' => todo!("trace"),
         _ => todo!("other chars"),
@@ -157,10 +164,36 @@ fn lookup_option_session(option: char) {
 }
 
 /// Lookup options for reports
-fn report_lookup() {
+fn lookup_report(kind: Kind, letter: char) {
     // %ABCDEFGHIJLMOPRSTUVWXYabcdefghijlmnopqrstuvwy
     // t:
     // amount, tail, total, total_data, truncate, total_width, time_report
+
+    // aefgpqst
+
+    match kind {
+        Kind::COMMAND => {
+            match letter {
+                'a' => {
+                    // POSTS_REPORTER(report_accounts)
+                    todo!("accounts")
+                },
+                'b' => {
+                    // FORMATTED_ACCOUNTS_REPORTER(balance_format_)
+                    todo!("balance") 
+                    // or budget
+                },
+                'p' => {
+                    // print, prices, pricedb, pricemap, payees
+                }
+                'r' => todo!("register"),
+                // cdelpstx
+                _ => todo!("the rest")
+            }
+        }
+        Kind::PRECOMMAND => todo!("pre-command"),
+        _ => todo!("handle")
+    }
 
     todo!("go through the report options")
 }

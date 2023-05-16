@@ -31,16 +31,7 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     // stick to Ledger-compatible arguments.
     let (commands, options) = read_command_arguments(args);
 
-    // Minimalistic approach:
-    // get the file input
-    let file_path = match get_filename_argument(&options) {
-        Some(filename) => filename,
-        None => panic!("No filename passed as argument"),
-    };
-    // parse the file
-    let journal = parse_file(file_path);
-
-    run_command(commands, &journal)
+    execute_command(commands, options)
 }
 
 pub enum Kind {
@@ -90,8 +81,25 @@ fn report(journal: &Journal) -> Vec<String> {
     output
 }
 
-fn run_command(commands: Vec<String>, journal: &Journal) -> Vec<String> {
-    // TODO: check the command(s)
+/// global::execute_command equivalent
+fn execute_command(commands: Vec<String>, options: Vec<String>) -> Vec<String> {
+    // todo: look for pre-command
+
+    // Minimalistic approach:
+    // get the file input
+    let file_path = match get_filename_argument(&options) {
+        Some(filename) => filename,
+        None => panic!("No filename passed as argument"),
+    };
+    // parse the journal file(s)
+    let journal = parse_file(file_path);
+
+
+    let verb = commands.iter().nth(0).unwrap();
+
+    // todo: lookup(COMMAND, verb)
+
+    let command_args = &commands[1..];
 
     // for now just use a pre-defined report
     report(&journal)
