@@ -1,6 +1,6 @@
 /**
  * Ledger-rs library
- * 
+ *
  * Implements all the logic and provides an entry point to 3rd-party code.
  */
 use std::{fs::File, io::Cursor};
@@ -21,15 +21,15 @@ mod scanner;
 mod utils;
 mod xact;
 
-/// entry point?
+/// entry point.
+/// The commands and arguments sent to the CLI are recognized and processed here. This is
+/// so that 3rd-party clients can pass argv and get the same result.
+/// The arguments should be compatible with Ledger, so that the functionality is comparable.
+///
 pub fn run(args: Vec<String>) -> Vec<String> {
-    // here we should accept parameters:
-    // - command / report
-    // - input data (files/string)
-    // - filters
-
-    // stick to Ledger-compatible arguments.
-    let (commands, options) = read_command_arguments(args);
+    // separates commands from the options
+    // read_command_arguments(args)
+    let (commands, options) = option::process_arguments(args);
 
     execute_command(commands, options)
 }
@@ -41,13 +41,7 @@ pub enum Kind {
     PRECOMMAND,
     COMMAND,
     DIRECTIVE,
-    FORMAT
-}
-
-/// separates commands from the options
-/// returns (commands, options)
-fn read_command_arguments(args: Vec<String>) -> (Vec<String>, Vec<String>) {
-    option::process_arguments(args)
+    FORMAT,
 }
 
 fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
@@ -62,7 +56,7 @@ fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
         Some(file) => Some(file.as_str()),
         None => None,
     };
-    
+
     filename
 }
 
@@ -83,19 +77,14 @@ fn report(journal: &Journal) -> Vec<String> {
 
 /// global::execute_command equivalent
 fn execute_command(commands: Vec<String>, options: Vec<String>) -> Vec<String> {
-    // todo: look for pre-command
-
-    // Minimalistic approach:
-    // get the file input
-    let file_path = match get_filename_argument(&options) {
-        Some(filename) => filename,
-        None => panic!("No filename passed as argument"),
-    };
-    // parse the journal file(s)
-    let journal = parse_file(file_path);
-
-
     let verb = commands.iter().nth(0).unwrap();
+
+    // todo: look for pre-command
+    // look_for_precommand(verb);
+
+    // if !precommand
+    //   if !at_repl
+    let journal = session_read_journal_files(&options);
 
     // todo: lookup(COMMAND, verb)
 
@@ -103,6 +92,22 @@ fn execute_command(commands: Vec<String>, options: Vec<String>) -> Vec<String> {
 
     // for now just use a pre-defined report
     report(&journal)
+}
+
+fn look_for_precommand(verb: &str) {
+    todo!()
+}
+
+fn session_read_journal_files(options: &Vec<String>) -> Journal {
+    // Minimalistic approach:
+    // get the file input
+    let file_path = match get_filename_argument(&options) {
+        Some(filename) => filename,
+        None => panic!("No filename passed as argument"),
+    };
+
+    // parse the journal file(s)
+    parse_file(file_path)
 }
 
 /// Parse input and return the model structure.
@@ -115,7 +120,6 @@ pub fn parse_text(text: &str) -> Journal {
     let source = Cursor::new(text);
     parser::read(source)
 }
-
 
 #[cfg(test)]
 mod lib_tests {
@@ -136,7 +140,7 @@ mod lib_tests {
 
 #[cfg(test)]
 mod arg_tests {
-    use crate::{read_command_arguments, get_filename_argument};
+    use crate::get_filename_argument;
 
     #[test]
     fn test_get_file_arg() {
@@ -147,31 +151,5 @@ mod arg_tests {
         let actual = get_filename_argument(&args);
 
         assert_eq!(expected, actual);
-    }
-
-    #[test]
-    fn test_extracting_command_arguments() {
-        let args: Vec<String> = shell_words::split("accounts -f basic.ledger").unwrap();
-
-        let (commands, options) = read_command_arguments(args);
-
-        assert_eq!(1, commands.len());
-        assert_eq!("accounts", commands[0]);
-
-        // TODO: check options?
-        assert_eq!(2, options.len());
-        assert_eq!("-f", options[0]);
-        assert_eq!("basic.ledger", options[1]);
-    }
-
-    #[test]
-    fn test_multiple_commands() {
-        let args: Vec<String> = shell_words::split("accounts b -f tests/minimal.ledger").unwrap();
-
-        let (commands, options) = read_command_arguments(args);
-
-        assert_eq!(2, commands.len());
-        assert_eq!("accounts", commands[0]);
-        assert_eq!("b", commands[1]);
     }
 }
