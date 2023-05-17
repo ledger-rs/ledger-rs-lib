@@ -1,13 +1,28 @@
-use crate::Kind;
-
 /**
  * option.cc
  *
  * Processes command arguments and options.
+ * 
+ * In Ledger, these are handled in lookup() and lookup_option() funcions in:
+ * - global
+ * - session
+ * - report
  */
 
-/// Process arguments?
+ pub enum Kind {
+    UNKNOWN,
+    FUNCTION,
+    OPTION,
+    PRECOMMAND,
+    COMMAND,
+    DIRECTIVE,
+    FORMAT,
+}
+
+/// Recognize arguments.
 /// returns (commands, options)
+/// Commands are application commands, with optional arguments, ie "accounts Asset"
+/// Options are the options with '-' or "--" prefix, ie "-f <file>"
 pub fn process_arguments(args: Vec<String>) -> (Vec<String>, Vec<String>) {
     let mut options: Vec<String> = vec![];
     let mut commands: Vec<String> = vec![];
@@ -105,7 +120,7 @@ fn find_option(letter: char) {
     name.push('_');
 
     // lookup first checks Session
-    session_lookup(crate::Kind::OPTION, &name);
+    session_lookup(Kind::OPTION, &name);
 
     todo!()
 }
@@ -284,11 +299,44 @@ fn lookup_option_report(letter: char) {
     }
 }
 
+pub(crate) fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
+    // Find the position of the -f arg
+    let Some(index) = args.iter().position(|a| a == &"-f")
+    else {
+        return None;
+    };
+
+    // now take the filename
+    let filename = match args.iter().nth(index + 1) {
+        Some(file) => Some(file.as_str()),
+        None => None,
+    };
+
+    filename
+}
+
+pub(crate) fn get_filename_arguments(options: &Vec<String>) -> Vec<&String> {
+    let mut filenames = vec![];
+    let mut iter = options.iter();
+    // iter.map(|opt| opt.)
+    while let item = iter.next() {
+        let Some(arg) = item else {break;};
+        if arg == "-f" {
+            // get the filename
+            let filename = iter.next().unwrap();
+            filenames.push(filename);
+        }
+    }
+    filenames
+}
+
 #[cfg(test)]
 mod tests {
     use shell_words::split;
 
-    use crate::option::process_arguments;
+    use crate::option::{process_arguments, get_filename_argument};
+
+    use super::get_filename_arguments;
 
     #[test]
     fn test_process_arguments() {
@@ -333,5 +381,27 @@ mod tests {
         assert_eq!(2, commands.len());
         assert_eq!("accounts", commands[0]);
         assert_eq!("b", commands[1]);
+    }
+
+    #[test]
+    fn test_get_file_arg() {
+        let command = "b -f tests/minimal.ledger";
+        let args = shell_words::split(command).expect("arguments parsed");
+        let expected = Some("tests/minimal.ledger");
+
+        let actual = get_filename_argument(&args);
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_multiple_filenames() {
+        let args = split("accounts -f one -f two").unwrap();
+
+        let actual = get_filename_arguments(&args);
+
+        assert_eq!(2, actual.len());
+        assert_eq!("one", actual[0]);
+        assert_eq!("two", actual[1]);
     }
 }

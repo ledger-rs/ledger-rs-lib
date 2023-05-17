@@ -28,36 +28,11 @@ mod xact;
 ///
 pub fn run(args: Vec<String>) -> Vec<String> {
     // separates commands from the options
-    // read_command_arguments(args)
     let (commands, options) = option::process_arguments(args);
 
+    // TODO: handle arguments, ie `file`
+
     execute_command(commands, options)
-}
-
-pub enum Kind {
-    UNKNOWN,
-    FUNCTION,
-    OPTION,
-    PRECOMMAND,
-    COMMAND,
-    DIRECTIVE,
-    FORMAT,
-}
-
-fn get_filename_argument(args: &Vec<String>) -> Option<&str> {
-    // Find the position of the -f arg
-    let Some(index) = args.iter().position(|a| a == &"-f")
-    else {
-        return None;
-    };
-
-    // now take the filename
-    let filename = match args.iter().nth(index + 1) {
-        Some(file) => Some(file.as_str()),
-        None => None,
-    };
-
-    filename
 }
 
 /// Entry point for a report?
@@ -101,7 +76,11 @@ fn look_for_precommand(verb: &str) {
 fn session_read_journal_files(options: &Vec<String>) -> Journal {
     // Minimalistic approach:
     // get the file input
-    let file_path = match get_filename_argument(&options) {
+
+    // TODO: multiple filenames
+    // let filenames = option::get_filename_arguments(options);
+    
+    let file_path = match option::get_filename_argument(options) {
         Some(filename) => filename,
         None => panic!("No filename passed as argument"),
     };
@@ -129,27 +108,11 @@ mod lib_tests {
     fn test_minimal() {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
-        let args = shell_words::split(command).expect("arguments parsed");
+        let args = shell_words::split(command).unwrap();
         let expected = r#""#;
 
         let actual = run(args);
 
         todo!("get output back")
-    }
-}
-
-#[cfg(test)]
-mod arg_tests {
-    use crate::get_filename_argument;
-
-    #[test]
-    fn test_get_file_arg() {
-        let command = "b -f tests/minimal.ledger";
-        let args = shell_words::split(command).expect("arguments parsed");
-        let expected = Some("tests/minimal.ledger");
-
-        let actual = get_filename_argument(&args);
-
-        assert_eq!(expected, actual);
     }
 }
