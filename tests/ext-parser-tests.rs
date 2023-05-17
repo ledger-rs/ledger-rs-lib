@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
 use ledger_rs_lib::journal::Journal;
 use rust_decimal_macros::dec;
+use shell_words::split;
 
 /**
  * External parser tests
@@ -57,4 +58,15 @@ fn detailed_basic_test() {
     assert_eq!(dec!(-20), amount2.quantity);
     let symbol = &journal.get_commodity(*amount2.commodity_index.as_ref().unwrap()).symbol;
     assert_eq!("EUR", symbol);
+}
+
+#[test]
+fn test_include() {
+    // let args = split("accounts -f tests/include.ledger").unwrap();
+    let input = "include tests/minimal.ledger";
+    let mut journal = Journal::new();
+
+    ledger_rs_lib::parse_text(input, &mut journal);
+
+    assert_eq!(1, journal.xacts.len());
 }

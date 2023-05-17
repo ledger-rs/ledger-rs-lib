@@ -1,3 +1,4 @@
+use core::panic;
 /**
  * Parser with iterators
  *
@@ -13,7 +14,7 @@
  * the collections in the Journal.
  * It also creates links among the models. This functionality is from finalize() function.
  */
-use std::io::{BufRead, BufReader, Read};
+use std::{io::{BufRead, BufReader, Read}, todo, env, path::PathBuf, str::FromStr, fs::File};
 
 use chrono::NaiveDate;
 
@@ -30,7 +31,6 @@ use crate::{
 // pub(crate) fn read<T: Read>(source: T) -> Journal {
 //     let mut parser = Parser::new(source);
 //     parser.parse();
-
 //     parser.journal
 // }
 
@@ -153,6 +153,56 @@ impl<'j, T: Read> Parser<'j, T> {
         Ok(())
     }
 
+    /// textual.cc
+    /// bool instance_t::general_directive(char *line)
+    fn general_directive(&self) -> bool {
+        // todo: skip if (*p == '@' || *p == '!')
+
+        // split directive and argument
+        let mut iter = self.buffer.split_whitespace();
+        let Some(directive) = iter.next() else { panic!("no directive?") };
+        let argument = iter.next();
+
+        // todo: check arguments for directives that require one
+        // match directive {
+        //     "comment" | "end" | "python" | "test" | "year" | "Y" => {
+        //         // 
+        //         // Year can also be specified with one letter?
+        //         ()
+        //     }
+        //     _ => {
+        //         panic!("The directive {:?} requires an argument!", directive);
+        //     }
+        // }
+
+        match directive.chars().peekable().peek().unwrap() {
+            'a' => {
+                todo!("a");
+            }
+            
+            // bcde
+
+            'i' => {
+                match self.buffer.as_str() {
+                    "include" => {
+                        include_directive(argument.unwrap());
+                        return true;
+                    },
+                    "import" => {
+                        todo!("import directive")
+                    }
+                    _ => ()
+                }
+            }
+
+            // ptvy
+        }
+
+        // lookup(DIRECTIVE, self.buffer)
+
+        false
+    }
+
     fn xact_directive(&mut self) {
         let tokens = scanner::tokenize_xact_header(&self.buffer);
         let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
@@ -211,6 +261,39 @@ impl<'j, T: Read> Parser<'j, T> {
 
             // empty the buffer before exiting.
             self.buffer.clear();
+        }
+    }
+
+    fn include_directive(&self, argument: &str) {
+        let mut filename: PathBuf;
+
+        // if (line[0] != '/' && line[0] != '\\' && line[0] != '~')
+        if argument.starts_with('/') || argument.starts_with('\\') || argument.starts_with('~') {
+            filename = PathBuf::from_str(argument).unwrap();
+        } else {
+            // relative path
+            // TODO: get the parent path?
+            // dir = parent_path()
+            // if (parent_path.empty())
+            // else, use current directory
+            filename = env::current_dir().unwrap();
+
+            filename.set_file_name(argument);
+        }
+
+        let mut file_found = false;
+        let parent_path = filename.parent().unwrap();
+        if parent_path.exists() {
+            if filename.is_file() {
+                // let base = filename.file_name();
+
+                // TODO: read file
+                todo!("read file")
+            }
+        }
+
+        if !file_found {
+            panic!("Include file not found");
         }
     }
 }
@@ -272,6 +355,27 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
 }
 
 #[cfg(test)]
+mod tests {
+    use std::{io::Cursor, todo};
+
+    use crate::journal::Journal;
+
+    use super::Parser;
+
+    #[test]
+    fn test_general_directive() {
+        let source = Cursor::new("include some-file.ledger");
+        let mut journal = Journal::new();
+
+        let parser = Parser::new(source, &mut journal);
+        
+        parser.general_directive();
+
+        todo!("assert")
+    }
+}
+
+#[cfg(test)]
 mod full_tests {
     use std::io::Cursor;
 
@@ -311,7 +415,9 @@ mod full_tests {
 
 #[cfg(test)]
 mod parser_tests {
-    use std::io::Cursor;
+    use std::{io::Cursor, assert_eq};
+
+    use shell_words::split;
 
     use crate::{parser, journal::Journal};
 
@@ -348,7 +454,7 @@ mod parser_tests {
     }
 
     #[test]
-    fn parse_standard_xact() {
+    fn test_parse_standard_xact() {
         let input = r#"; Standard transaction
 2023-04-10 Supermarket
     Expenses  20 EUR
@@ -382,7 +488,7 @@ mod parser_tests {
     }
 
     #[test]
-    fn parse_trade_xact() {
+    fn test_parse_trade_xact() {
         // Arrange
         let input = r#"; Standard transaction
 2023-04-10 Supermarket

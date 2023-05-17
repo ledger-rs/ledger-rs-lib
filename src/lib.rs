@@ -19,10 +19,9 @@ mod pool;
 mod post;
 mod report;
 mod scanner;
-mod utils;
 mod xact;
 
-/// entry point.
+/// Entry point.
 /// The commands and arguments sent to the CLI are recognized and processed here. This is
 /// so that 3rd-party clients can pass argv and get the same result.
 /// The arguments should be compatible with Ledger, so that the functionality is comparable.
