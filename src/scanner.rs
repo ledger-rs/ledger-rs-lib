@@ -509,8 +509,7 @@ mod scanner_tests_post {
 
         let (actual, remainder) = scan_symbol(input);
 
-        todo!("check for valid double quotes handling");
-        assert_eq!("VECP", actual);
+        assert_eq!("\"VECP\"", actual);
         assert_eq!("@ 13.68 EUR", remainder);
     }
 

@@ -6,7 +6,7 @@ fn split_args(command: &str) -> Vec<String> {
     shell_words::split(command).unwrap()
 }
 
-// todo: #[test]
+#[test]
 fn minimal_balance_test_b() {
     let args: Vec<String> = shell_words::split("b -f tests/minimal.ledger").unwrap();
     

@@ -6,6 +6,7 @@
 use std::{fs::File, io::Cursor};
 
 use journal::Journal;
+use option::InputOptions;
 
 mod account;
 mod amount;
@@ -30,8 +31,6 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     // separates commands from the options
     let (commands, options) = option::process_arguments(args);
 
-    // TODO: handle arguments, ie `file`
-
     execute_command(commands, options)
 }
 
@@ -51,7 +50,7 @@ fn report(journal: &Journal) -> Vec<String> {
 }
 
 /// global::execute_command equivalent
-fn execute_command(commands: Vec<String>, options: Vec<String>) -> Vec<String> {
+fn execute_command(commands: Vec<String>, input_options: InputOptions) -> Vec<String> {
     let verb = commands.iter().nth(0).unwrap();
 
     // todo: look for pre-command
@@ -59,7 +58,7 @@ fn execute_command(commands: Vec<String>, options: Vec<String>) -> Vec<String> {
 
     // if !precommand
     //   if !at_repl
-    let journal = session_read_journal_files(&options);
+    let journal = session_read_journal_files(&input_options);
 
     // todo: lookup(COMMAND, verb)
 
@@ -73,17 +72,12 @@ fn look_for_precommand(verb: &str) {
     todo!()
 }
 
-fn session_read_journal_files(options: &Vec<String>) -> Journal {
+fn session_read_journal_files(options: &InputOptions) -> Journal {
     // Minimalistic approach:
     // get the file input
 
     // TODO: multiple filenames
-    // let filenames = option::get_filename_arguments(options);
-    
-    let file_path = match option::get_filename_argument(options) {
-        Some(filename) => filename,
-        None => panic!("No filename passed as argument"),
-    };
+    let file_path = options.filenames.first().unwrap();
 
     // parse the journal file(s)
     parse_file(file_path)
