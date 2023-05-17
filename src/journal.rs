@@ -62,6 +62,12 @@ impl Journal {
         &self.accounts[index]
     }
 
+    /// A convenience method that returns a vector of Account references
+    /// for a given vector of indices, ie from Posts.
+    // pub fn get_accounts(&self, account_indices: &Vec<AccountIndex>) -> Vec<&Account> {
+
+    // }
+
     pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
         &self.commodities[index]
     }

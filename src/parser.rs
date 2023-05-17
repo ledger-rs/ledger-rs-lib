@@ -275,6 +275,8 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
 mod full_tests {
     use std::io::Cursor;
 
+    use shell_words::split;
+
     use crate::journal::Journal;
 
     #[test]

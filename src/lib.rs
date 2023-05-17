@@ -76,12 +76,11 @@ fn session_read_journal_files(options: &InputOptions) -> Journal {
     // Minimalistic approach:
     // get the file input
 
-    let file_path = options.filenames.first().unwrap();
-    // TODO: multiple filenames
+    // multiple filenames
     let mut journal = Journal::new();
     for filename in &options.filenames {
         // parse the journal file(s)
-        parse_file(file_path, &mut journal);
+        parse_file(filename, &mut journal);
     }
 
     journal
@@ -100,7 +99,11 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
 
 #[cfg(test)]
 mod lib_tests {
-    use crate::run;
+    use std::{todo, assert_eq};
+
+    use rust_decimal_macros::dec;
+
+    use crate::{run, parser, option, amount::Amount};
 
     #[test]
     fn test_minimal() {
@@ -113,4 +116,35 @@ mod lib_tests {
 
         todo!("get output back")
     }
+
+    #[test]
+    fn test_multiple_files() {
+        let args = shell_words::split("accounts -f tests/minimal.ledger -f tests/basic.ledger").unwrap();
+        let (_commands, input_options) = option::process_arguments(args);
+        
+        let journal = super::session_read_journal_files(&input_options);
+
+        // Assert
+
+        // xacts
+        assert_eq!(2, journal.xacts.len());
+        assert_eq!("Payee", journal.xacts[0].payee);
+        assert_eq!("Supermarket", journal.xacts[1].payee);
+
+        // posts
+        assert_eq!(4, journal.posts.len());
+        assert_eq!(Some(Amount::new(dec!(20), None)), journal.posts[0].amount);
+        assert_eq!(Some(Amount::new(dec!(20), Some(0))), journal.posts[2].amount);
+        
+        // accounts
+        assert_eq!("Expenses", journal.accounts[0].name);
+        assert_eq!("Assets", journal.accounts[1].name);
+        assert_eq!("Expenses:Food", journal.accounts[2].name);
+        assert_eq!("Assets:Cash", journal.accounts[3].name);
+
+        // commodities
+        assert_eq!(1, journal.commodities.len());
+        assert_eq!("EUR", journal.commodities[0].symbol);
+    }
+
 }
