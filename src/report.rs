@@ -57,7 +57,8 @@ mod tests {
 
 "#;
         let source = Cursor::new(src);
-        let journal = parser::read(source);
+        let mut journal = Journal::new();
+        parser::read_into_journal(source, &mut journal);
         journal
     }
 

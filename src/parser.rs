@@ -27,28 +27,34 @@ use crate::{
     xact::Xact,
 };
 
-pub(crate) fn read<T: Read>(source: T) -> Journal {
-    let mut parser = Parser::new(source);
-    parser.parse();
+// pub(crate) fn read<T: Read>(source: T) -> Journal {
+//     let mut parser = Parser::new(source);
+//     parser.parse();
 
-    parser.journal
+//     parser.journal
+// }
+
+pub(crate) fn read_into_journal<T: Read>(source: T, journal: &mut Journal) {
+    let mut parser = Parser::new(source, journal);
+
+    parser.parse();
 }
 
-pub fn parse_date(date_str: &str) -> NaiveDate {
+pub(crate) fn parse_date(date_str: &str) -> NaiveDate {
     // todo: support more date formats?
 
     NaiveDate::parse_from_str(date_str, "%Y-%m-%d").expect("date parsed")
 }
 
-struct Parser<T: Read> {
-    pub journal: Journal,
+struct Parser<'j, T: Read> {
+    pub journal: &'j mut Journal,
 
     reader: BufReader<T>,
     buffer: String,
 }
 
-impl<T: Read> Parser<T> {
-    pub fn new(source: T) -> Self {
+impl<'j, T: Read> Parser<'j, T> {
+    pub fn new(source: T, journal: &'j mut Journal) -> Self {
         let reader = BufReader::new(source);
         // To avoid allocation, reuse the String variable.
         let buffer = String::new();
@@ -56,7 +62,7 @@ impl<T: Read> Parser<T> {
         Self {
             reader,
             buffer,
-            journal: Journal::new(),
+            journal,
         }
     }
 
@@ -269,6 +275,8 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
 mod full_tests {
     use std::io::Cursor;
 
+    use crate::journal::Journal;
+
     #[test]
     fn test_minimal_parsing() {
         let input = r#"; Minimal transaction
@@ -277,8 +285,10 @@ mod full_tests {
     Assets
 "#;
         let cursor = Cursor::new(input);
+        let mut journal = Journal::new();
 
-        let journal = super::read(cursor);
+        // Act
+        super::read_into_journal(cursor, &mut journal);
 
         assert_eq!(1, journal.xacts.len());
 
@@ -301,7 +311,7 @@ mod full_tests {
 mod parser_tests {
     use std::io::Cursor;
 
-    use crate::parser;
+    use crate::{parser, journal::Journal};
 
     #[test]
     fn test_minimal_parser() {
@@ -311,9 +321,10 @@ mod parser_tests {
     Assets
 "#;
         let cursor = Cursor::new(input);
+        let mut journal = Journal::new();
 
         // Act
-        let journal = parser::read(cursor);
+        parser::read_into_journal(cursor, &mut journal);
 
         // Assert
 
@@ -342,8 +353,9 @@ mod parser_tests {
     Assets
 "#;
         let cursor = Cursor::new(input);
-
-        let journal = super::read(cursor);
+        let mut journal = Journal::new();
+        
+        super::read_into_journal(cursor, &mut journal);
 
         // Assert
         // Xact
@@ -376,7 +388,9 @@ mod parser_tests {
     Assets
 "#;
         let cursor = Cursor::new(input);
-        let journal = super::read(cursor);
+        let mut journal = Journal::new();
+        
+        super::read_into_journal(cursor, &mut journal);
 
         // Assert
         let xact = journal.xacts.first().unwrap();

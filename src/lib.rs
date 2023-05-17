@@ -76,22 +76,26 @@ fn session_read_journal_files(options: &InputOptions) -> Journal {
     // Minimalistic approach:
     // get the file input
 
-    // TODO: multiple filenames
     let file_path = options.filenames.first().unwrap();
+    // TODO: multiple filenames
+    let mut journal = Journal::new();
+    for filename in &options.filenames {
+        // parse the journal file(s)
+        parse_file(file_path, &mut journal);
+    }
 
-    // parse the journal file(s)
-    parse_file(file_path)
+    journal
 }
 
 /// Parse input and return the model structure.
-pub fn parse_file(file_path: &str) -> Journal {
+pub fn parse_file(file_path: &str, journal: &mut Journal) {
     let file = File::open(file_path).expect("file opened");
-    parser::read(file)
+    parser::read_into_journal(file, journal);
 }
 
-pub fn parse_text(text: &str) -> Journal {
+pub fn parse_text(text: &str, journal: &mut Journal) {
     let source = Cursor::new(text);
-    parser::read(source)
+    parser::read_into_journal(source, journal);
 }
 
 #[cfg(test)]
