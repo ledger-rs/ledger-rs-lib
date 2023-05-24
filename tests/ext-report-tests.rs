@@ -1,3 +1,6 @@
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
+
 /**
  * External reports tests
  */
@@ -14,6 +17,8 @@ fn minimal_balance_test_b() {
 
     // TODO: compare to expected output.
     assert!(!actual.is_empty());
+    assert_eq!("Account Assets has balance -20", actual[0]);
+    assert_eq!("Account Expenses has balance 20", actual[1])
 }
 
 #[test]

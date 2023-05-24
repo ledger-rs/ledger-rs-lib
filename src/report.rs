@@ -36,37 +36,41 @@ pub fn balance_report(mut journal: Journal) -> Vec<String> {
     // - display total
     // revalued total
 
-    let mut output = vec![];
+    let mut balances = vec![];
 
-    // sort accounts
-    journal.accounts.sort_by(|a, b| a.name.cmp(&b.name));
-    // iterate over accounts
+    // calculate balances
     for (i, acc) in journal.accounts.iter().enumerate() {
-        // calculate balances
-
         // TODO: separate balance per currency
         let balance: Decimal = journal
             .posts
             .iter()
+            .filter(|post| post.account_index == i)
             .map(|post| post.amount.as_ref().unwrap().quantity)
-            .sum::<Decimal>();
+            // .filter_map(|post| Some(post.amount.as_ref().unwrap().quantity))
+            // .fold(Decimal::ZERO, |acc, val| acc + val);
+            .sum();
 
-        let line = format!("Account {} has balance {}", &acc.name, balance);
-        output.push(line);
+        balances.push((acc.name.to_owned(), balance));
     }
 
-    // iterate over posts
+    // Format output
 
-    // calc_posts::operator() is in filters.cc
+    // sort accounts
+    balances.sort_by(|(acc1, bal1), (acc2, bal2)| acc1.cmp(&acc2));
 
-    // accounts_flusher
-
+    let mut output = vec![];
+    for (account, balance) in balances {
+        let line = format!("Account {} has balance {}", account, balance.to_string());
+        output.push(line);
+    }
     output
 }
 
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+
+    use rust_decimal_macros::dec;
 
     use crate::{journal::Journal, parser};
 
