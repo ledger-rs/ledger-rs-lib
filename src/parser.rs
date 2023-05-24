@@ -185,7 +185,7 @@ impl<'j, T: Read> Parser<'j, T> {
             'i' => {
                 match self.buffer.as_str() {
                     "include" => {
-                        include_directive(argument.unwrap());
+                        self.include_directive(argument.unwrap());
                         return true;
                     },
                     "import" => {
@@ -196,6 +196,10 @@ impl<'j, T: Read> Parser<'j, T> {
             }
 
             // ptvy
+
+            _ => {
+                todo!("handle")
+            }
         }
 
         // lookup(DIRECTIVE, self.buffer)

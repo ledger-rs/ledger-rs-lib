@@ -1,16 +1,21 @@
-use crate::{journal::Journal, filters::calc_posts};
+use rust_decimal::Decimal;
+
+use crate::{account::Account, journal::Journal};
 
 /**
  * Reports
  */
 
 /// Accounts report. Command: `accounts`.
-/// 
+///
 /// void report_t::posts_report(post_handler_ptr handler)
 /// in output.cc
 /// report_accounts
 pub fn report_accounts(journal: &Journal) -> impl Iterator<Item = String> + '_ {
-    journal.accounts.iter().map(|account| account.name.to_string())
+    journal
+        .accounts
+        .iter()
+        .map(|account| account.name.to_string())
 }
 
 fn report_commodities() {
@@ -23,7 +28,7 @@ fn report_payees() {
 
 /// Balance report. Invoked with 'b' command.
 /// Or accounts_report in ledger.
-fn balance_report(journal: Journal) -> Vec<String> {
+pub fn balance_report(mut journal: Journal) -> Vec<String> {
     // filters:
     // - amount
     // - total
@@ -31,14 +36,32 @@ fn balance_report(journal: Journal) -> Vec<String> {
     // - display total
     // revalued total
 
+    let mut output = vec![];
+
+    // sort accounts
+    journal.accounts.sort_by(|a, b| a.name.cmp(&b.name));
+    // iterate over accounts
+    for (i, acc) in journal.accounts.iter().enumerate() {
+        // calculate balances
+
+        // TODO: separate balance per currency
+        let balance: Decimal = journal
+            .posts
+            .iter()
+            .map(|post| post.amount.as_ref().unwrap().quantity)
+            .sum::<Decimal>();
+
+        let line = format!("Account {} has balance {}", &acc.name, balance);
+        output.push(line);
+    }
+
     // iterate over posts
 
     // calc_posts::operator() is in filters.cc
-    calc_posts();
 
     // accounts_flusher
-    
-    todo!()
+
+    output
 }
 
 #[cfg(test)]

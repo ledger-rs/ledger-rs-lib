@@ -12,8 +12,8 @@ fn minimal_balance_test_b() {
     
     let actual = ledger_rs_lib::run(args);
 
-    // todo: compare to expected output.
-    assert!(false)
+    // TODO: compare to expected output.
+    assert!(!actual.is_empty());
 }
 
 #[test]

@@ -11,7 +11,6 @@ use option::InputOptions;
 mod account;
 mod amount;
 mod commodity;
-mod filters;
 pub mod journal;
 pub mod option;
 mod parser;
@@ -33,21 +32,6 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     execute_command(commands, options)
 }
 
-/// Entry point for a report?
-fn report(journal: &Journal) -> Vec<String> {
-    // TODO: identify which report
-
-    // iterate over Journal
-    // apply filters, etc.
-
-    // get the output
-
-    // TODO: replace this temporary report
-    let mut output = report::report_accounts(journal).collect::<Vec<String>>();
-    output.sort();
-    output
-}
-
 /// global::execute_command equivalent
 fn execute_command(commands: Vec<String>, input_options: InputOptions) -> Vec<String> {
     let verb = commands.iter().nth(0).unwrap();
@@ -63,8 +47,32 @@ fn execute_command(commands: Vec<String>, input_options: InputOptions) -> Vec<St
 
     let command_args = &commands[1..];
 
-    // for now just use a pre-defined report
-    report(&journal)
+    // execute command
+    match verb.chars().next().unwrap() {
+        'a' => {
+            // accounts?
+            // TODO: replace this temporary report
+            let mut output = report::report_accounts(&journal).collect::<Vec<String>>();
+            output.sort();
+            output
+        }
+        'b' => {
+            match verb.as_str() {
+                "b" | "bal" | "balance" => {
+                    // balance report
+                    report::balance_report(journal)
+                },
+                "budget" => {
+                    // budget
+                    todo!("budget!")
+                },
+                _ => {
+                    todo!("?")
+                }
+            }
+        }
+        _ => todo!("handle"),
+    }
 }
 
 fn look_for_precommand(verb: &str) {
@@ -98,11 +106,11 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
 
 #[cfg(test)]
 mod lib_tests {
-    use std::{todo, assert_eq};
+    use std::{assert_eq, todo};
 
     use rust_decimal_macros::dec;
 
-    use crate::{run, parser, option, amount::Amount};
+    use crate::{amount::Amount, option, parser, run};
 
     #[test]
     fn test_minimal() {
@@ -118,9 +126,10 @@ mod lib_tests {
 
     #[test]
     fn test_multiple_files() {
-        let args = shell_words::split("accounts -f tests/minimal.ledger -f tests/basic.ledger").unwrap();
+        let args =
+            shell_words::split("accounts -f tests/minimal.ledger -f tests/basic.ledger").unwrap();
         let (_commands, input_options) = option::process_arguments(args);
-        
+
         let journal = super::session_read_journal_files(&input_options);
 
         // Assert
@@ -133,8 +142,11 @@ mod lib_tests {
         // posts
         assert_eq!(4, journal.posts.len());
         assert_eq!(Some(Amount::new(dec!(20), None)), journal.posts[0].amount);
-        assert_eq!(Some(Amount::new(dec!(20), Some(0))), journal.posts[2].amount);
-        
+        assert_eq!(
+            Some(Amount::new(dec!(20), Some(0))),
+            journal.posts[2].amount
+        );
+
         // accounts
         assert_eq!("Expenses", journal.accounts[0].name);
         assert_eq!("Assets", journal.accounts[1].name);
@@ -145,5 +157,4 @@ mod lib_tests {
         assert_eq!(1, journal.commodities.len());
         assert_eq!("EUR", journal.commodities[0].symbol);
     }
-
 }
