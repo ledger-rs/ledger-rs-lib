@@ -117,11 +117,14 @@ mod lib_tests {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).unwrap();
-        let expected = r#""#;
+        let expected = r#"Account Assets has balance -20
+Account Expenses has balance 20"#;
 
-        let actual = run(args);
+        let actual = run(args).join("\n");
 
-        todo!("get output back")
+        // Assert
+        assert!(!actual.is_empty());
+        assert_eq!(expected, actual);
     }
 
     #[test]
