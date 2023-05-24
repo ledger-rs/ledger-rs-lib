@@ -14,7 +14,14 @@ use core::panic;
  * the collections in the Journal.
  * It also creates links among the models. This functionality is from finalize() function.
  */
-use std::{io::{BufRead, BufReader, Read}, todo, env, path::PathBuf, str::FromStr, fs::File};
+use std::{
+    env,
+    fs::File,
+    io::{BufRead, BufReader, Read},
+    path::PathBuf,
+    str::FromStr,
+    todo,
+};
 
 use chrono::NaiveDate;
 
@@ -166,7 +173,7 @@ impl<'j, T: Read> Parser<'j, T> {
         // todo: check arguments for directives that require one
         // match directive {
         //     "comment" | "end" | "python" | "test" | "year" | "Y" => {
-        //         // 
+        //         //
         //         // Year can also be specified with one letter?
         //         ()
         //     }
@@ -179,24 +186,20 @@ impl<'j, T: Read> Parser<'j, T> {
             'a' => {
                 todo!("a");
             }
-            
-            // bcde
 
-            'i' => {
-                match self.buffer.as_str() {
-                    "include" => {
-                        self.include_directive(argument.unwrap());
-                        return true;
-                    },
-                    "import" => {
-                        todo!("import directive")
-                    }
-                    _ => ()
+            // bcde
+            'i' => match self.buffer.as_str() {
+                "include" => {
+                    self.include_directive(argument.unwrap());
+                    return true;
                 }
-            }
+                "import" => {
+                    todo!("import directive")
+                }
+                _ => (),
+            },
 
             // ptvy
-
             _ => {
                 todo!("handle")
             }
@@ -260,12 +263,12 @@ impl<'j, T: Read> Parser<'j, T> {
                 }
             }
 
-            // "finalize" transaction
-            crate::xact::finalize_indexed(xact_index, &mut self.journal);
-
             // empty the buffer before exiting.
             self.buffer.clear();
         }
+
+        // "finalize" transaction
+        crate::xact::finalize(xact_index, &mut self.journal);
     }
 
     fn include_directive(&self, argument: &str) {
@@ -372,10 +375,31 @@ mod tests {
         let mut journal = Journal::new();
 
         let parser = Parser::new(source, &mut journal);
-        
+
         parser.general_directive();
 
         todo!("assert")
+    }
+
+    /// A transaction record, after which comes a line with spaces only.
+    /// This should be parseable.
+    #[test]
+    fn test_xact_with_space_after() {
+        let src = r#";
+2023-05-05 Payee
+    Expenses  25 EUR
+    Assets
+            
+"#;
+        let source = Cursor::new(src);
+        let mut journal = Journal::new();
+        let mut parser = Parser::new(source, &mut journal);
+
+        // Act
+        parser.parse();
+
+        // Assert
+        assert_eq!(2, journal.accounts.len());
     }
 }
 
@@ -419,11 +443,11 @@ mod full_tests {
 
 #[cfg(test)]
 mod parser_tests {
-    use std::{io::Cursor, assert_eq};
+    use std::{assert_eq, io::Cursor};
 
     use shell_words::split;
 
-    use crate::{parser, journal::Journal};
+    use crate::{journal::Journal, parser};
 
     #[test]
     fn test_minimal_parser() {
@@ -466,7 +490,7 @@ mod parser_tests {
 "#;
         let cursor = Cursor::new(input);
         let mut journal = Journal::new();
-        
+
         super::read_into_journal(cursor, &mut journal);
 
         // Assert
@@ -501,7 +525,7 @@ mod parser_tests {
 "#;
         let cursor = Cursor::new(input);
         let mut journal = Journal::new();
-        
+
         super::read_into_journal(cursor, &mut journal);
 
         // Assert
@@ -513,7 +537,10 @@ mod parser_tests {
 
         // post 1
         let p1 = posts[0];
-        assert_eq!("Assets:Investment", journal.get_account(p1.account_index).name);
+        assert_eq!(
+            "Assets:Investment",
+            journal.get_account(p1.account_index).name
+        );
         // amount
         let Some(a1) = &p1.amount else {panic!()};
         assert_eq!("20", a1.quantity.to_string());
@@ -522,7 +549,10 @@ mod parser_tests {
         let Some(ref cost1) = p1.cost else { panic!()};
         // cost
         assert_eq!("10", cost1.quantity.to_string());
-        assert_eq!("EUR", journal.get_commodity(cost1.commodity_index.unwrap()).symbol);
+        assert_eq!(
+            "EUR",
+            journal.get_commodity(cost1.commodity_index.unwrap()).symbol
+        );
 
         // post 2
         let p2 = posts[1];

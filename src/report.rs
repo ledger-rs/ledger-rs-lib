@@ -97,4 +97,26 @@ mod tests {
         assert_eq!("Account Assets has balance -25 EUR", actual[0]);
         assert_eq!("Account Expenses has balance 25 EUR", actual[1]);
     }
+
+    #[test]
+    fn test_with_two_commodities() {
+        let src = r#";
+2023-05-05 Payee
+    Expenses  25 EUR
+    Assets
+
+2023-05-05 Payee 2
+    Expenses  25 BAM
+    Assets
+"#;
+        let source = Cursor::new(src);
+        let mut journal = Journal::new();
+        parser::read_into_journal(source, &mut journal);
+
+        // Act
+        let actual = balance_report(journal);
+
+        // Assert
+        assert!(!actual.is_empty());
+    }
 }
