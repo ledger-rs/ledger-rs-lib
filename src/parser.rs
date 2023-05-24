@@ -233,7 +233,7 @@ impl<'j, T: Read> Parser<'j, T> {
                         todo!("Check what happens here")
                     }
 
-                    // parse
+                    // parse line
                     match self.buffer.chars().peekable().peek() {
                         Some(' ') => {
                             // valid line
@@ -248,7 +248,7 @@ impl<'j, T: Read> Parser<'j, T> {
                                 }
                             }
                         }
-                        Some('\r') => {
+                        Some('\r') | Some('\n') => {
                             // empty line "\r\n". Exit.
                             break;
                         }

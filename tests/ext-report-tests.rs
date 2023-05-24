@@ -10,7 +10,7 @@ fn split_args(command: &str) -> Vec<String> {
 }
 
 #[test]
-fn minimal_balance_test_b() {
+fn test_balance_minimal() {
     let args: Vec<String> = shell_words::split("b -f tests/minimal.ledger").unwrap();
     
     let actual = ledger_rs_lib::run(args);
@@ -19,6 +19,18 @@ fn minimal_balance_test_b() {
     assert!(!actual.is_empty());
     assert_eq!("Account Assets has balance -20", actual[0]);
     assert_eq!("Account Expenses has balance 20", actual[1])
+}
+
+#[test]
+fn test_balance_basic() {
+    let args: Vec<String> = shell_words::split("b -f tests/basic.ledger").unwrap();
+    
+    let actual = ledger_rs_lib::run(args);
+
+    // TODO: compare to expected output.
+    assert!(!actual.is_empty());
+    assert_eq!("Account Assets:Cash has balance -20 EUR", actual[0]);
+    assert_eq!("Account Expenses:Food has balance 20 EUR", actual[1])
 }
 
 #[test]

@@ -28,33 +28,33 @@ fn report_payees() {
 
 /// Balance report. Invoked with 'b' command.
 /// Or accounts_report in ledger.
-pub fn balance_report(mut journal: Journal) -> Vec<String> {
-    // filters:
-    // - amount
-    // - total
-    // - display amount
-    // - display total
-    // revalued total
+pub fn balance_report(journal: Journal) -> Vec<String> {
+    let balances = get_account_balances(journal);
 
+    // Format output
+    format_balance_report(balances)
+}
+
+fn get_account_balances(journal: Journal) -> Vec<(String, Decimal)> {
     let mut balances = vec![];
 
     // calculate balances
     for (i, acc) in journal.accounts.iter().enumerate() {
         // TODO: separate balance per currency
+
         let balance: Decimal = journal
             .posts
             .iter()
             .filter(|post| post.account_index == i)
             .map(|post| post.amount.as_ref().unwrap().quantity)
-            // .filter_map(|post| Some(post.amount.as_ref().unwrap().quantity))
-            // .fold(Decimal::ZERO, |acc, val| acc + val);
             .sum();
 
         balances.push((acc.name.to_owned(), balance));
     }
+    balances
+}
 
-    // Format output
-
+fn format_balance_report(mut balances: Vec<(String, Decimal)>) -> Vec<String> {
     // sort accounts
     balances.sort_by(|(acc1, bal1), (acc2, bal2)| acc1.cmp(&acc2));
 
@@ -70,8 +70,6 @@ pub fn balance_report(mut journal: Journal) -> Vec<String> {
 mod tests {
     use std::io::Cursor;
 
-    use rust_decimal_macros::dec;
-
     use crate::{journal::Journal, parser};
 
     use super::balance_report;
@@ -79,7 +77,7 @@ mod tests {
     fn create_journal() -> Journal {
         let src = r#";
 2023-05-05 Payee
-    Expenses  20 EUR
+    Expenses  25 EUR
     Assets
 
 "#;
@@ -89,13 +87,14 @@ mod tests {
         journal
     }
 
-    //#[test]
+    #[test]
     fn test_balance_report_one_xact() {
         let journal = create_journal();
 
         let actual = balance_report(journal);
 
-        todo!("implement the report");
-        assert!(false)
+        assert!(!actual.is_empty());
+        assert_eq!("Account Assets has balance -25 EUR", actual[0]);
+        assert_eq!("Account Expenses has balance 25 EUR", actual[1]);
     }
 }
