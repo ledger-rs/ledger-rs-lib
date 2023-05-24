@@ -1,0 +1,7 @@
+; Multiple currencies in one transaction
+
+2023-04-21 Supermarket
+    Assets:Eur   -20 EUR
+    Assets:Bam    40 BAM
+    TRADING:BAM  -40 BAM
+    TRADING:EUR   20 EUR

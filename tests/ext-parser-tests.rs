@@ -70,3 +70,16 @@ fn test_include() {
 
     assert_eq!(1, journal.xacts.len());
 }
+
+#[test]
+fn test_parsing_multiple_currencies() {
+    let file_path = "tests/multiple_currencies.ledger";
+    let mut journal = Journal::new();
+
+    // Act
+    ledger_rs_lib::parse_file(file_path, &mut journal);
+
+    // Assert
+    assert!(!journal.xacts.is_empty());
+    assert!(!journal.posts.is_empty());
+}
