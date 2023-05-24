@@ -239,8 +239,14 @@ impl<'j, T: Read> Parser<'j, T> {
                     // parse line
                     match self.buffer.chars().peekable().peek() {
                         Some(' ') => {
-                            // valid line
+                            // valid line, starts with space.
                             let input = self.buffer.trim_start();
+
+                            // if the line is blank after trimming, exit (end the transaction).
+                            if input.is_empty() {
+                                break;
+                            }
+
                             // Process the Xact content line. Could be a Comment or a Post.
                             match input.chars().peekable().peek() {
                                 Some(';') => {
@@ -256,7 +262,6 @@ impl<'j, T: Read> Parser<'j, T> {
                             break;
                         }
                         _ => {
-                            // log::warn!("we have {:?}", c);
                             panic!("should not happen")
                         }
                     }
@@ -305,6 +310,8 @@ impl<'j, T: Read> Parser<'j, T> {
     }
 }
 
+/// Parses Post from the buffer, adds it to the Journal and links
+/// to Xact, Account, etc.
 fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     let tokens = scanner::scan_post(input);
 
