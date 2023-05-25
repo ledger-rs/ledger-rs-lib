@@ -1,6 +1,12 @@
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, journal::{Journal, PostIndex, XactIndex}, post::Post, parser};
+use crate::{
+    amount::Amount,
+    balance::Balance,
+    journal::{Journal, PostIndex, XactIndex},
+    parser,
+    post::Post,
+};
 
 pub struct Xact {
     pub date: Option<NaiveDate>,
@@ -68,7 +74,8 @@ impl Xact {
 /// `bool xact_base_t::finalize()`
 ///
 pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
-    let mut balance: Option<Amount> = None;
+    // let mut balance: Option<Amount> = None;
+    let mut balance = Balance::new();
     // The pointer to the post that has no amount.
     let mut null_post: Option<PostIndex> = None;
     let xact = journal.xacts.get(xact_index).expect("xact");
@@ -81,14 +88,12 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
         // amount = post.cost ? post.amount
         // for now, just use the amount
-        //if !post.amount.as_ref().unwrap().is_null() {
         if post.amount.is_some() {
-            if balance.is_none() {
-                let initial_amount = Amount::copy_from(&post.amount.as_ref().unwrap());
-                balance = Some(initial_amount);
-            } else {
-                balance.as_mut().unwrap().add(&post.amount.as_ref().unwrap());
-            }
+            // Add to balance.
+            let Some(amt) = &post.amount
+                else {panic!("should not happen")};
+
+            balance.add(amt.to_owned());
         } else if null_post.is_some() {
             todo!()
         } else {
@@ -106,13 +111,17 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         // generated to balance them all.
         log::debug!("There was a null posting");
 
-        let post = journal.posts.get_mut(null_post.unwrap()).unwrap();
+        let Some(null_post_index) = null_post
+            else {panic!("should not happen")};
+        let Some(post) = journal.posts.get_mut(null_post_index)
+            else {panic!("should not happen")};
+
         // use inverse amount
-        post.amount = Some(balance.unwrap().inverse());
+        todo!("find the inverse amount");
+        // post.amount = Some(balance.unwrap().inverse());
         null_post = None;
     }
 
     // TODO: Process Commodities?
     // TODO: Process Account records from Posts.
-
 }

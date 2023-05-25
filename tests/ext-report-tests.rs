@@ -70,3 +70,13 @@ fn test_balance_plain() {
     todo!("assert")
     // assert_eq!(expected, actual);
 }
+
+/// Display account balances with multiple currencies.
+#[test]
+fn test_balance_multiple_currencies() {
+    let args = split_args("b -f tests/multiple_currencies.ledger");
+    let actual = ledger_rs_lib::run(args);
+
+    assert!(false);
+    // assert_eq!("Account Assets:Cash has balance -20 ");
+}

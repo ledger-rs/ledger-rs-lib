@@ -10,6 +10,7 @@ use option::InputOptions;
 
 mod account;
 mod amount;
+mod balance;
 mod commodity;
 pub mod journal;
 pub mod option;
@@ -106,7 +107,7 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
 
 #[cfg(test)]
 mod lib_tests {
-    use std::{assert_eq, todo};
+    use std::assert_eq;
 
     use rust_decimal_macros::dec;
 
