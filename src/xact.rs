@@ -117,8 +117,17 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
             else {panic!("should not happen")};
 
         // use inverse amount
-        todo!("find the inverse amount");
-        // post.amount = Some(balance.unwrap().inverse());
+        let amt = if balance.amounts.len() == 1 {
+            // only one commodity
+            let amt_bal = balance.amounts.iter().nth(0).unwrap().1;
+
+            amt_bal.inverse()
+        } else {
+            // TODO: handle option when there are multiple currencies and only one blank posting.
+            todo!("check this option")
+        };
+
+        post.amount = Some(amt);
         null_post = None;
     }
 

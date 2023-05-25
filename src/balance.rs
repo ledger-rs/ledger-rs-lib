@@ -11,7 +11,7 @@ use crate::commodity::Commodity;
 /// Balance
 pub(crate) struct Balance {
     /// Map of commodity index, Amount
-    amounts: HashMap<usize, Amount>, // try Symbol/Amount for easier search.
+    pub amounts: HashMap<usize, Amount>, // try Symbol/Amount for easier search.
                                      // amounts: HashMap<String, Amount>
 }
 
