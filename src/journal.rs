@@ -76,6 +76,11 @@ impl Journal {
         indices.iter().map(|i| &self.posts[*i]).collect()
     }
 
+    pub fn get_xact_posts(&self, index: XactIndex) -> Vec<&Post> {
+        let xact = &self.xacts[index];
+        self.get_posts(&xact.posts)
+    }
+
 }
 
 #[cfg(test)]
