@@ -3,7 +3,6 @@
  *
  * Intended to help with storing amounts in multiple commodities.
  */
-use std::collections::HashMap;
 
 use crate::{amount::Amount, commodity::Commodity, journal::CommodityIndex};
 

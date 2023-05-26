@@ -29,16 +29,16 @@ fn report_payees() {
 /// Balance report. Invoked with 'b' command.
 /// Or accounts_report in ledger.
 pub fn balance_report(journal: Journal) -> Vec<String> {
-    let balances = get_account_balances(journal);
+    let balances = get_account_balances(&journal);
 
     // Format output
-    format_balance_report(balances)
+    format_balance_report(balances, &journal)
 }
 
 /// Calculates account balances.
 /// returns (account_name, balance)
 /// 
-fn get_account_balances(journal: Journal) -> Vec<(String, Balance)> {
+fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
     let mut balances = vec![];
 
     // calculate balances
@@ -61,7 +61,7 @@ fn get_account_balances(journal: Journal) -> Vec<(String, Balance)> {
     balances
 }
 
-fn format_balance_report(mut balances: Vec<(String, Balance)>) -> Vec<String> {
+fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal) -> Vec<String> {
     // sort accounts
     balances.sort_by(|(acc1, bal1), (acc2, bal2)| acc1.cmp(&acc2));
 
@@ -70,9 +70,13 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>) -> Vec<String> {
         let mut bal_text: String = String::new();
         for amount in &balance.amounts {
             // 
-            bal_text += format!("{:?}", amount).as_str();
+            let symbol = match amount.commodity_index {
+                Some(i) => journal.get_commodity(i).symbol.as_str(),
+                None => "",
+            };
+            bal_text += format!("{} {}", amount.quantity, symbol).as_str();
         }
-        let line = format!("Account {} has balance {:?}", account, balance);
+        let line = format!("Account {} has balance {}", account, bal_text);
         output.push(line);
     }
     output
@@ -110,14 +114,14 @@ mod tests {
     }
 
     #[test]
-    fn test_with_two_commodities() {
+    fn test_bal_report_two_commodities() {
         let src = r#";
 2023-05-05 Payee
     Expenses  25 EUR
     Assets
 
 2023-05-05 Payee 2
-    Expenses  25 BAM
+    Expenses  13 BAM
     Assets
 "#;
         let source = Cursor::new(src);
@@ -129,5 +133,10 @@ mod tests {
 
         // Assert
         assert!(!actual.is_empty());
+        assert_eq!(4, actual.len());
+        assert_eq!("Account Assets has balance -25 EUR", actual[0]);
+        assert_eq!("Account Assets has balance -13 BAM", actual[1]);
+        assert_eq!("Account Expenses has balance 25 EUR", actual[2]);
+        assert_eq!("Account Expenses has balance 13 BAM", actual[3]);
     }
 }
