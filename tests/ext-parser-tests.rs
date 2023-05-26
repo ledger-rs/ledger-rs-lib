@@ -1,7 +1,6 @@
 use chrono::NaiveDate;
 use ledger_rs_lib::journal::Journal;
 use rust_decimal_macros::dec;
-use shell_words::split;
 
 /**
  * External parser tests
@@ -73,6 +72,7 @@ fn test_include() {
 
 #[test]
 fn test_parsing_multiple_currencies() {
+    // Arrange
     let file_path = "tests/multiple_currencies.ledger";
     let mut journal = Journal::new();
 
@@ -82,4 +82,18 @@ fn test_parsing_multiple_currencies() {
     // Assert
     assert!(!journal.xacts.is_empty());
     assert!(!journal.posts.is_empty());
+}
+
+#[test]
+fn test_parsing_account_tree() {
+    // Arrange
+    let file_path = "tests/basic.ledger";
+    let mut journal = Journal::new();
+
+    // Act
+    ledger_rs_lib::parse_file(file_path, &mut journal);
+
+    // Assert
+    assert!(!journal.xacts.is_empty());
+    assert_eq!(4, journal.accounts.len());
 }

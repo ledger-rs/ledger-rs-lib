@@ -1,3 +1,5 @@
+use std::{collections::HashMap, ops::Deref};
+
 use crate::{xact::Xact, account::Account, post::Post, commodity::Commodity};
 
 /**
@@ -17,6 +19,8 @@ pub struct Journal {
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
+    // key, account index
+    pub accounts_map: HashMap<String, usize>,
 }
 
 impl Journal {
@@ -28,6 +32,7 @@ impl Journal {
             xacts: vec![],
             posts: vec![],
             accounts: vec![],
+            accounts_map: HashMap::new(),
 
             // sources: Vec<fileinfo?>
         }
@@ -81,12 +86,51 @@ impl Journal {
         self.get_posts(&xact.posts)
     }
 
+    pub fn register_account(&mut self, name: &str) -> Option<usize> {
+        let account_index = self.find_account(name, true);
+
+        // todo: add any validity checks here.
+
+        account_index
+    }
+
+    /// Create an account tree from the account full-name.
+    pub fn find_account(&mut self, full_account_name: &str, auto_create: bool) -> Option<usize> {
+        let mut has_account = self.accounts_map.get(full_account_name);
+        if has_account.is_some() {
+            return has_account.cloned();
+        }
+        
+        let mut account_index: Option<usize> = None;
+        let mut parent: Option<usize> = None;
+
+        for part in full_account_name.split(':') {
+            has_account = self.accounts_map.get(part);
+
+            if has_account.is_none() {
+                if !auto_create {
+                    return None;
+                }
+
+                let mut new_account = Account::new(part);
+                if parent.is_some() {
+                    new_account.parent_index = account_index;
+                }
+
+                account_index = Some(self.add_account(new_account));
+                self.accounts_map.insert(part.to_owned(), account_index.unwrap());
+
+                parent = account_index;
+            }
+        }
+        
+        account_index
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{account::Account, post::Post};
-
     use super::Journal;
 
     #[test]
@@ -123,5 +167,44 @@ mod tests {
         assert_eq!(2, actual.len());
         assert_eq!(10, actual[0].account_index);
         assert_eq!(20, actual[1].account_index);
+    }
+
+    #[test]
+    fn test_register_account() {
+        let name = "Assets:Investments:Broker";
+        let mut journal = Journal::new();
+
+        let actual = journal.register_account(name);
+
+        // Asserts
+        assert_eq!(3, journal.accounts_map.len());
+        assert_eq!(Some(2), actual);
+    }
+
+    #[test]
+    fn test_find_account() {
+        let name = "Assets:Investments:Broker";
+        let mut journal = Journal::new();
+        
+        let actual = journal.find_account(name, true);
+
+        // Assert
+
+        assert_eq!(3, journal.accounts_map.len());
+
+        let mut index = *journal.accounts_map.get("Assets").unwrap();
+        let mut account = journal.get_account(index);
+        assert_eq!("Assets", account.name);
+
+        index = *journal.accounts_map.get("Investments").unwrap();
+        let assets_account = journal.get_account(index);
+        assert_eq!("Investments", assets_account.name);
+
+        index = *journal.accounts_map.get("Broker").unwrap();
+        let journal_account = journal.get_account(index);
+        assert_eq!("Broker", journal_account.name);
+
+        assert!(actual.is_some());
+        assert_eq!(2, actual.unwrap());
     }
 }
