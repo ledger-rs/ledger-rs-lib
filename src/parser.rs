@@ -414,7 +414,7 @@ mod tests {
 mod full_tests {
     use std::io::Cursor;
 
-    use crate::journal::Journal;
+    use crate::{journal::Journal, parser::read_into_journal};
 
     #[test]
     fn test_minimal_parsing() {
@@ -429,6 +429,7 @@ mod full_tests {
         // Act
         super::read_into_journal(cursor, &mut journal);
 
+        // Assert
         assert_eq!(1, journal.xacts.len());
 
         let xact = journal.xacts.first().unwrap();
@@ -443,6 +444,23 @@ mod full_tests {
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];
         assert_eq!("Assets", journal.get_account(post2.account_index).name);
+    }
+
+    #[test]
+    fn test_multiple_currencies_one_xact() {
+        let input = r#";
+2023-05-05 Payee
+    Assets:Cash EUR  -25 EUR
+    Assets:Cash USD   30 USD
+"#;
+        let cursor = Cursor::new(input);
+        let mut journal = Journal::new();
+
+        // Act
+        read_into_journal(cursor, &mut journal);
+
+        // Assert
+        assert_eq!(2, journal.commodities.len());
     }
 }
 

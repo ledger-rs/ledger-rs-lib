@@ -1,6 +1,6 @@
 use rust_decimal::Decimal;
 
-use crate::{account::Account, journal::Journal, amount::Amount, balance::Balance};
+use crate::{account::Account, amount::Amount, balance::Balance, journal::Journal};
 
 /**
  * Reports
@@ -37,7 +37,7 @@ pub fn balance_report(journal: Journal) -> Vec<String> {
 
 /// Calculates account balances.
 /// returns (account_name, balance)
-/// 
+///
 fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
     let mut balances = vec![];
 
@@ -45,12 +45,9 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
     for (i, acc) in journal.accounts.iter().enumerate() {
         // TODO: separate balance per currency
 
-        let filtered_posts = journal
-            .posts
-            .iter()
-            .filter(|post| post.account_index == i);
-            // .map(|post| post.amount)
-            // .sum();
+        let filtered_posts = journal.posts.iter().filter(|post| post.account_index == i);
+        // .map(|post| post.amount)
+        // .sum();
         let mut balance: Balance = Balance::new();
         for post in filtered_posts {
             balance.add(&post.amount.as_ref().unwrap());
@@ -69,7 +66,7 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal
     for (account, balance) in balances {
         let mut bal_text: String = String::new();
         for amount in &balance.amounts {
-            // 
+            //
             let symbol = match amount.commodity_index {
                 Some(i) => journal.get_commodity(i).symbol.as_str(),
                 None => "",
@@ -86,8 +83,8 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal
 mod tests {
     use std::io::Cursor;
 
-    use crate::{journal::Journal, parser};
     use super::balance_report;
+    use crate::{journal::Journal, parser};
 
     fn create_journal() -> Journal {
         let src = r#";
@@ -138,5 +135,26 @@ mod tests {
         assert_eq!("Account Assets has balance -13 BAM", actual[1]);
         assert_eq!("Account Expenses has balance 25 EUR", actual[2]);
         assert_eq!("Account Expenses has balance 13 BAM", actual[3]);
+    }
+
+    #[test]
+    fn test_bal_multiple_commodities_in_the_same_xact() {
+        let src = r#";
+2023-05-05 Payee
+    Assets:Cash EUR  -25 EUR
+    Assets:Cash USD   30 USD
+"#;
+        let source = Cursor::new(src);
+        let mut journal = Journal::new();
+        parser::read_into_journal(source, &mut journal);
+
+        // Act
+        let actual = balance_report(journal);
+
+        // Assert
+        assert!(!actual.is_empty());
+        assert_eq!(2, actual.len());
+        assert_eq!("Account Assets:Cash EUR has balance -25 EUR", actual[0]);
+        assert_eq!("Account Assets:Cash USD has balance 30 USD", actual[1]);
     }
 }

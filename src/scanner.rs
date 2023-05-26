@@ -140,6 +140,8 @@ pub(crate) fn scan_post(input: &str) -> [&str; 5] {
 /// (Quantity, Symbol, remainder)
 ///
 fn scan_amount(input: &str) -> (&str, &str, &str) {
+    let input = input.trim_start();
+    
     // Check the next character
     let c = *input.chars().peekable().peek().expect("A valid character");
 
