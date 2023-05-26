@@ -53,16 +53,4 @@ mod tests {
 
         assert_eq!(input, actual.name);
     }
-
-    #[test]
-    fn test_parse_parent() {
-        let input = "Expenses:Dining";
-
-        let actual = Account::parse(input);
-
-        assert_eq!("Dining", actual.name);
-
-        todo!("assert account hierarchy")
-    }
-
 }

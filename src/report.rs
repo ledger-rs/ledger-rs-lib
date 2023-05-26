@@ -1,6 +1,6 @@
 use rust_decimal::Decimal;
 
-use crate::{account::Account, journal::Journal};
+use crate::{account::Account, journal::Journal, amount::Amount, balance::Balance};
 
 /**
  * Reports
@@ -35,32 +35,44 @@ pub fn balance_report(journal: Journal) -> Vec<String> {
     format_balance_report(balances)
 }
 
-fn get_account_balances(journal: Journal) -> Vec<(String, Decimal)> {
+/// Calculates account balances.
+/// returns (account_name, balance)
+/// 
+fn get_account_balances(journal: Journal) -> Vec<(String, Balance)> {
     let mut balances = vec![];
 
     // calculate balances
     for (i, acc) in journal.accounts.iter().enumerate() {
         // TODO: separate balance per currency
 
-        let balance: Decimal = journal
+        let filtered_posts = journal
             .posts
             .iter()
-            .filter(|post| post.account_index == i)
-            .map(|post| post.amount.as_ref().unwrap().quantity)
-            .sum();
+            .filter(|post| post.account_index == i);
+            // .map(|post| post.amount)
+            // .sum();
+        let mut balance: Balance = Balance::new();
+        for post in filtered_posts {
+            balance.add(&post.amount.as_ref().unwrap());
+        }
 
         balances.push((acc.name.to_owned(), balance));
     }
     balances
 }
 
-fn format_balance_report(mut balances: Vec<(String, Decimal)>) -> Vec<String> {
+fn format_balance_report(mut balances: Vec<(String, Balance)>) -> Vec<String> {
     // sort accounts
     balances.sort_by(|(acc1, bal1), (acc2, bal2)| acc1.cmp(&acc2));
 
     let mut output = vec![];
     for (account, balance) in balances {
-        let line = format!("Account {} has balance {}", account, balance.to_string());
+        let mut bal_text: String = String::new();
+        for (cur_index, amount) in &balance.amounts {
+            // 
+            bal_text += format!("{:?} {}", amount, cur_index).as_str();
+        }
+        let line = format!("Account {} has balance {:?}", account, balance);
         output.push(line);
     }
     output
@@ -71,7 +83,6 @@ mod tests {
     use std::io::Cursor;
 
     use crate::{journal::Journal, parser};
-
     use super::balance_report;
 
     fn create_journal() -> Journal {

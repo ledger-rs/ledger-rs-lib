@@ -109,6 +109,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         // If one post has no value at all, its value will become the inverse of
         // the rest.  If multiple commodities are involved, multiple posts are
         // generated to balance them all.
+
         log::debug!("There was a null posting");
 
         let Some(null_post_index) = null_post

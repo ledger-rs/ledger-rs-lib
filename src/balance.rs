@@ -5,13 +5,13 @@
  */
 use std::collections::HashMap;
 
-use crate::amount::Amount;
-use crate::commodity::Commodity;
+use crate::{commodity::Commodity, journal::CommodityIndex, amount::Amount};
 
 /// Balance
+#[derive(Debug)]
 pub(crate) struct Balance {
     /// Map of commodity index, Amount
-    pub amounts: HashMap<usize, Amount>, // try Symbol/Amount for easier search.
+    pub amounts: HashMap<CommodityIndex, Amount>, // try Symbol/Amount for easier search.
                                      // amounts: HashMap<String, Amount>
 }
 
