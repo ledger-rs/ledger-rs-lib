@@ -120,7 +120,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         // use inverse amount
         let amt = if balance.amounts.len() == 1 {
             // only one commodity
-            let amt_bal = balance.amounts.iter().nth(0).unwrap().1;
+            let amt_bal = balance.amounts.iter().nth(0).unwrap();
 
             amt_bal.inverse()
         } else {

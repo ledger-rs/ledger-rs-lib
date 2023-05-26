@@ -68,9 +68,9 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>) -> Vec<String> {
     let mut output = vec![];
     for (account, balance) in balances {
         let mut bal_text: String = String::new();
-        for (cur_index, amount) in &balance.amounts {
+        for amount in &balance.amounts {
             // 
-            bal_text += format!("{:?} {}", amount, cur_index).as_str();
+            bal_text += format!("{:?}", amount).as_str();
         }
         let line = format!("Account {} has balance {:?}", account, balance);
         output.push(line);
