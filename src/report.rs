@@ -43,11 +43,13 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
 
     // calculate balances
     for (i, acc) in journal.accounts.iter().enumerate() {
-        // TODO: separate balance per currency
-
+        // get posts for this account.
         let filtered_posts = journal.posts.iter().filter(|post| post.account_index == i);
         // .map(|post| post.amount)
         // .sum();
+
+        // TODO: separate balance per currency
+
         let mut balance: Balance = Balance::new();
         for post in filtered_posts {
             balance.add(&post.amount.as_ref().unwrap());
@@ -60,7 +62,7 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
 
 fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal) -> Vec<String> {
     // sort accounts
-    balances.sort_by(|(acc1, bal1), (acc2, bal2)| acc1.cmp(&acc2));
+    balances.sort_by(|(acc1, _bal1), (acc2, _bal2)| acc1.cmp(&acc2));
 
     let mut output = vec![];
     for (account, balance) in balances {
@@ -71,7 +73,12 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal
                 Some(i) => journal.get_commodity(i).symbol.as_str(),
                 None => "",
             };
-            bal_text += format!("{} {}", amount.quantity, symbol).as_str();
+
+            bal_text += amount.quantity.to_string().as_str();
+            if !symbol.is_empty() {
+                bal_text += " ";
+                bal_text += symbol;
+            }
         }
         let line = format!("Account {} has balance {}", account, bal_text);
         output.push(line);

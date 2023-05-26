@@ -110,7 +110,7 @@ impl<'j, T: Read> Parser<'j, T> {
         // }
         // let length = self.buffer.len();
         // log::debug!("line length: {:?}", length);
-        if self.buffer == "\r\n" {
+        if self.buffer == "\r\n" || self.buffer == "\n" {
             return Ok(());
         }
 
@@ -325,7 +325,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     let commodity_index;
     {
         // Create Commodity, add to collection
-        // commodity_pool.find(symbol)
+        // TODO: commodity_pool.find(symbol)
         // pool.create(symbol)
         let commodity = Commodity::parse(tokens[2]);
         commodity_index = match commodity {
@@ -468,9 +468,7 @@ mod full_tests {
 mod parser_tests {
     use std::{assert_eq, io::Cursor};
 
-    use shell_words::split;
-
-    use crate::{journal::Journal, parser};
+    use crate::{journal::Journal, parser::{self, read_into_journal}};
 
     #[test]
     fn test_minimal_parser() {
@@ -549,7 +547,8 @@ mod parser_tests {
         let cursor = Cursor::new(input);
         let mut journal = Journal::new();
 
-        super::read_into_journal(cursor, &mut journal);
+        // Act
+        read_into_journal(cursor, &mut journal);
 
         // Assert
         let xact = journal.xacts.first().unwrap();
@@ -587,6 +586,29 @@ mod parser_tests {
         assert_eq!("VEUR", comm2.symbol);
 
         assert!(p2.cost.is_none());
+    }
+
+    #[test]
+    fn test_parsing_account_tree() {
+        let input = r#"
+2023-05-23 Payee
+  Assets:Eur   -20 EUR
+  Assets:USD    30 USD
+  Trading:Eur   20 EUR
+  Trading:Usd  -30 USD
+"#;
+
+        let cursor = Cursor::new(input);
+        let mut journal = Journal::new();
+
+        // Act
+        read_into_journal(cursor, &mut journal);
+
+        // Assert
+        assert_eq!(1, journal.xacts.len());
+        assert_eq!(4, journal.posts.len());
+        assert_eq!(4, journal.accounts.len());
+        assert_eq!(2, journal.commodities.len());
     }
 }
 

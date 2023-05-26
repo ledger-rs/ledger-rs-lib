@@ -111,7 +111,7 @@ mod lib_tests {
 
     use rust_decimal_macros::dec;
 
-    use crate::{amount::Amount, option, parser, run};
+    use crate::{amount::Amount, option, run};
 
     #[test]
     fn test_minimal() {
