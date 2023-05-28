@@ -4,19 +4,18 @@
 use std::collections::HashMap;
 
 use chrono::NaiveDateTime;
-use petgraph::Graph;
-use rust_decimal::Decimal;
+use petgraph::stable_graph::NodeIndex;
 
 use crate::{amount::Amount, commodity::Commodity, history::CommodityHistory};
 
-pub(crate) struct CommodityPool {
-    /// Map (symbol, commodity)
-    commodities: HashMap<String, Commodity>,
-    // annotated_commodities: HashMap<String, Commodity>,
+/// Commodity Index is the index of the node in the history graph.
+pub type CommodityIndex = NodeIndex;
 
-    // commodity_price_history: CommodityHistory
-    // commodity_history: Graph<String, Decimal>,
-    commodity_history: CommodityHistory,
+pub struct CommodityPool {
+    /// Map (symbol, commodity)
+    pub(crate) commodities: HashMap<String, NodeIndex>,
+    // annotated_commodities: HashMap<String, Commodity>,
+    pub(crate) commodity_history: CommodityHistory,
     // null_commodity: Commodity
     // default_commodity: Commodity
 
@@ -31,30 +30,44 @@ impl CommodityPool {
         }
     }
 
-    pub fn create(&mut self, symbol: &str) {
+    /// Creates a new Commodity for the given Symbol.
+    pub fn create(&mut self, symbol: &str) -> CommodityIndex {
         // todo: handle double quotes
 
         let c = Commodity::new(symbol);
 
-        self.commodities.insert(symbol.to_owned(), c);
+        // add to price history
+        let i = self.commodity_history.add_commodity(c);
 
-        // TODO: add price history
-        // commodity_price_history.add_commodity(*commodity.get());
+        // Add to map.
+        self.commodities.insert(symbol.to_owned(), i);
+
+        i
     }
 
     pub fn find(&self, symbol: &str) -> Option<&Commodity> {
-        self.commodities.get(symbol)
+        match self.commodities.get(symbol) {
+            Some(i) => Some(self.commodity_history.get_commodity(*i)),
+            None => None,
+        }
     }
 
-    // pub fn find_or_create(&mut self, symbol: &str) -> &Commodity {
-    //     match self.commodities.get(symbol) {
-    //         Some(cdty) => return cdty,
-    //         None => {
-    //             self.create(symbol);
-    //             return self.commodities.get(symbol).unwrap();
-    //         }
-    //     }
-    // }
+    pub fn find_or_create(&mut self, symbol: &str) -> CommodityIndex {
+        match self.commodities.get(symbol) {
+            Some(i) => {
+                // get the commodity from the graph
+                // self.commodity_history.get_commodity(*i)
+                *i
+            },
+            None => {
+                self.create(symbol)
+            }
+        }
+    }
+
+    pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
+        self.commodity_history.get_commodity(index)
+    }
 
     pub fn exchange(&self, commodity: &Commodity, per_unit_cost: Amount, moment: NaiveDateTime) {
         todo!()

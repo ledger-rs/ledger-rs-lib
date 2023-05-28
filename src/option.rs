@@ -141,8 +141,6 @@ fn lookup_option_global(kind: Kind, letter: char) {
         't' => todo!("trace"),
         _ => todo!("other chars"),
     }
-
-    todo!()
 }
 
 fn process_option(whence: String, value: Option<String>) {
@@ -259,9 +257,8 @@ fn lookup_report(kind: Kind, name: &str) {
                     // WRAP_FUNCTOR(query_command)
                 }
                 // efgpqst
-                _ => todo!("handle"),
+                _ => todo!("handle pre-command"),
             }
-            todo!("pre-command")
         }
         _ => todo!("handle"),
     }

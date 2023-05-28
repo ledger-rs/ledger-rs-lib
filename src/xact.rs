@@ -1,11 +1,9 @@
 use chrono::NaiveDate;
 
 use crate::{
-    amount::Amount,
     balance::Balance,
     journal::{Journal, PostIndex, XactIndex},
     parser,
-    post::Post,
 };
 
 pub struct Xact {

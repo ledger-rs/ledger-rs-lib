@@ -4,7 +4,7 @@
  * Intended to help with storing amounts in multiple commodities.
  */
 
-use crate::{amount::Amount, commodity::Commodity, journal::CommodityIndex};
+use crate::amount::Amount;
 
 /// Balance
 #[derive(Debug)]
@@ -56,7 +56,7 @@ mod tests {
     use rust_decimal_macros::dec;
 
     use super::Balance;
-    use crate::amount::Amount;
+    use crate::{amount::Amount, pool::CommodityIndex};
 
     #[test]
     fn test_adding_first_amount_no_commodity() {
@@ -95,7 +95,7 @@ mod tests {
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(dec!(25), Some(0));
+        let amount = Amount::new(dec!(25), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
         let amount = Amount::new(dec!(5), None);
@@ -106,7 +106,7 @@ mod tests {
         assert_eq!(2, balance.amounts.len());
         assert_eq!(dec!(25), balance.amounts.iter().nth(0).unwrap().quantity);
         assert_eq!(
-            Some(0),
+            Some(CommodityIndex::new(0)),
             balance.amounts.iter().nth(0).unwrap().commodity_index
         );
 
@@ -119,10 +119,10 @@ mod tests {
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(dec!(25), Some(0));
+        let amount = Amount::new(dec!(25), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
-        let amount = Amount::new(dec!(5), Some(1));
+        let amount = Amount::new(dec!(5), Some(CommodityIndex::new(1)));
         balance.add(&amount);
 
         // Assert
@@ -131,13 +131,13 @@ mod tests {
 
         assert_eq!(dec!(25), balance.amounts.iter().nth(0).unwrap().quantity);
         assert_eq!(
-            Some(0),
+            Some(CommodityIndex::new(0)),
             balance.amounts.iter().nth(0).unwrap().commodity_index
         );
 
         assert_eq!(dec!(5), balance.amounts.iter().nth(1).unwrap().quantity);
         assert_eq!(
-            Some(1),
+            Some(CommodityIndex::new(1)),
             balance.amounts.iter().nth(1).unwrap().commodity_index
         );
     }
@@ -147,10 +147,10 @@ mod tests {
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(dec!(25), Some(0));
+        let amount = Amount::new(dec!(25), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
-        let amount = Amount::new(dec!(5), Some(0));
+        let amount = Amount::new(dec!(5), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
         // Assert
@@ -159,7 +159,7 @@ mod tests {
 
         assert_eq!(dec!(30), balance.amounts.iter().nth(0).unwrap().quantity);
         assert_eq!(
-            Some(0),
+            Some(CommodityIndex::new(0)),
             balance.amounts.iter().nth(0).unwrap().commodity_index
         );
     }

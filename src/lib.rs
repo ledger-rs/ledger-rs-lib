@@ -112,7 +112,7 @@ mod lib_tests {
 
     use rust_decimal_macros::dec;
 
-    use crate::{amount::Amount, option, run};
+    use crate::{amount::Amount, option, run, pool::CommodityIndex};
 
     #[test]
     fn test_minimal() {
@@ -148,7 +148,7 @@ Account Expenses has balance 20"#;
         assert_eq!(4, journal.posts.len());
         assert_eq!(Some(Amount::new(dec!(20), None)), journal.posts[0].amount);
         assert_eq!(
-            Some(Amount::new(dec!(20), Some(0))),
+            Some(Amount::new(dec!(20), Some(CommodityIndex::new(0)))),
             journal.posts[2].amount
         );
 
@@ -159,7 +159,7 @@ Account Expenses has balance 20"#;
         assert_eq!("Assets:Cash", journal.accounts[3].name);
 
         // commodities
-        assert_eq!(1, journal.commodities.len());
-        assert_eq!("EUR", journal.commodities[0].symbol);
+        assert_eq!(1, journal.commodity_pool.commodities.len());
+        assert_eq!("EUR", journal.commodity_pool.find("EUR").unwrap().symbol);
     }
 }

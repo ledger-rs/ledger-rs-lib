@@ -1,21 +1,21 @@
-use std::{collections::HashMap, ops::Deref};
+use std::collections::HashMap;
 
-use crate::{xact::Xact, account::Account, post::Post, commodity::Commodity};
+use crate::{xact::Xact, account::Account, post::Post, pool::CommodityPool};
 
 /**
  * Journal
  */
 
 pub type AccountIndex = usize;
-pub type CommodityIndex = usize;
+// pub type CommodityIndex = usize;
 pub type PostIndex = usize;
 pub type XactIndex = usize;
 
 pub struct Journal {
     // pub master: Account,
     
-    pub commodities: Vec<Commodity>,
-    // todo: commodity_pool
+    // pub commodities: Vec<Commodity>,
+    pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
@@ -28,7 +28,8 @@ impl Journal {
         Journal {
             // master: Account::new(),
 
-            commodities: vec![],
+            commodity_pool: CommodityPool::new(),
+            // commodities: vec![],
             xacts: vec![],
             posts: vec![],
             accounts: vec![],
@@ -43,11 +44,6 @@ impl Journal {
         self.accounts.len() - 1
     }
 
-    pub fn add_commodity(&mut self, commodity: Commodity) -> CommodityIndex {
-        self.commodities.push(commodity);
-        self.commodities.len() - 1
-    }
-
     pub fn add_xact(&mut self, xact: Xact) -> XactIndex {
         self.xacts.push(xact);
         self.xacts.len() - 1
@@ -59,10 +55,6 @@ impl Journal {
         i
     }
 
-    pub fn find_commodity(&self, symbol: &str) -> Option<&Commodity> {
-        self.commodities.iter().find(|c| c.symbol == symbol)
-    }
-
     pub fn get_account(&self, index: usize) -> &Account {
         &self.accounts[index]
     }
@@ -72,10 +64,6 @@ impl Journal {
     // pub fn get_accounts(&self, account_indices: &Vec<AccountIndex>) -> Vec<&Account> {
 
     // }
-
-    pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
-        &self.commodities[index]
-    }
 
     pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
         indices.iter().map(|i| &self.posts[*i]).collect()
@@ -193,7 +181,7 @@ mod tests {
         assert_eq!(3, journal.accounts_map.len());
 
         let mut index = *journal.accounts_map.get("Assets").unwrap();
-        let mut account = journal.get_account(index);
+        let account = journal.get_account(index);
         assert_eq!("Assets", account.name);
 
         index = *journal.accounts_map.get("Investments").unwrap();

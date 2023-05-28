@@ -1,10 +1,8 @@
-use rust_decimal::Decimal;
-
-use crate::{account::Account, amount::Amount, balance::Balance, journal::Journal};
-
 /**
  * Reports
  */
+
+ use crate::{balance::Balance, journal::Journal};
 
 /// Accounts report. Command: `accounts`.
 ///
@@ -70,7 +68,7 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal
         for amount in &balance.amounts {
             //
             let symbol = match amount.commodity_index {
-                Some(i) => journal.get_commodity(i).symbol.as_str(),
+                Some(i) => journal.commodity_pool.commodity_history.get_commodity(i).symbol.as_str(),
                 None => "",
             };
 

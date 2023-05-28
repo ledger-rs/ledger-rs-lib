@@ -1,11 +1,9 @@
-use std::{
-    ops::{AddAssign, Mul},
-    str::FromStr,
-};
+use std::ops::{AddAssign, Mul};
 
-use crate::journal::CommodityIndex;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+
+use crate::pool::CommodityIndex;
 
 /**
  * Amount
@@ -20,7 +18,7 @@ pub struct Amount {
 impl Amount {
     pub fn new(
         quantity: Decimal,
-        commodity_index: Option<usize>,
+        commodity_index: Option<CommodityIndex>,
     ) -> Self {
         Self {
             quantity,
@@ -131,15 +129,15 @@ impl AddAssign<Amount> for Amount {
     }
 }
 
-fn parse_quantity(input: &str) -> Option<Decimal> {
-    // handle empty string
-    if input.is_empty() {
-        return None;
-    }
+// fn parse_quantity(input: &str) -> Option<Decimal> {
+//     // handle empty string
+//     if input.is_empty() {
+//         return None;
+//     }
 
-    // get rid of thousand separators
-    // let clean = input.replace(',', '');
+//     // get rid of thousand separators
+//     // let clean = input.replace(',', '');
 
-    Some(Decimal::from_str(input).expect("quantity parsed"))
-}
+//     Some(Decimal::from_str(input).expect("quantity parsed"))
+// }
 

@@ -1,7 +1,3 @@
-use chrono::NaiveDateTime;
-
-use crate::amount::Amount;
-
 /**
  * commodity.cc
  */
@@ -29,19 +25,18 @@ impl Commodity {
         Self { symbol: symbol.to_owned() }
     }
 
-    pub fn parse(symbol: &str) -> Option<Self> {
-        if symbol.is_empty() {
-            return None;
-        }
-
-        Some(Commodity::new(symbol))
-    }
+    // pub fn parse(symbol: &str) -> Option<Self> {
+    //     if symbol.is_empty() {
+    //         return None;
+    //     }
+    //     Some(Commodity::new(symbol))
+    // }
 }
 
-struct PricePoint {
-    when: NaiveDateTime,
-    price: Amount
-}
+// struct PricePoint {
+//     when: NaiveDateTime,
+//     price: Amount
+// }
 
 #[cfg(test)]
 mod tests {
