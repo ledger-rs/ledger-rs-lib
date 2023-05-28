@@ -47,7 +47,7 @@ impl CommodityHistory {
     }
 
     pub fn get_commodity(&self, index: NodeIndex) -> &Commodity {
-        todo!()
+        self.graph.node_weight(index).expect("index should be valid")
     }
 
     pub fn map_prices(&self) {

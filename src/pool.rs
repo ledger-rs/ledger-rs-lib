@@ -36,32 +36,34 @@ impl CommodityPool {
 
         let c = Commodity::new(symbol);
 
-        // add to price history
+        // add to price history graph.
         let i = self.commodity_history.add_commodity(c);
 
-        // Add to map.
+        // Add index to map.
         self.commodities.insert(symbol.to_owned(), i);
 
         i
     }
 
-    pub fn find(&self, symbol: &str) -> Option<&Commodity> {
+    pub fn find_index(&self, symbol: &str) -> Option<&CommodityIndex> {
+        self.commodities.get(symbol)
+    }
+
+    pub fn find_commodity(&self, symbol: &str) -> Option<&Commodity> {
         match self.commodities.get(symbol) {
             Some(i) => Some(self.commodity_history.get_commodity(*i)),
             None => None,
         }
     }
 
-    pub fn find_or_create(&mut self, symbol: &str) -> CommodityIndex {
-        match self.commodities.get(symbol) {
-            Some(i) => {
-                // get the commodity from the graph
-                // self.commodity_history.get_commodity(*i)
-                *i
-            },
-            None => {
-                self.create(symbol)
-            }
+    pub fn find_or_create(&mut self, symbol: &str) -> Option<CommodityIndex> {
+        if symbol.is_empty() {
+            return None;
+        }
+
+        match self.find_index(symbol) {
+            Some(i) => Some(*i),
+            None => Some(self.create(symbol)),
         }
     }
 
