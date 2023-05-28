@@ -86,7 +86,7 @@ impl Journal {
     pub fn find_account(&mut self, full_account_name: &str, auto_create: bool) -> Option<usize> {
         let mut has_account = self.accounts_map.get(full_account_name);
         if has_account.is_some() {
-            return has_account.cloned();
+            return has_account.copied();
         }
         
         let mut account_index: Option<usize> = None;
