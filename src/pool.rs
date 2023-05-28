@@ -7,7 +7,7 @@ use chrono::NaiveDateTime;
 use petgraph::Graph;
 use rust_decimal::Decimal;
 
-use crate::{amount::Amount, commodity::Commodity};
+use crate::{amount::Amount, commodity::Commodity, history::CommodityHistory};
 
 pub(crate) struct CommodityPool {
     /// Map (symbol, commodity)
@@ -27,7 +27,7 @@ impl CommodityPool {
     pub fn new() -> Self {
         Self {
             commodities: HashMap::new(),
-            commodity_history: Graph::new(),
+            commodity_history: CommodityHistory::new(),
         }
     }
 
@@ -65,14 +65,6 @@ impl CommodityPool {
     }
 }
 
-type CommodityHistory = Graph<String, Decimal>;
-
-// impl CommodityHistory {
-//     pub fn add_commodity(&self) {
-//         todo!()
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use super::CommodityPool;
@@ -93,7 +85,7 @@ mod tests {
 }
 
 #[cfg(test)]
-mod exchange_tests {
+mod tests_algos {
     use petgraph::{
         algo::{bellman_ford, dijkstra, floyd_warshall},
         dot::Dot,
@@ -129,7 +121,7 @@ mod exchange_tests {
         let usd = hist.add_node("usd");
         let aud = hist.add_node("aud");
         // edges are prices / exchange rates
-        hist.add_edge(aud, eur, 1.65);
+        hist.add_edge(eur, aud, 0.85);
         hist.add_edge(aud, usd, 1.30);
 
         // Act
@@ -137,17 +129,13 @@ mod exchange_tests {
 
         // Assert
         assert!(!actual.is_empty());
-        // eur->aud->usd has one hop, aud.
-        assert_eq!(1, actual.len());
-
-        // let (member_i, member_i32) = actual.iter().next().unwrap();
-        // let member = hist[member_i];
-        // assert_eq!(&1, member_i32);
-        // log::debug!("{:?}", member_i);
+        // eur->aud->usd has three nodes.
+        assert_eq!(3, actual.len());
     }
 
     /// Dijkstra algorithm should be enough for our purpose. It just needs to give us the shortest
     /// path between the desired currencies. The rates are all positive.
+    /// However, this test is wrong, since it just adds edges, which is not what we need.
     #[test]
     fn test_exchange_with_dijkstra() {
         // Arrange
@@ -157,7 +145,7 @@ mod exchange_tests {
         let usd = hist.add_node("usd");
         let aud = hist.add_node("aud");
         // edges are prices / exchange rates
-        hist.add_edge(aud, eur, 0.6074);
+        hist.add_edge(eur, aud, 1.65);
         hist.add_edge(aud, usd, 0.6520);
 
         // Act
@@ -165,10 +153,20 @@ mod exchange_tests {
 
         // Assert
         assert!(!actual.is_empty());
-        assert_eq!(1, actual.len());
-        
-        let (i, int) = actual.iter().next().unwrap();
-        
+        assert_eq!(3, actual.len());
+
+        // The order is not guaranteed.
+        // let (i, member_i32) = actual.iter().nth(0).unwrap();
+        // let member = hist.node_weight(*i).unwrap();
+        // assert_eq!("eur", *member);
+
+        // let (i, member_i32) = actual.iter().nth(1).unwrap();
+        // let member = hist.node_weight(*i).unwrap();
+        // assert_eq!("aud", *member);
+
+        // let (i, member_i32) = actual.iter().nth(2).unwrap();
+        // let member = hist.node_weight(*i).unwrap();
+        // assert_eq!("usd", *member);
     }
 
     /// Bellman-Ford algorhythm finds the shortest route but allows for negative edge cost.
@@ -210,5 +208,27 @@ mod exchange_tests {
         let actual = floyd_warshall(&hist, |_| 1).unwrap();
 
         assert!(!actual.is_empty());
+    }
+
+    // search for edge (direct exchange rate).
+    #[test]
+    fn test_search() {
+        // Arrange
+        let mut hist = Graph::<&str, f32>::new();
+        // edges are commodities
+        let eur = hist.add_node("eur");
+        let usd = hist.add_node("usd");
+        let aud = hist.add_node("aud");
+        // edges are prices / exchange rates
+        hist.add_edge(eur, aud, 1.65);
+        hist.add_edge(aud, usd, 0.6520);
+
+        // Act
+        let actual = hist.find_edge(eur, aud);
+        assert!(actual.is_some());
+
+        let Some(euraud) = actual else {panic!()};
+        let weight = hist.edge_weight(euraud).unwrap();
+        assert_eq!(&1.65, weight);
     }
 }

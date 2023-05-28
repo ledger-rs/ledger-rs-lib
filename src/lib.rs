@@ -12,6 +12,7 @@ mod account;
 mod amount;
 mod balance;
 mod commodity;
+mod history;
 pub mod journal;
 pub mod option;
 mod parser;

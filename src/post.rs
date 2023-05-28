@@ -39,3 +39,7 @@ impl Post {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+}
