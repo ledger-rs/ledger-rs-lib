@@ -74,7 +74,7 @@ mod tests {
     use petgraph::stable_graph::NodeIndex;
     use rust_decimal_macros::dec;
 
-    use crate::{amount::Amount, commodity::Commodity, pool::CommodityIndex};
+    use crate::{amount::Amount, commodity::Commodity};
     use super::CommodityHistory;
 
     #[test]

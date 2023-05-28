@@ -1,6 +1,3 @@
-use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
-
 /**
  * External reports tests
  */
@@ -51,7 +48,7 @@ fn test_account_filter() {
     let actual = ledger_rs_lib::run(args);
 
     assert!(!actual.is_empty());
-    let expected = vec!["Assets"];
+    let expected = vec!["Assets", "Expenses"];
     assert_eq!(expected, actual);
 }
 

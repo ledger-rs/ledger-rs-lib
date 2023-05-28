@@ -627,7 +627,7 @@ mod amount_parsing_tests {
     fn setup() -> Journal {
         let mut journal = Journal::new();
         let xact = Xact::create("2023-05-02", "", "Supermarket", "");
-        let xact_index = journal.add_xact(xact);
+        journal.add_xact(xact);
 
         journal
     }
@@ -683,7 +683,7 @@ mod amount_parsing_tests {
     fn test_neg_commodity_separated() {
         let expected = Amount {
             quantity: dec!(-20),
-            commodity_index: Some(CommodityIndex::new(5)),
+            commodity_index: Some(CommodityIndex::new(0)),
         };
         let mut journal = setup();
 
@@ -693,8 +693,7 @@ mod amount_parsing_tests {
         // Assert
         let post = journal.posts.first().unwrap();
         let Some(a) = &post.amount else { panic!() };
-        let q = a.quantity;
-        assert_eq!(dec!(-20), q);
+        assert_eq!(&expected, a);
 
         let commodity = journal
             .commodity_pool
