@@ -14,10 +14,12 @@ use std::collections::HashMap;
 
 use chrono::NaiveDateTime;
 use petgraph::{Graph, stable_graph::NodeIndex};
+use rust_decimal::Decimal;
 
 use crate::{amount::Amount, commodity::Commodity, pool::CommodityIndex};
 
-type PriceMap = HashMap<NaiveDateTime, Amount>;
+// type PriceMap = HashMap<NaiveDateTime, Amount>;
+type PriceMap = HashMap<NaiveDateTime, Decimal>;
 
 pub(crate) struct CommodityHistory {
     graph: Graph<Commodity, PriceMap>
@@ -36,14 +38,17 @@ impl CommodityHistory {
     pub fn add_price(&mut self, source: CommodityIndex, date: NaiveDateTime, price: Amount) {
         assert!(Some(source) != price.commodity_index);
 
-        // self.graph.from_index(i)
-        
-        //self.pri
+        let index = match self.graph.find_edge(source, price.commodity_index.unwrap()) {
+            Some(index) => index,
+            None => {
+                let dest = price.commodity_index.unwrap();
+                self.graph.add_edge(source, dest, PriceMap::new())
+            },
+        };
+        let prices = self.graph.edge_weight_mut(index).unwrap();
+
         // Add the rate.
-        // let Some(target) = price.commodity_index;
-        // self.graph.add_edge(source, target, price.quantity);
-        
-        todo!()
+        prices.insert(date, price.quantity);
     }
 
     pub fn get_commodity(&self, index: NodeIndex) -> &Commodity {
@@ -66,10 +71,10 @@ impl CommodityHistory {
 #[cfg(test)]
 mod tests {
     use chrono::Local;
+    use petgraph::stable_graph::NodeIndex;
     use rust_decimal_macros::dec;
 
     use crate::{amount::Amount, commodity::Commodity, pool::CommodityIndex};
-
     use super::CommodityHistory;
 
     #[test]
@@ -91,22 +96,30 @@ mod tests {
         let c = Commodity::new("EUR");
         let id = hist.add_commodity(c);
 
+        let actual = hist.get_commodity(id);
+
+        assert_eq!("EUR", actual.symbol);
     }
 
     #[test]
     fn test_adding_price() {
         // Arrange
         let mut hist = CommodityHistory::new();
-        let commodity_index = CommodityIndex::new(5);
+        let eur = hist.add_commodity(Commodity::new("EUR"));
+        let usd = hist.add_commodity(Commodity::new("USD"));
         let local = Local::now();
         let today = local.naive_local();
-        let price = Amount::new(dec!(25), Some(commodity_index));
+        let price = Amount::new(dec!(25), Some(usd));
 
         // Act
-        hist.add_price(commodity_index, today, price);
+        hist.add_price(eur, today, price);
 
         // Assert
-        assert_eq!(1, hist.graph.node_count());
+        assert_eq!(2, hist.graph.node_count());
+        assert_eq!(1, hist.graph.edge_count());
+
+        let edge = hist.graph.edge_weights().nth(0).unwrap();
+        assert_eq!(&dec!(25), edge.values().nth(0).unwrap());
     }
 
     // #[test]
@@ -119,4 +132,14 @@ mod tests {
     //     let x = hist.graph.add_edge(eur, aud, weight);
     //     // x.index();
     // }
+
+    #[test]
+    fn test_index() {
+        let mut graph= CommodityHistory::new();
+        let x = graph.add_commodity(Commodity::new("EUR"));
+        let y = x.index();
+        let z = NodeIndex::new(y);
+
+        assert_eq!(z, x);
+    }
 }
