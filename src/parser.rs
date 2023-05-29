@@ -35,11 +35,9 @@ use crate::{
     xact::Xact,
 };
 
-// pub(crate) fn read<T: Read>(source: T) -> Journal {
-//     let mut parser = Parser::new(source);
-//     parser.parse();
-//     parser.journal
-// }
+pub const ISO_DATE_FORMAT: &str = "%Y-%m-%d";
+pub const ISO_TIME_FORMAT: &str = "%H:%M:%S";
+
 
 pub(crate) fn read_into_journal<T: Read>(source: T, journal: &mut Journal) {
     let mut parser = Parser::new(source, journal);
@@ -50,7 +48,7 @@ pub(crate) fn read_into_journal<T: Read>(source: T, journal: &mut Journal) {
 pub(crate) fn parse_date(date_str: &str) -> NaiveDate {
     // todo: support more date formats?
 
-    NaiveDate::parse_from_str(date_str, "%Y-%m-%d").expect("date parsed")
+    NaiveDate::parse_from_str(date_str, ISO_DATE_FORMAT).expect("date parsed")
 }
 
 struct Parser<'j, T: Read> {
@@ -213,7 +211,7 @@ impl<'j, T: Read> Parser<'j, T> {
         false
     }
 
-    fn price_xact_directive(&self) {
+    fn price_xact_directive(&mut self) {
         // pass on to the commodity pool
         self.journal.commodity_pool.parse_price_directive(&self.buffer);
     }

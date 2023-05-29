@@ -216,6 +216,12 @@ fn scan_cost(input: &str) -> (&str, &str, &str) {
     }
 }
 
+/// Scans the Price directive
+/// 
+/// i.e.  
+/// P 2022-03-03 13:00:00 EUR 1.12 USD
+/// 
+/// returns [date, time, commodity, quantity, price_commodity]
 pub(crate) fn scan_price_directive(input: &str) -> [&str; 5] {
     // Skip the starting P and whitespace.
     let input = input[1..].trim_start();

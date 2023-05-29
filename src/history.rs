@@ -22,7 +22,7 @@ use crate::{amount::Amount, commodity::Commodity, pool::CommodityIndex};
 type PriceMap = HashMap<NaiveDateTime, Decimal>;
 
 pub(crate) struct CommodityHistory {
-    graph: Graph<Commodity, PriceMap>
+    pub(crate) graph: Graph<Commodity, PriceMap>
 }
 
 impl CommodityHistory {
@@ -35,14 +35,19 @@ impl CommodityHistory {
         self.graph.add_node(commodity)
     }
 
-    pub fn add_price(&mut self, source: CommodityIndex, date: NaiveDateTime, price: Amount) {
-        assert!(Some(source) != price.commodity_index);
+    /// Adds a new price point.
+    /// i.e. 1 EUR = 1.12 USD
+    /// source: EUR
+    /// date
+    /// price: 1.12 USD
+    pub fn add_price(&mut self, commodity: CommodityIndex, date: NaiveDateTime, price: Amount) {
+        assert!(Some(commodity) != price.commodity_index);
 
-        let index = match self.graph.find_edge(source, price.commodity_index.unwrap()) {
+        let index = match self.graph.find_edge(commodity, price.commodity_index.unwrap()) {
             Some(index) => index,
             None => {
                 let dest = price.commodity_index.unwrap();
-                self.graph.add_edge(source, dest, PriceMap::new())
+                self.graph.add_edge(commodity, dest, PriceMap::new())
             },
         };
         let prices = self.graph.edge_weight_mut(index).unwrap();

@@ -1,12 +1,16 @@
 /**
  * Commodity Pool
  */
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
-use chrono::NaiveDateTime;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use petgraph::stable_graph::NodeIndex;
+use rust_decimal::Decimal;
 
-use crate::{amount::Amount, commodity::Commodity, history::CommodityHistory, scanner};
+use crate::{
+    amount::Amount, commodity::Commodity, history::CommodityHistory, parser::{ISO_DATE_FORMAT, ISO_TIME_FORMAT},
+    scanner,
+};
 
 /// Commodity Index is the index of the node in the history graph.
 pub type CommodityIndex = NodeIndex;
@@ -75,15 +79,42 @@ impl CommodityPool {
         todo!()
     }
 
-    pub fn parse_price_directive(&self, line: &str) {
+    pub fn parse_price_directive(&mut self, line: &str) {
         let tokens = scanner::scan_price_directive(line);
-        
-        todo!("continue")
+
+        // date
+        let date = NaiveDate::parse_from_str(tokens[0], ISO_DATE_FORMAT).expect("date parsed");
+        // time
+        let time = if !tokens[1].is_empty() {
+            NaiveTime::parse_from_str(tokens[1], ISO_TIME_FORMAT).expect("time parsed")
+        } else {
+            NaiveTime::MIN
+        };
+        let datetime = NaiveDateTime::new(date, time);
+
+        // commodity
+        let Some(commodity_index) = self.find_or_create(tokens[2])
+            else {panic!("could not add commodity")};
+
+        // quantity
+        let quantity = Decimal::from_str(tokens[3]).expect("quantity parsed");
+
+        // cost commodity
+        let cost_commodity_index = self.find_or_create(tokens[4]);
+
+        // cost
+        let cost = Amount::new(quantity, cost_commodity_index);
+
+        // Add price for commodity
+        self.commodity_history
+            .add_price(commodity_index, datetime, cost);
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use rust_decimal_macros::dec;
+
     use super::CommodityPool;
 
     #[test]
@@ -103,12 +134,32 @@ mod tests {
     #[test]
     fn test_parsing_price_directive() {
         let line = "P 2022-03-03 13:00:00 EUR 1.12 USD";
-        let pool = CommodityPool::new();
+        let mut pool = CommodityPool::new();
 
         // Act
         pool.parse_price_directive(line);
 
-        todo!("assert")
+        // Assert
+        assert_eq!(2, pool.commodities.len());
+        assert_eq!(2, pool.commodity_history.graph.node_count());
+        assert_eq!(1, pool.commodity_history.graph.edge_count());
+
+        // Currencies in the map.
+        assert!(pool.commodities.contains_key("EUR"));
+        assert!(pool.commodities.contains_key("USD"));
+
+        // Currencies as nodes in the graph.
+        assert_eq!("EUR", pool.commodity_history.graph.node_weights().nth(0).unwrap().symbol);
+        assert_eq!("USD", pool.commodity_history.graph.node_weights().nth(1).unwrap().symbol);
+
+        // Rate, edge
+        let rates = pool.commodity_history.graph.edge_weights().nth(0).unwrap();
+        assert_eq!(1, rates.len());
+        let datetime_string = rates.keys().nth(0).unwrap().to_string();
+        // date/time
+        assert_eq!("2022-03-03 13:00:00", datetime_string);
+        // rate
+        assert_eq!(&dec!(1.12), rates.values().nth(0).unwrap());
     }
 }
 
