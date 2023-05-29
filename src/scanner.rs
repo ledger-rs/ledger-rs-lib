@@ -217,32 +217,48 @@ fn scan_cost(input: &str) -> (&str, &str, &str) {
 }
 
 pub(crate) fn scan_price_directive(input: &str) -> [&str; 5] {
-    // Skip the starting P
+    // Skip the starting P and whitespace.
     let input = input[1..].trim_start();
 
     // date
-    let Some(separator_index) = input.find(|c| c == ' ' || c == '\t')
-        else { panic!("invalid record") };
-    // date, rest
-    let (date, input) = (&input[..separator_index], &input[separator_index..]);
+    let (date, input) = scan_price_element(input);
 
     // time
-    if input.chars().peekable().peek().unwrap().is_digit(10) {
+    let input = input.trim_start();
+    let (time, input) = match input.chars().peekable().peek().unwrap().is_digit(10) {
         // time
-    } else {
+        true => scan_price_element(input),
         // no time
-    }
-    // let Some(separator_index) = input.find(|c| c == ' ' || c == '\t')
-    //     else { panic!("invalid record") };
-    // let (time, input) = (&input[..separator_index], &input[separator_index..]);
+        false => ("", input),
+    };
 
     // commodity
+    let input = input.trim_start();
+    let (commodity, input) = scan_price_element(input);
 
     // price, quantity
+    let input = input.trim_start();
+    let (quantity, input) = scan_price_element(input);
 
     // price, commodity
+    let input = input.trim_start();
+    let (price_commodity, _input) = scan_price_element(input);
 
-    [date, , , , ]
+    [date, time, commodity, quantity, price_commodity]
+}
+
+fn find_next_separator(input: &str) -> Option<usize> {
+    input.find(|c| c == ' ' || c == '\t')
+}
+
+fn scan_price_element(input: &str) -> (&str, &str) {
+    let Some(separator_index) = find_next_separator(input)
+        else {
+            return (input, "")
+        };
+
+    // date, rest
+    (&input[..separator_index], &input[separator_index..])
 }
 
 
@@ -605,6 +621,10 @@ mod price_scanner_tests {
 
         let actual = scan_price_directive(line);
 
-        todo!("assert")
+        assert_eq!("2022-03-03", actual[0]);
+        assert_eq!("13:00:00", actual[1]);
+        assert_eq!("EUR", actual[2]);
+        assert_eq!("1.12", actual[3]);
+        assert_eq!("USD", actual[4]);
     }
 }
