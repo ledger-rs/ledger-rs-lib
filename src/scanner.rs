@@ -141,7 +141,7 @@ pub(crate) fn scan_post(input: &str) -> [&str; 5] {
 ///
 fn scan_amount(input: &str) -> (&str, &str, &str) {
     let input = input.trim_start();
-    
+
     // Check the next character
     let c = *input.chars().peekable().peek().expect("A valid character");
 
@@ -215,6 +215,36 @@ fn scan_cost(input: &str) -> (&str, &str, &str) {
         todo!("total cost")
     }
 }
+
+pub(crate) fn scan_price_directive(input: &str) -> [&str; 5] {
+    // Skip the starting P
+    let input = input[1..].trim_start();
+
+    // date
+    let Some(separator_index) = input.find(|c| c == ' ' || c == '\t')
+        else { panic!("invalid record") };
+    // date, rest
+    let (date, input) = (&input[..separator_index], &input[separator_index..]);
+
+    // time
+    if input.chars().peekable().peek().unwrap().is_digit(10) {
+        // time
+    } else {
+        // no time
+    }
+    // let Some(separator_index) = input.find(|c| c == ' ' || c == '\t')
+    //     else { panic!("invalid record") };
+    // let (time, input) = (&input[..separator_index], &input[separator_index..]);
+
+    // commodity
+
+    // price, quantity
+
+    // price, commodity
+
+    [date, , , , ]
+}
+
 
 #[cfg(test)]
 mod scanner_tests_xact {
@@ -562,5 +592,19 @@ mod amount_tests {
 
         assert_eq!("25.86", quantity);
         assert_eq!("EUR", symbol);
+    }
+}
+
+#[cfg(test)]
+mod price_scanner_tests {
+    use super::scan_price_directive;
+
+    #[test]
+    fn test_scan_price_directive() {
+        let line = "P 2022-03-03 13:00:00 EUR 1.12 USD";
+
+        let actual = scan_price_directive(line);
+
+        todo!("assert")
     }
 }

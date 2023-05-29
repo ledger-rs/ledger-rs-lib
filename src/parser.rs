@@ -141,8 +141,11 @@ impl<'j, T: Read> Parser<'j, T> {
 
                 // if !general_directive()
                 match c {
+                    // ACDNY
+
                     'P' => {
                         // price
+                        self.price_xact_directive();
                     }
 
                     c => {
@@ -208,6 +211,11 @@ impl<'j, T: Read> Parser<'j, T> {
         // lookup(DIRECTIVE, self.buffer)
 
         false
+    }
+
+    fn price_xact_directive(&self) {
+        // pass on to the commodity pool
+        self.journal.commodity_pool.parse_price_directive(&self.buffer);
     }
 
     fn xact_directive(&mut self) {

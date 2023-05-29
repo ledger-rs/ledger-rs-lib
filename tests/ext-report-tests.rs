@@ -37,7 +37,7 @@ fn test_accounts() {
     let actual = ledger_rs_lib::run(args);
 
     assert!(!actual.is_empty());
-    let expected = vec!["Expenses", "Assets"];
+    let expected = vec!["Assets", "Expenses"];
     assert_eq!(expected, actual);
 }
 
@@ -48,7 +48,8 @@ fn test_account_filter() {
     let actual = ledger_rs_lib::run(args);
 
     assert!(!actual.is_empty());
-    let expected = vec!["Assets", "Expenses"];
+    // Only Assets should be returned.
+    let expected = vec!["Assets"];
     assert_eq!(expected, actual);
 }
 

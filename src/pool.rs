@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use chrono::NaiveDateTime;
 use petgraph::stable_graph::NodeIndex;
 
-use crate::{amount::Amount, commodity::Commodity, history::CommodityHistory};
+use crate::{amount::Amount, commodity::Commodity, history::CommodityHistory, scanner};
 
 /// Commodity Index is the index of the node in the history graph.
 pub type CommodityIndex = NodeIndex;
@@ -75,8 +75,10 @@ impl CommodityPool {
         todo!()
     }
 
-    pub fn parse_price_directive() {
-        todo!()
+    pub fn parse_price_directive(&self, line: &str) {
+        let tokens = scanner::scan_price_directive(line);
+        
+        todo!("continue")
     }
 }
 
@@ -96,6 +98,17 @@ mod tests {
         assert_eq!(1, pool.commodities.len());
         assert!(pool.commodities.contains_key("EUR"));
         // assert_eq!(Some(symbol), pool.commodities.get(symbol));
+    }
+
+    #[test]
+    fn test_parsing_price_directive() {
+        let line = "P 2022-03-03 13:00:00 EUR 1.12 USD";
+        let pool = CommodityPool::new();
+
+        // Act
+        pool.parse_price_directive(line);
+
+        todo!("assert")
     }
 }
 
