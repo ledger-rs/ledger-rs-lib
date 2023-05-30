@@ -120,7 +120,8 @@ mod lib_tests {
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).unwrap();
         let expected = r#"Account Assets has balance -20
-Account Expenses has balance 20"#;
+Account Expenses has balance 20
+Account master has balance "#;
 
         let actual = run(args).join("\n");
 
@@ -153,10 +154,11 @@ Account Expenses has balance 20"#;
         );
 
         // accounts
-        assert_eq!("Expenses", journal.accounts[0].name);
-        assert_eq!("Assets", journal.accounts[1].name);
-        assert_eq!("Expenses:Food", journal.accounts[2].name);
-        assert_eq!("Assets:Cash", journal.accounts[3].name);
+        assert_eq!("master", journal.accounts[0].name);
+        assert_eq!("Expenses", journal.accounts[1].name);
+        assert_eq!("Assets", journal.accounts[2].name);
+        assert_eq!("Food", journal.accounts[3].name);
+        assert_eq!("Cash", journal.accounts[4].name);
 
         // commodities
         assert_eq!(1, journal.commodity_pool.commodities.len());

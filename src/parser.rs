@@ -324,7 +324,6 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     let account_index;
     {
         // Create Account, add to collection
-        // let account = Account::parse(tokens[0]);
         account_index = journal.register_account(tokens[0]).unwrap();
     }
 
@@ -402,7 +401,7 @@ mod tests {
         parser.parse();
 
         // Assert
-        assert_eq!(2, journal.accounts.len());
+        assert_eq!(3, journal.accounts.len());
     }
 }
 
@@ -437,7 +436,6 @@ mod full_tests {
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
 
-        // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &journal.posts[xact.posts[1]];
         assert_eq!("Assets", journal.get_account(post2.account_index).name);
     }
@@ -559,7 +557,7 @@ mod parser_tests {
         // post 1
         let p1 = posts[0];
         assert_eq!(
-            "Assets:Investment",
+            "Investment",
             journal.get_account(p1.account_index).name
         );
         // amount
@@ -616,7 +614,7 @@ mod parser_tests {
         // Assert
         assert_eq!(1, journal.xacts.len());
         assert_eq!(4, journal.posts.len());
-        assert_eq!(4, journal.accounts.len());
+        assert_eq!(7, journal.accounts.len());
         assert_eq!(2, journal.commodity_pool.commodities.len());
     }
 }

@@ -122,7 +122,7 @@ pub(crate) fn scan_post(input: &str) -> [&str; 5] {
         Some(i) => {
             let account = &input[..i];
             let (quantity, symbol, input) = scan_amount(&input[i + 2..]);
-            let (cost_q, cost_s, input) = match input.is_empty() {
+            let (cost_q, cost_s, _input) = match input.is_empty() {
                 true => ("", "", ""),
                 false => scan_cost(input),
             };
@@ -132,7 +132,7 @@ pub(crate) fn scan_post(input: &str) -> [&str; 5] {
 
             return [account, quantity, symbol, cost_q, cost_s];
         }
-        None => [input, "", "", "", ""],
+        None => [input.trim_end(), "", "", "", ""],
     }
 }
 

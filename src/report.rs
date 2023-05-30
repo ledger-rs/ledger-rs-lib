@@ -53,7 +53,7 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
             balance.add(&post.amount.as_ref().unwrap());
         }
 
-        balances.push((acc.name.to_owned(), balance));
+        balances.push((acc.fullname(journal), balance));
     }
     balances
 }
@@ -158,8 +158,10 @@ mod tests {
 
         // Assert
         assert!(!actual.is_empty());
-        assert_eq!(2, actual.len());
-        assert_eq!("Account Assets:Cash EUR has balance -25 EUR", actual[0]);
-        assert_eq!("Account Assets:Cash USD has balance 30 USD", actual[1]);
+        assert_eq!(4, actual.len());
+        assert_eq!("Account Assets has balance ", actual[0]);
+        assert_eq!("Account Cash EUR has balance -25 EUR", actual[1]);
+        assert_eq!("Account Cash USD has balance 30 USD", actual[2]);
+        assert_eq!("Account Assets:Cash USD has balance 30 USD", actual[3]);
     }
 }

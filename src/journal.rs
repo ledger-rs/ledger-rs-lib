@@ -34,7 +34,7 @@ impl Journal {
         };
 
         // Add master account
-        j.add_account(Account::new("master"));
+        j.add_account(Account::new(""));
 
         j
     }
@@ -91,15 +91,19 @@ impl Journal {
 
         // todo: expand_aliases
 
-        let account_index = self.find_account(0, name, true);
+        let account_index = self.find_or_create_account(0, name, true);
 
         // todo: add any validity checks here.
 
         account_index
     }
 
+    // pub fn find_account(&self, name: &str) -> Option<AccountIndex> {
+    //     self.find_or_create_account(0, name, false)
+    // }
+
     /// Create an account tree from the account full-name.
-    pub fn find_account(&mut self, root_id: AccountIndex, acct_name: &str, auto_create: bool) -> Option<AccountIndex> {
+    pub fn find_or_create_account(&mut self, root_id: AccountIndex, acct_name: &str, auto_create: bool) -> Option<AccountIndex> {
         let parent = self.accounts.get(root_id).unwrap();
         if parent.accounts.contains_key(acct_name) {
             return Some(*parent.accounts.get(acct_name).unwrap());
@@ -120,8 +124,15 @@ impl Journal {
 
         let mut account_index: AccountIndex;
         if !parent.accounts.contains_key(first) {
+            if !auto_create {
+                return None
+            }
+            
             // create and add to the store.
-            account_index = self.add_account(Account::new(first));
+            let mut new_account = Account::new(first);
+            new_account.parent_index = Some(root_id);
+
+            account_index = self.add_account(new_account);
 
             // Add to local map
             let root_mut = self.accounts.get_mut(root_id).unwrap();
@@ -132,7 +143,7 @@ impl Journal {
 
         // Search recursively.
         if !rest.is_empty() {
-            account_index = self.find_account(account_index, rest, auto_create).unwrap()
+            account_index = self.find_or_create_account(account_index, rest, auto_create).unwrap()
         }
 
         Some(account_index)
