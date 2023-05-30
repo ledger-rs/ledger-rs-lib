@@ -43,8 +43,6 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
     for (i, acc) in journal.accounts.iter().enumerate() {
         // get posts for this account.
         let filtered_posts = journal.posts.iter().filter(|post| post.account_index == i);
-        // .map(|post| post.amount)
-        // .sum();
 
         // TODO: separate balance per currency
 
@@ -72,7 +70,12 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal
                 None => "",
             };
 
+            if !bal_text.is_empty() {
+                bal_text += ", ";
+            }
+            
             bal_text += amount.quantity.to_string().as_str();
+
             if !symbol.is_empty() {
                 bal_text += " ";
                 bal_text += symbol;
@@ -91,28 +94,24 @@ mod tests {
     use super::balance_report;
     use crate::{journal::Journal, parser};
 
-    fn create_journal() -> Journal {
+    #[test]
+    fn test_balance_report_one_xact() {
         let src = r#";
 2023-05-05 Payee
     Expenses  25 EUR
     Assets
 
 "#;
-        let source = Cursor::new(src);
         let mut journal = Journal::new();
-        parser::read_into_journal(source, &mut journal);
-        journal
-    }
-
-    #[test]
-    fn test_balance_report_one_xact() {
-        let journal = create_journal();
+        parser::read_into_journal(Cursor::new(src), &mut journal);
 
         let actual = balance_report(journal);
 
         assert!(!actual.is_empty());
-        assert_eq!("Account Assets has balance -25 EUR", actual[0]);
-        assert_eq!("Account Expenses has balance 25 EUR", actual[1]);
+        assert_eq!(3, actual.len());
+        assert_eq!("Account  has balance ", actual[0]);
+        assert_eq!("Account Assets has balance -25 EUR", actual[1]);
+        assert_eq!("Account Expenses has balance 25 EUR", actual[2]);
     }
 
     #[test]
@@ -135,11 +134,10 @@ mod tests {
 
         // Assert
         assert!(!actual.is_empty());
-        assert_eq!(4, actual.len());
-        assert_eq!("Account Assets has balance -25 EUR", actual[0]);
-        assert_eq!("Account Assets has balance -13 BAM", actual[1]);
-        assert_eq!("Account Expenses has balance 25 EUR", actual[2]);
-        assert_eq!("Account Expenses has balance 13 BAM", actual[3]);
+        assert_eq!(3, actual.len());
+        assert_eq!("Account  has balance ", actual[0]);
+        assert_eq!("Account Assets has balance -25 EUR, -13 BAM", actual[1]);
+        assert_eq!("Account Expenses has balance 25 EUR, 13 BAM", actual[2]);
     }
 
     #[test]
@@ -159,9 +157,9 @@ mod tests {
         // Assert
         assert!(!actual.is_empty());
         assert_eq!(4, actual.len());
-        assert_eq!("Account Assets has balance ", actual[0]);
-        assert_eq!("Account Cash EUR has balance -25 EUR", actual[1]);
-        assert_eq!("Account Cash USD has balance 30 USD", actual[2]);
+        assert_eq!("Account  has balance ", actual[0]);
+        assert_eq!("Account Assets has balance ", actual[1]);
+        assert_eq!("Account Assets:Cash EUR has balance -25 EUR", actual[2]);
         assert_eq!("Account Assets:Cash USD has balance 30 USD", actual[3]);
     }
 }

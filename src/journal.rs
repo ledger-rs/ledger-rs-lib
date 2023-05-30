@@ -127,7 +127,7 @@ impl Journal {
             if !auto_create {
                 return None
             }
-            
+
             // create and add to the store.
             let mut new_account = Account::new(first);
             new_account.parent_index = Some(root_id);
@@ -205,19 +205,22 @@ mod tests {
 
         // tree structure
         let master = journal.get_master_account();
-        assert_eq!("master", master.name);
+        assert_eq!("", master.name);
 
-        let assets_id = master.accounts.get("Assets").unwrap();
-        let assets = journal.get_account(*assets_id);
+        let assets_id = master.get_account("Assets").unwrap();
+        let assets = journal.get_account(assets_id);
         assert_eq!("Assets", assets.name);
+        assert_eq!(Some(0), assets.parent_index);
 
         let inv_ix = assets.get_account("Investments").unwrap();
         let inv = journal.get_account(inv_ix);
         assert_eq!("Investments", inv.name);
+        assert_eq!(Some(assets_id), inv.parent_index);
 
         let broker_ix = inv.get_account("Broker").unwrap();
         let broker = journal.get_account(broker_ix);
         assert_eq!("Broker", broker.name);
+        assert_eq!(Some(inv_ix), broker.parent_index);
     }
 
     /// The master account needs to be created in the Journal automatically.
@@ -227,6 +230,6 @@ mod tests {
 
         let actual = j.get_master_account();
 
-        assert_eq!("master", actual.name);
+        assert_eq!("", actual.name);
     }
 }

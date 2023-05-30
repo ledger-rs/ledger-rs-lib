@@ -119,9 +119,9 @@ mod lib_tests {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).unwrap();
-        let expected = r#"Account Assets has balance -20
-Account Expenses has balance 20
-Account master has balance "#;
+        let expected = r#"Account  has balance 
+Account Assets has balance -20
+Account Expenses has balance 20"#;
 
         let actual = run(args).join("\n");
 
@@ -154,7 +154,7 @@ Account master has balance "#;
         );
 
         // accounts
-        assert_eq!("master", journal.accounts[0].name);
+        assert_eq!("", journal.accounts[0].name);
         assert_eq!("Expenses", journal.accounts[1].name);
         assert_eq!("Assets", journal.accounts[2].name);
         assert_eq!("Food", journal.accounts[3].name);
