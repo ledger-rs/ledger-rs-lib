@@ -86,19 +86,45 @@ impl Journal {
         self.get_posts(&xact.posts)
     }
 
-    pub fn register_account(&mut self, name: &str) -> Option<usize> {
+    pub fn register_account(&mut self, name: &str) -> Option<AccountIndex> {
         // todo: expand_aliases
 
-        // let master = self.get_master_account();
-        let account_index = self.find_account(name, true);
+        // let master = self.get_master_account_mut();
+        // let account_index = master.find_account(name, self);
+        
+        // let account_index = self.find_account(name, true);
+        let account_index = self.find_rewrite(name, true, 0);
 
         // todo: add any validity checks here.
 
         account_index
     }
 
+    pub fn find_rewrite(&mut self, name: &str, auto_create: bool, root_id: AccountIndex) -> Option<AccountIndex> {
+        let root = self.accounts.get(root_id).unwrap();
+        if root.accounts.contains_key(name) {
+            return Some(*root.accounts.get(name).unwrap());
+        }
+
+        // if not found, try to break down
+        let part = "Expenses";
+        if !root.accounts.contains_key(part) {
+            let new_acc = Account::new(part);
+
+            // Add to the store
+            let new_id = self.add_account(new_acc);
+
+            // Add to local map
+            let root_m = self.accounts.get_mut(0).unwrap();
+            root_m.accounts.insert(part.into(), new_id);
+
+        }
+
+        None
+    }
+
     /// Create an account tree from the account full-name.
-    pub fn find_account(&mut self, name: &str, auto_create: bool) -> Option<usize> {
+    pub fn find_account(&mut self, name: &str, auto_create: bool) -> Option<AccountIndex> {
         let mut has_account = self.accounts_map.get(name);
         if has_account.is_some() {
             return has_account.copied();
