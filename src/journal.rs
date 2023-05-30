@@ -12,9 +12,8 @@ pub type PostIndex = usize;
 pub type XactIndex = usize;
 
 pub struct Journal {
-    // pub master: Account,
+    pub master: AccountIndex,
     
-    // pub commodities: Vec<Commodity>,
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
@@ -25,18 +24,22 @@ pub struct Journal {
 
 impl Journal {
     pub fn new() -> Self {
-        Journal {
-            // master: Account::new(),
+        let mut j = Journal {
+            master: 0,
 
             commodity_pool: CommodityPool::new(),
-            // commodities: vec![],
             xacts: vec![],
             posts: vec![],
             accounts: vec![],
             accounts_map: HashMap::new(),
 
             // sources: Vec<fileinfo?>
-        }
+        };
+
+        // Add master account
+        j.add_account(Account::new("master"));
+
+        j
     }
 
     pub fn add_account(&mut self, acct: Account) -> AccountIndex {
@@ -67,6 +70,10 @@ impl Journal {
 
     pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
         indices.iter().map(|i| &self.posts[*i]).collect()
+    }
+
+    pub fn get_master_account(&self) -> &Account {
+        self.accounts.get(0).expect("master account")
     }
 
     pub fn get_xact_posts(&self, index: XactIndex) -> Vec<&Post> {
@@ -167,6 +174,16 @@ mod tests {
         // Asserts
         assert_eq!(3, journal.accounts_map.len());
         assert_eq!(Some(2), actual);
+    }
+
+    /// The master account needs to be created in the Journal automatically.
+    #[test]
+    fn test_master_gets_created() {
+        let j = Journal::new();
+
+        let actual = j.get_master_account();
+
+        assert_eq!("master", actual.name);
     }
 
     #[test]
