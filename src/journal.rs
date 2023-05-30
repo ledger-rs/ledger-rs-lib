@@ -18,8 +18,9 @@ pub struct Journal {
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
+
     // key, account index
-    pub accounts_map: HashMap<String, usize>,
+    pub accounts_map: HashMap<String, AccountIndex>,
 }
 
 impl Journal {
@@ -74,6 +75,10 @@ impl Journal {
 
     pub fn get_master_account(&self) -> &Account {
         self.accounts.get(0).expect("master account")
+    }
+
+    pub fn get_master_account_mut(&mut self) -> &mut Account {
+        self.accounts.get_mut(0).expect("master account")
     }
 
     pub fn get_xact_posts(&self, index: XactIndex) -> Vec<&Post> {

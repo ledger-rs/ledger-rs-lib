@@ -7,14 +7,14 @@ use std::vec;
 #[derive(Debug, PartialEq)]
 pub struct Account {
     // parent
-    pub parent_index: Option<usize>,
+    pub parent_index: Option<AccountIndex>,
     pub name: String,
     // note
     // depth
     pub accounts: Vec<Account>,
     // pub posts: Vec<Post>,
     /// indices of Posts in the Journal.Posts array.
-    pub post_indices: Vec<usize>,
+    pub post_indices: Vec<PostIndex>,
     // deferred posts
     // value_expr
 }
