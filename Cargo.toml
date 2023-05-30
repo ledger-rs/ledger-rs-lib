@@ -13,9 +13,9 @@ keywords = ["library", "finance"]
 
 [dependencies]
 anyhow = "1.0.71"
-chrono = "0.4.24"
+chrono = "0.4.25"
 env_logger = "0.10.0"
-log = "0.4.17"
+log = "0.4.18"
 petgraph = "0.6.3"
 rust_decimal = "1.29.1"
 rust_decimal_macros = "1.29.1"

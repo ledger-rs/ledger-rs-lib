@@ -82,6 +82,9 @@ impl Journal {
     }
 
     pub fn register_account(&mut self, name: &str) -> Option<usize> {
+        // todo: expand_aliases
+
+        // let master = self.get_master_account();
         let account_index = self.find_account(name, true);
 
         // todo: add any validity checks here.
@@ -90,8 +93,8 @@ impl Journal {
     }
 
     /// Create an account tree from the account full-name.
-    pub fn find_account(&mut self, full_account_name: &str, auto_create: bool) -> Option<usize> {
-        let mut has_account = self.accounts_map.get(full_account_name);
+    pub fn find_account(&mut self, name: &str, auto_create: bool) -> Option<usize> {
+        let mut has_account = self.accounts_map.get(name);
         if has_account.is_some() {
             return has_account.copied();
         }
@@ -99,7 +102,7 @@ impl Journal {
         let mut account_index: Option<usize> = None;
         let mut parent: Option<usize> = None;
 
-        for part in full_account_name.split(':') {
+        for part in name.split(':') {
             has_account = self.accounts_map.get(part);
 
             if has_account.is_none() {
