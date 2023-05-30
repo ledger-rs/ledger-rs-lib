@@ -31,15 +31,8 @@ impl Account {
         }
     }
 
-    pub fn find_account(&mut self, name: &str, journal: &mut Journal) -> Option<AccountIndex> {
-
-        // if not found
-        let acct = Account::new(name);
-        let index = journal.add_account(acct);
-
-        self.accounts.insert(name.to_owned(), index);
-
-        Some(index)
+    pub fn get_account(&self, name: &str) -> Option<AccountIndex> {
+        Some(*self.accounts.get(name).unwrap())
     }
 
     pub fn parse(input: &str) -> Self {

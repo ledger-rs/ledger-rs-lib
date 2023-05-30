@@ -59,7 +59,7 @@ impl Journal {
         i
     }
 
-    pub fn get_account(&self, index: usize) -> &Account {
+    pub fn get_account(&self, index: AccountIndex) -> &Account {
         &self.accounts[index]
     }
 
@@ -93,67 +93,51 @@ impl Journal {
         // let account_index = master.find_account(name, self);
         
         // let account_index = self.find_account(name, true);
-        let account_index = self.find_rewrite(name, true, 0);
+        let account_index = self.find_account(name, true, 0);
 
         // todo: add any validity checks here.
 
         account_index
     }
 
-    pub fn find_rewrite(&mut self, name: &str, auto_create: bool, root_id: AccountIndex) -> Option<AccountIndex> {
-        let root = self.accounts.get(root_id).unwrap();
-        if root.accounts.contains_key(name) {
-            return Some(*root.accounts.get(name).unwrap());
+    /// Create an account tree from the account full-name.
+    pub fn find_account(&mut self, acct_name: &str, auto_create: bool, parent_id: AccountIndex) -> Option<AccountIndex> {
+        let parent = self.accounts.get(parent_id).unwrap();
+        if parent.accounts.contains_key(acct_name) {
+            return Some(*parent.accounts.get(acct_name).unwrap());
         }
 
         // if not found, try to break down
-        let part = "Expenses";
-        if !root.accounts.contains_key(part) {
-            let new_acc = Account::new(part);
+        let first: &str;
+        let rest: &str;
+        if let Some(separator_index) = acct_name.find(':') {
+            // Contains separators
+            first = &acct_name[..separator_index];
+            rest = &acct_name[separator_index + 1..];
+        } else {
+            // take all
+            first = acct_name;
+            rest = "";
+        }
 
-            // Add to the store
-            let new_id = self.add_account(new_acc);
+        let mut account_index: AccountIndex;
+        if !parent.accounts.contains_key(first) {
+            // create and add to the store.
+            account_index = self.add_account(Account::new(first));
 
             // Add to local map
-            let root_m = self.accounts.get_mut(0).unwrap();
-            root_m.accounts.insert(part.into(), new_id);
-
+            let root_mut = self.accounts.get_mut(parent_id).unwrap();
+            root_mut.accounts.insert(first.into(), account_index);
+        } else {
+            account_index = *parent.accounts.get(first).unwrap();
         }
 
-        None
-    }
-
-    /// Create an account tree from the account full-name.
-    pub fn find_account(&mut self, name: &str, auto_create: bool) -> Option<AccountIndex> {
-        let mut has_account = self.accounts_map.get(name);
-        if has_account.is_some() {
-            return has_account.copied();
+        // Search recursively.
+        if !rest.is_empty() {
+            account_index = self.find_account(rest, auto_create, account_index).unwrap()
         }
-        
-        let mut account_index: Option<usize> = None;
-        let mut parent: Option<usize> = None;
 
-        for part in name.split(':') {
-            has_account = self.accounts_map.get(part);
-
-            if has_account.is_none() {
-                if !auto_create {
-                    return None;
-                }
-
-                let mut new_account = Account::new(part);
-                if parent.is_some() {
-                    new_account.parent_index = account_index;
-                }
-
-                account_index = Some(self.add_account(new_account));
-                self.accounts_map.insert(part.to_owned(), account_index.unwrap());
-
-                parent = account_index;
-            }
-        }
-        
-        account_index
+        Some(account_index)
     }
 }
 
@@ -206,8 +190,24 @@ mod tests {
         let actual = journal.register_account(name);
 
         // Asserts
-        assert_eq!(3, journal.accounts_map.len());
-        assert_eq!(Some(2), actual);
+        assert_eq!(4, journal.accounts.len());
+        assert_eq!(Some(3), actual);
+
+        // tree structure
+        let master = journal.get_master_account();
+        assert_eq!("master", master.name);
+
+        let assets_id = master.accounts.get("Assets").unwrap();
+        let assets = journal.get_account(*assets_id);
+        assert_eq!("Assets", assets.name);
+
+        let inv_ix = assets.get_account("Investments").unwrap();
+        let inv = journal.get_account(inv_ix);
+        assert_eq!("Investments", inv.name);
+
+        let broker_ix = inv.get_account("Broker").unwrap();
+        let broker = journal.get_account(broker_ix);
+        assert_eq!("Broker", broker.name);
     }
 
     /// The master account needs to be created in the Journal automatically.
@@ -225,7 +225,7 @@ mod tests {
         let name = "Assets:Investments:Broker";
         let mut journal = Journal::new();
         
-        let actual = journal.find_account(name, true);
+        let actual = journal.find_account(name, true, 0);
 
         // Assert
 
