@@ -1,5 +1,7 @@
 use std::vec;
 
+use crate::journal::{AccountIndex, PostIndex};
+
 /**
  * Account
  */
