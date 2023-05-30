@@ -18,9 +18,6 @@ pub struct Journal {
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
-
-    // key, account index
-    pub accounts_map: HashMap<String, AccountIndex>,
 }
 
 impl Journal {
@@ -32,7 +29,6 @@ impl Journal {
             xacts: vec![],
             posts: vec![],
             accounts: vec![],
-            accounts_map: HashMap::new(),
 
             // sources: Vec<fileinfo?>
         };
@@ -43,7 +39,9 @@ impl Journal {
         j
     }
 
-    pub fn add_account(&mut self, acct: Account) -> AccountIndex {
+    /// Adds the account to the storage.
+    /// Should be used only during account registration.
+    fn add_account(&mut self, acct: Account) -> AccountIndex {
         self.accounts.push(acct);
         self.accounts.len() - 1
     }
@@ -87,13 +85,13 @@ impl Journal {
     }
 
     pub fn register_account(&mut self, name: &str) -> Option<AccountIndex> {
+        if name.is_empty() {
+            panic!("Invalid account name {:?}", name);
+        }
+
         // todo: expand_aliases
 
-        // let master = self.get_master_account_mut();
-        // let account_index = master.find_account(name, self);
-        
-        // let account_index = self.find_account(name, true);
-        let account_index = self.find_account(name, true, 0);
+        let account_index = self.find_account(0, name, true);
 
         // todo: add any validity checks here.
 
@@ -101,8 +99,8 @@ impl Journal {
     }
 
     /// Create an account tree from the account full-name.
-    pub fn find_account(&mut self, acct_name: &str, auto_create: bool, parent_id: AccountIndex) -> Option<AccountIndex> {
-        let parent = self.accounts.get(parent_id).unwrap();
+    pub fn find_account(&mut self, root_id: AccountIndex, acct_name: &str, auto_create: bool) -> Option<AccountIndex> {
+        let parent = self.accounts.get(root_id).unwrap();
         if parent.accounts.contains_key(acct_name) {
             return Some(*parent.accounts.get(acct_name).unwrap());
         }
@@ -126,7 +124,7 @@ impl Journal {
             account_index = self.add_account(Account::new(first));
 
             // Add to local map
-            let root_mut = self.accounts.get_mut(parent_id).unwrap();
+            let root_mut = self.accounts.get_mut(root_id).unwrap();
             root_mut.accounts.insert(first.into(), account_index);
         } else {
             account_index = *parent.accounts.get(first).unwrap();
@@ -134,7 +132,7 @@ impl Journal {
 
         // Search recursively.
         if !rest.is_empty() {
-            account_index = self.find_account(rest, auto_create, account_index).unwrap()
+            account_index = self.find_account(account_index, rest, auto_create).unwrap()
         }
 
         Some(account_index)
@@ -152,7 +150,8 @@ mod tests {
         let a = Account::new("Assets");
         let i = journal.add_account(a);
 
-        assert_eq!(0, i);
+        // There is master account
+        assert_eq!(1, i);
     }
 
     #[test]
@@ -218,32 +217,5 @@ mod tests {
         let actual = j.get_master_account();
 
         assert_eq!("master", actual.name);
-    }
-
-    #[test]
-    fn test_find_account() {
-        let name = "Assets:Investments:Broker";
-        let mut journal = Journal::new();
-        
-        let actual = journal.find_account(name, true, 0);
-
-        // Assert
-
-        assert_eq!(3, journal.accounts_map.len());
-
-        let mut index = *journal.accounts_map.get("Assets").unwrap();
-        let account = journal.get_account(index);
-        assert_eq!("Assets", account.name);
-
-        index = *journal.accounts_map.get("Investments").unwrap();
-        let assets_account = journal.get_account(index);
-        assert_eq!("Investments", assets_account.name);
-
-        index = *journal.accounts_map.get("Broker").unwrap();
-        let journal_account = journal.get_account(index);
-        assert_eq!("Broker", journal_account.name);
-
-        assert!(actual.is_some());
-        assert_eq!(2, actual.unwrap());
     }
 }

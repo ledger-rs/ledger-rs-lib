@@ -324,8 +324,8 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     let account_index;
     {
         // Create Account, add to collection
-        let account = Account::parse(tokens[0]);
-        account_index = journal.add_account(account);
+        // let account = Account::parse(tokens[0]);
+        account_index = journal.register_account(tokens[0]).unwrap();
     }
 
     let commodity_index: Option<CommodityIndex>;
@@ -370,7 +370,6 @@ mod tests {
     use std::{io::Cursor, todo};
 
     use crate::journal::Journal;
-
     use super::Parser;
 
     #[test]
