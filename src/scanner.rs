@@ -10,9 +10,9 @@
 /// Check for .is_empty() after receiving the result and handle appropriately.
 ///
 /// Ledger's documentation specifies the following format
-/// ```
+/// 
 /// DATE[=EDATE] [*|!] [(CODE)] DESC
-/// ```
+/// 
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
 pub(crate) fn tokenize_xact_header(input: &str) -> [&str; 4] {
