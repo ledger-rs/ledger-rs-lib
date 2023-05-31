@@ -603,7 +603,7 @@ mod scanner_tests_post {
 }
 
 #[cfg(test)]
-mod amount_tests {
+mod scanner_tests_amount {
     use super::scan_cost;
 
     #[test]
@@ -618,7 +618,7 @@ mod amount_tests {
 }
 
 #[cfg(test)]
-mod price_scanner_tests {
+mod scanner_tests_price_directive {
     use super::scan_price_directive;
 
     #[test]

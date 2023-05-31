@@ -75,7 +75,17 @@ impl CommodityPool {
         self.commodity_history.get_commodity(index)
     }
 
-    pub fn exchange(&self, commodity: &Commodity, per_unit_cost: Amount, moment: NaiveDateTime) {
+    // pub fn exchange(&self, commodity: &Commodity, per_unit_cost: Amount, moment: NaiveDateTime) {
+    //     todo!()
+    // }
+
+    pub fn exchange(&self, amount: &Amount, cost: &Amount, is_per_unit: bool, add_price: bool, moment: NaiveDateTime) -> CostBreakdown {
+        // amount.commodity_index
+        
+        // annotations?
+
+        let per_unit_cost = if is_per_unit || amount.is_zero() { cost.abs() } else { (*cost / *amount).abs() };
+
         todo!()
     }
 
@@ -109,6 +119,12 @@ impl CommodityPool {
         self.commodity_history
             .add_price(commodity_index, datetime, cost);
     }
+}
+
+pub struct CostBreakdown {
+    amount: Amount,
+    final_cost: Amount,
+    basis_cost: Amount
 }
 
 #[cfg(test)]
@@ -160,6 +176,11 @@ mod tests {
         assert_eq!("2022-03-03 13:00:00", datetime_string);
         // rate
         assert_eq!(&dec!(1.12), rates.values().nth(0).unwrap());
+    }
+
+    #[test]
+    fn test_exchange() {
+
     }
 }
 

@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Mul};
+use std::ops::{AddAssign, Div, Mul};
 
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -9,20 +9,27 @@ use crate::pool::CommodityIndex;
  * Amount
  */
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Amount {
     pub quantity: Decimal,
     pub commodity_index: Option<CommodityIndex>,
 }
 
 impl Amount {
-    pub fn new(
-        quantity: Decimal,
-        commodity_index: Option<CommodityIndex>,
-    ) -> Self {
+    pub fn new(quantity: Decimal, commodity_index: Option<CommodityIndex>) -> Self {
         Self {
             quantity,
             commodity_index,
+        }
+    }
+
+    pub fn abs(&self) -> Amount {
+        if self.quantity.is_sign_positive() {
+            let mut clone = self.clone();
+            clone.quantity.set_sign_negative(true);
+            clone
+        } else {
+            self.clone()
         }
     }
 
@@ -103,6 +110,10 @@ impl Amount {
             false
         }
     }
+
+    pub fn is_zero(&self) -> bool {
+        self.quantity.is_zero()
+    }
 }
 
 impl std::ops::Add<Amount> for Amount {
@@ -129,15 +140,42 @@ impl AddAssign<Amount> for Amount {
     }
 }
 
-// fn parse_quantity(input: &str) -> Option<Decimal> {
-//     // handle empty string
-//     if input.is_empty() {
-//         return None;
-//     }
+impl Div for Amount {
+    type Output = Amount;
 
-//     // get rid of thousand separators
-//     // let clean = input.replace(',', '');
+    fn div(self, rhs: Self) -> Self::Output {
+        if self.quantity.is_zero() || rhs.quantity.is_zero() {
+            todo!("handle no quantity");
+        }
 
-//     Some(Decimal::from_str(input).expect("quantity parsed"))
-// }
+        let mut result = Amount::new(Decimal::ZERO, None);
 
+        if self.commodity_index.is_none() {
+            result.commodity_index = rhs.commodity_index;
+        } else {
+            result.commodity_index = self.commodity_index
+        }
+
+        result.quantity = self.quantity / rhs.quantity;
+
+        result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rust_decimal_macros::dec;
+
+    use super::Amount;
+
+    #[test]
+    fn test_division() {
+        let a = Amount::new(dec!(10), Some(3.into()));
+        let b = Amount::new(dec!(5), Some(3.into()));
+        let expected = Amount::new(dec!(2), Some(3.into()));
+
+        let c = a / b;
+
+        assert_eq!(expected, c);
+    }
+}

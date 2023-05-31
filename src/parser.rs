@@ -38,7 +38,6 @@ use crate::{
 pub const ISO_DATE_FORMAT: &str = "%Y-%m-%d";
 pub const ISO_TIME_FORMAT: &str = "%H:%M:%S";
 
-
 pub(crate) fn read_into_journal<T: Read>(source: T, journal: &mut Journal) {
     let mut parser = Parser::new(source, journal);
 
@@ -140,7 +139,6 @@ impl<'j, T: Read> Parser<'j, T> {
                 // if !general_directive()
                 match c {
                     // ACDNY
-
                     'P' => {
                         // price
                         self.price_xact_directive();
@@ -213,7 +211,9 @@ impl<'j, T: Read> Parser<'j, T> {
 
     fn price_xact_directive(&mut self) {
         // pass on to the commodity pool
-        self.journal.commodity_pool.parse_price_directive(&self.buffer);
+        self.journal
+            .commodity_pool
+            .parse_price_directive(&self.buffer);
     }
 
     fn xact_directive(&mut self) {
@@ -368,8 +368,8 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
 mod tests {
     use std::{io::Cursor, todo};
 
-    use crate::journal::Journal;
     use super::Parser;
+    use crate::journal::Journal;
 
     /// Enable this test again when the functionality is complete
     //#[test]
@@ -557,10 +557,7 @@ mod parser_tests {
 
         // post 1
         let p1 = posts[0];
-        assert_eq!(
-            "Investment",
-            journal.get_account(p1.account_index).name
-        );
+        assert_eq!("Investment", journal.get_account(p1.account_index).name);
         // amount
         let Some(a1) = &p1.amount else {panic!()};
         assert_eq!("20", a1.quantity.to_string());
@@ -617,6 +614,27 @@ mod parser_tests {
         assert_eq!(4, journal.posts.len());
         assert_eq!(7, journal.accounts.len());
         assert_eq!(2, journal.commodity_pool.commodities.len());
+    }
+}
+
+#[cfg(test)]
+mod posting_parsing_tests {
+    use crate::journal::Journal;
+
+    #[test]
+    fn test_parsing_lot() {
+        let file_path = "tests/lot.ledger";
+        let mut j = Journal::new();
+
+        // Act
+        crate::parse_file(file_path, &mut j);
+
+        // Assert
+        assert_eq!(1, j.xacts.len());
+        assert_eq!(4, j.accounts.len());
+        assert_eq!(2, j.commodity_pool.commodities.len());
+
+        todo!("check the price")
     }
 }
 

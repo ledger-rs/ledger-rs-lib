@@ -67,6 +67,10 @@ impl Journal {
 
     // }
 
+    pub fn get_post(&self, index: PostIndex) -> &Post {
+        &self.posts[index]
+    }
+
     pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
         indices.iter().map(|i| &self.posts[*i]).collect()
     }

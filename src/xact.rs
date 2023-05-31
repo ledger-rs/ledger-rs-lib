@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 
 use crate::{
     balance::Balance,
@@ -91,7 +91,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
             let Some(amt) = &post.amount
                 else {panic!("should not happen")};
 
-            balance.add(amt.to_owned());
+            balance.add(amt);
         } else if null_post.is_some() {
             todo!()
         } else {
@@ -101,6 +101,42 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
     // If there is only one post, balance against the default account if one has
     // been set.
+    if xact.posts.len() == 1 {
+        todo!("handle")
+    }
+
+    if null_post.is_none() && xact.posts.len() == 2 {
+        // When an xact involves two different commodities (regardless of how
+        // many posts there are) determine the conversion ratio by dividing the
+        // total value of one commodity by the total value of the other.  This
+        // establishes the per-unit cost for this post for both commodities.
+        todo!("complete")
+    }
+
+    // if (has_date())
+    {
+        for post_index in &xact.posts {
+            let p = journal.get_post(*post_index);
+            if p.cost.is_none() {
+                continue;
+            }
+
+            let Some(amt) = &p.amount else {panic!("No amount found on the posting")};
+            let Some(cost) = &p.cost else {panic!("No cost found on the posting")};
+            if amt.commodity_index == cost.commodity_index {
+                panic!("A posting's cost must be of a different commodity than its amount");
+            }
+
+            // Cost breakdown
+            // TODO: virtual cost does not create a price
+            let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
+            let breakdown = journal
+                .commodity_pool
+                .exchange(amt, cost, false, true, today);
+
+            todo!("complete")
+        }
+    }
 
     // Handle null-amount post.
     if null_post.is_some() {
@@ -123,6 +159,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
             amt_bal.inverse()
         } else {
             // TODO: handle option when there are multiple currencies and only one blank posting.
+
             todo!("check this option")
         };
 
