@@ -132,7 +132,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
             let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
             let breakdown = journal
                 .commodity_pool
-                .exchange(amt, cost, false, true, today);
+                .exchange_breakdown(amt, cost, false, true, today, &journal);
 
             todo!("complete")
         }

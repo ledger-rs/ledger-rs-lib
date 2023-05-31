@@ -9,7 +9,7 @@ use journal::Journal;
 use option::InputOptions;
 
 mod account;
-mod amount;
+pub mod amount;
 mod balance;
 mod commodity;
 mod history;
@@ -110,8 +110,6 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
 mod lib_tests {
     use std::assert_eq;
 
-    use rust_decimal_macros::dec;
-
     use crate::{amount::Amount, option, run, pool::CommodityIndex};
 
     #[test]
@@ -147,9 +145,9 @@ Account Expenses has balance 20"#;
 
         // posts
         assert_eq!(4, journal.posts.len());
-        assert_eq!(Some(Amount::new(dec!(20), None)), journal.posts[0].amount);
+        assert_eq!(Some(Amount::new(20.into(), None)), journal.posts[0].amount);
         assert_eq!(
-            Some(Amount::new(dec!(20), Some(CommodityIndex::new(0)))),
+            Some(Amount::new(20.into(), Some(CommodityIndex::new(0)))),
             journal.posts[2].amount
         );
 

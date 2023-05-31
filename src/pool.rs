@@ -5,11 +5,13 @@ use std::{collections::HashMap, str::FromStr};
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use petgraph::stable_graph::NodeIndex;
-use rust_decimal::Decimal;
 
 use crate::{
-    amount::Amount, commodity::Commodity, history::CommodityHistory, parser::{ISO_DATE_FORMAT, ISO_TIME_FORMAT},
-    scanner,
+    amount::{Amount, Decimal},
+    commodity::Commodity,
+    history::CommodityHistory,
+    parser::{ISO_DATE_FORMAT, ISO_TIME_FORMAT},
+    scanner, journal::Journal,
 };
 
 /// Commodity Index is the index of the node in the history graph.
@@ -32,6 +34,10 @@ impl CommodityPool {
             commodities: HashMap::new(),
             commodity_history: CommodityHistory::new(),
         }
+    }
+
+    pub fn add_price(&mut self, commodity: CommodityIndex, date: NaiveDateTime, price: Amount) {
+        self.commodity_history.add_price(commodity, date, price)
     }
 
     /// Creates a new Commodity for the given Symbol.
@@ -75,16 +81,43 @@ impl CommodityPool {
         self.commodity_history.get_commodity(index)
     }
 
-    // pub fn exchange(&self, commodity: &Commodity, per_unit_cost: Amount, moment: NaiveDateTime) {
-    //     todo!()
-    // }
+    pub fn exchange(&self, commodity_index: CommodityIndex, per_unit_cost: Amount, moment: NaiveDateTime, journal: &Journal) {
+        let commodity = journal.get_commodity(commodity_index);
 
-    pub fn exchange(&self, amount: &Amount, cost: &Amount, is_per_unit: bool, add_price: bool, moment: NaiveDateTime) -> CostBreakdown {
+        todo!()
+    }
+
+    pub fn exchange_breakdown(
+        &self,
+        amount: &Amount,
+        cost: &Amount,
+        is_per_unit: bool,
+        add_price: bool,
+        moment: NaiveDateTime,
+        journal: &Journal
+    ) -> CostBreakdown {
         // amount.commodity_index
-        
+
         // annotations?
 
-        let per_unit_cost = if is_per_unit || amount.is_zero() { cost.abs() } else { (*cost / *amount).abs() };
+        let mut per_unit_cost = if is_per_unit || amount.is_zero() {
+            cost.abs()
+        } else {
+            (*cost / *amount).abs()
+        };
+
+        if cost.commodity_index.is_none() {
+            per_unit_cost.commodity_index = None;
+        }
+
+        // DEBUG("commodity.prices.add",
+
+        // Do not record commodity exchanges where amount's commodity has a
+        // fixated price, since this does not establish a market value for the
+        // base commodity.
+        if add_price && !per_unit_cost.is_zero() && amount.commodity_index != per_unit_cost.commodity_index {
+            self.exchange(amount.commodity_index.unwrap(), per_unit_cost, moment, journal);
+        }
 
         todo!()
     }
@@ -124,13 +157,16 @@ impl CommodityPool {
 pub struct CostBreakdown {
     amount: Amount,
     final_cost: Amount,
-    basis_cost: Amount
+    basis_cost: Amount,
 }
 
 #[cfg(test)]
 mod tests {
-    use rust_decimal_macros::dec;
+    use std::str::FromStr;
 
+    use chrono::NaiveDateTime;
+
+    use crate::amount::{Amount, Decimal};
     use super::CommodityPool;
 
     #[test]
@@ -165,8 +201,24 @@ mod tests {
         assert!(pool.commodities.contains_key("USD"));
 
         // Currencies as nodes in the graph.
-        assert_eq!("EUR", pool.commodity_history.graph.node_weights().nth(0).unwrap().symbol);
-        assert_eq!("USD", pool.commodity_history.graph.node_weights().nth(1).unwrap().symbol);
+        assert_eq!(
+            "EUR",
+            pool.commodity_history
+                .graph
+                .node_weights()
+                .nth(0)
+                .unwrap()
+                .symbol
+        );
+        assert_eq!(
+            "USD",
+            pool.commodity_history
+                .graph
+                .node_weights()
+                .nth(1)
+                .unwrap()
+                .symbol
+        );
 
         // Rate, edge
         let rates = pool.commodity_history.graph.edge_weights().nth(0).unwrap();
@@ -175,12 +227,30 @@ mod tests {
         // date/time
         assert_eq!("2022-03-03 13:00:00", datetime_string);
         // rate
-        assert_eq!(&dec!(1.12), rates.values().nth(0).unwrap());
+        assert_eq!(&Decimal::from(1.12), rates.values().nth(0).unwrap());
     }
 
-    #[test]
+    // #[test]
     fn test_exchange() {
+        let mut pool = CommodityPool::new();
+        let eur = pool.create("EUR");
+        let usd = pool.create("USD");
+        let today = NaiveDateTime::from_str("2023-05-10").unwrap();
+        let price = Amount::new(1.25.into(), Some(usd));
+        pool.add_price(eur, today, price);
 
+        // let actual = pool.exchange(eur, Amount::new(15.into(), commodity_index), moment, journal);
+
+        todo!("complete")
+    }
+
+    // TODO: complete
+    // #[test]
+    fn test_exchange_breakdown() {
+        let pool = CommodityPool::new();
+
+        // pool.exchange_breakdown(amount, cost, is_per_unit, add_price, moment);
+        todo!()
     }
 }
 

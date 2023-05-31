@@ -640,9 +640,7 @@ mod posting_parsing_tests {
 
 #[cfg(test)]
 mod amount_parsing_tests {
-    use rust_decimal_macros::dec;
-
-    use crate::{journal::Journal, parser::parse_post, pool::CommodityIndex, xact::Xact};
+    use crate::{journal::Journal, parser::parse_post, pool::CommodityIndex, xact::Xact, amount::Decimal};
 
     use super::Amount;
 
@@ -657,7 +655,7 @@ mod amount_parsing_tests {
     #[test]
     fn test_positive_no_commodity() {
         let expected = Amount {
-            quantity: dec!(20),
+            quantity: 20.into(),
             commodity_index: None,
         };
         let actual = Amount::parse("20", None).unwrap();
@@ -669,7 +667,7 @@ mod amount_parsing_tests {
     fn test_negative_no_commodity() {
         let actual = Amount::parse("-20", None).unwrap();
         let expected = Amount {
-            quantity: dec!(-20),
+            quantity: (-20).into(),
             commodity_index: None,
         };
 
@@ -679,7 +677,7 @@ mod amount_parsing_tests {
     #[test]
     fn test_pos_w_commodity_separated() {
         let expected = Amount {
-            quantity: dec!(20),
+            quantity: 20.into(),
             commodity_index: Some(CommodityIndex::new(0)),
         };
         let mut journal = setup();
@@ -704,7 +702,7 @@ mod amount_parsing_tests {
     #[test]
     fn test_neg_commodity_separated() {
         let expected = Amount {
-            quantity: dec!(-20),
+            quantity: (-20).into(),
             commodity_index: Some(CommodityIndex::new(0)),
         };
         let mut journal = setup();
@@ -771,7 +769,7 @@ mod amount_parsing_tests {
     #[test]
     fn test_quantity_separators() {
         let input = "-1000000.00";
-        let expected = dec!(-1_000_000);
+        let expected = Decimal::from(-1_000_000);
 
         let amount = Amount::parse(input, None);
         assert!(amount.is_some());
@@ -784,13 +782,13 @@ mod amount_parsing_tests {
     #[test]
     fn test_addition() {
         //let c1 = Commodity::new("EUR");
-        let left = Amount::new(dec!(10), None);
+        let left = Amount::new(10.into(), None);
         // let c2 = Commodity::new("EUR");
-        let right = Amount::new(dec!(15), None);
+        let right = Amount::new(15.into(), None);
 
         let actual = left + right;
 
-        assert_eq!(dec!(25), actual.quantity);
+        assert_eq!(Decimal::from(25), actual.quantity);
         // assert!(actual.commodity.is_some());
         // assert_eq!("EUR", actual.commodity.unwrap().symbol);
     }
@@ -798,14 +796,14 @@ mod amount_parsing_tests {
     #[test]
     fn test_add_assign() {
         // let c1 = Commodity::new("EUR");
-        let mut actual = Amount::new(dec!(21), None);
+        let mut actual = Amount::new(21.into(), None);
         // let c2 = Commodity::new("EUR");
-        let other = Amount::new(dec!(13), None);
+        let other = Amount::new(13.into(), None);
 
         // actual += addition;
         actual.add(&other);
 
-        assert_eq!(dec!(34), actual.quantity);
+        assert_eq!(Decimal::from(34), actual.quantity);
     }
 
     #[test]
@@ -818,10 +816,10 @@ mod amount_parsing_tests {
 
     #[test]
     fn test_copy_from_no_commodity() {
-        let other = Amount::new(dec!(10), None);
+        let other = Amount::new(10.into(), None);
         let actual = Amount::copy_from(&other);
 
-        assert_eq!(dec!(10), actual.quantity);
+        assert_eq!(Decimal::from(10), actual.quantity);
         // assert_eq!(None, actual.commodity);
     }
 }

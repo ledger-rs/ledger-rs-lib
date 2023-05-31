@@ -53,14 +53,12 @@ impl Balance {
 
 #[cfg(test)]
 mod tests {
-    use rust_decimal_macros::dec;
-
     use super::Balance;
-    use crate::{amount::Amount, pool::CommodityIndex};
+    use crate::{amount::{Amount, Decimal}, pool::CommodityIndex};
 
     #[test]
     fn test_adding_first_amount_no_commodity() {
-        let amount = Amount::new(dec!(25), None);
+        let amount = Amount::new(25.into(), None);
         let mut balance = Balance::new();
 
         balance.add(&amount);
@@ -68,7 +66,7 @@ mod tests {
         // Assert
         assert!(!balance.amounts.is_empty());
         assert_eq!(1, balance.amounts.len());
-        assert_eq!(dec!(25), balance.amounts.iter().next().unwrap().quantity);
+        assert_eq!(Decimal::from(25), balance.amounts.iter().next().unwrap().quantity);
         assert_eq!(None, balance.amounts.iter().next().unwrap().commodity_index);
     }
 
@@ -77,16 +75,16 @@ mod tests {
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(dec!(25), None);
+        let amount = Amount::new(25.into(), None);
         balance.add(&amount);
 
-        let amount = Amount::new(dec!(5), None);
+        let amount = Amount::new(5.into(), None);
         balance.add(&amount);
 
         // Assert
         assert!(!balance.amounts.is_empty());
         assert_eq!(1, balance.amounts.len());
-        assert_eq!(dec!(30), balance.amounts.iter().next().unwrap().quantity);
+        assert_eq!(Decimal::from(30), balance.amounts.iter().next().unwrap().quantity);
         assert_eq!(None, balance.amounts.iter().next().unwrap().commodity_index);
     }
 
@@ -95,22 +93,22 @@ mod tests {
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(dec!(25), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(25.into(), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
-        let amount = Amount::new(dec!(5), None);
+        let amount = Amount::new(5.into(), None);
         balance.add(&amount);
 
         // Assert
         assert!(!balance.amounts.is_empty());
         assert_eq!(2, balance.amounts.len());
-        assert_eq!(dec!(25), balance.amounts.iter().nth(0).unwrap().quantity);
+        assert_eq!(Decimal::from(25), balance.amounts.iter().nth(0).unwrap().quantity);
         assert_eq!(
             Some(CommodityIndex::new(0)),
             balance.amounts.iter().nth(0).unwrap().commodity_index
         );
 
-        assert_eq!(dec!(5), balance.amounts.iter().nth(1).unwrap().quantity);
+        assert_eq!(Decimal::from(5), balance.amounts.iter().nth(1).unwrap().quantity);
         assert_eq!(None, balance.amounts.iter().nth(1).unwrap().commodity_index);
     }
 
@@ -119,23 +117,23 @@ mod tests {
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(dec!(25), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(25.into(), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
-        let amount = Amount::new(dec!(5), Some(CommodityIndex::new(1)));
+        let amount = Amount::new(5.into(), Some(CommodityIndex::new(1)));
         balance.add(&amount);
 
         // Assert
         assert!(!balance.amounts.is_empty());
         assert_eq!(2, balance.amounts.len());
 
-        assert_eq!(dec!(25), balance.amounts.iter().nth(0).unwrap().quantity);
+        assert_eq!(Decimal::from(25), balance.amounts.iter().nth(0).unwrap().quantity);
         assert_eq!(
             Some(CommodityIndex::new(0)),
             balance.amounts.iter().nth(0).unwrap().commodity_index
         );
 
-        assert_eq!(dec!(5), balance.amounts.iter().nth(1).unwrap().quantity);
+        assert_eq!(Decimal::from(5), balance.amounts.iter().nth(1).unwrap().quantity);
         assert_eq!(
             Some(CommodityIndex::new(1)),
             balance.amounts.iter().nth(1).unwrap().commodity_index
@@ -147,17 +145,17 @@ mod tests {
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(dec!(25), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(25.into(), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
-        let amount = Amount::new(dec!(5), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(5.into(), Some(CommodityIndex::new(0)));
         balance.add(&amount);
 
         // Assert
         assert!(!balance.amounts.is_empty());
         assert_eq!(1, balance.amounts.len());
 
-        assert_eq!(dec!(30), balance.amounts.iter().nth(0).unwrap().quantity);
+        assert_eq!(Decimal::from(30), balance.amounts.iter().nth(0).unwrap().quantity);
         assert_eq!(
             Some(CommodityIndex::new(0)),
             balance.amounts.iter().nth(0).unwrap().commodity_index

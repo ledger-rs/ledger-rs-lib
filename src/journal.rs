@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{xact::Xact, account::Account, post::Post, pool::CommodityPool};
+use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity};
 
 /**
  * Journal
@@ -66,6 +66,10 @@ impl Journal {
     // pub fn get_accounts(&self, account_indices: &Vec<AccountIndex>) -> Vec<&Account> {
 
     // }
+
+    pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
+        self.commodity_pool.get_commodity(index)
+    }
 
     pub fn get_post(&self, index: PostIndex) -> &Post {
         &self.posts[index]

@@ -14,9 +14,8 @@ use std::collections::HashMap;
 
 use chrono::NaiveDateTime;
 use petgraph::{Graph, stable_graph::NodeIndex};
-use rust_decimal::Decimal;
 
-use crate::{amount::Amount, commodity::Commodity, pool::CommodityIndex};
+use crate::{amount::{Amount, Decimal}, commodity::Commodity, pool::CommodityIndex};
 
 // type PriceMap = HashMap<NaiveDateTime, Amount>;
 type PriceMap = HashMap<NaiveDateTime, Decimal>;
@@ -77,9 +76,8 @@ impl CommodityHistory {
 mod tests {
     use chrono::Local;
     use petgraph::stable_graph::NodeIndex;
-    use rust_decimal_macros::dec;
 
-    use crate::{amount::Amount, commodity::Commodity};
+    use crate::{amount::{Amount, Decimal}, commodity::Commodity};
     use super::CommodityHistory;
 
     #[test]
@@ -114,7 +112,7 @@ mod tests {
         let usd = hist.add_commodity(Commodity::new("USD"));
         let local = Local::now();
         let today = local.naive_local();
-        let price = Amount::new(dec!(25), Some(usd));
+        let price = Amount::new(25.into(), Some(usd));
 
         // Act
         hist.add_price(eur, today, price);
@@ -124,7 +122,7 @@ mod tests {
         assert_eq!(1, hist.graph.edge_count());
 
         let edge = hist.graph.edge_weights().nth(0).unwrap();
-        assert_eq!(&dec!(25), edge.values().nth(0).unwrap());
+        assert_eq!(&Decimal::from(25), edge.values().nth(0).unwrap());
     }
 
     // #[test]
