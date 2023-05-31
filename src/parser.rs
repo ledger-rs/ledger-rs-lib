@@ -620,7 +620,7 @@ mod posting_parsing_tests {
     use crate::journal::Journal;
 
     #[test]
-    fn test_parsing_lot() {
+    fn test_parsing_buy_lot() {
         let file_path = "tests/lot.ledger";
         let mut j = Journal::new();
 

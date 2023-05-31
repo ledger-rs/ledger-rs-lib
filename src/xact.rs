@@ -3,7 +3,8 @@ use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use crate::{
     balance::Balance,
     journal::{Journal, PostIndex, XactIndex},
-    parser, post::Post,
+    parser,
+    post::Post,
 };
 
 pub struct Xact {
@@ -79,7 +80,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
     let xact = journal.xacts.get(xact_index).expect("xact");
 
     // Balance
-    for post_index in xact.posts.iter() {
+    for post_index in &xact.posts {
         // must balance?
 
         let post = journal.posts.get(*post_index).expect("post");
@@ -110,7 +111,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         // many posts there are) determine the conversion ratio by dividing the
         // total value of one commodity by the total value of the other.  This
         // establishes the per-unit cost for this post for both commodities.
-        
+
         let mut top_post: Option<&Post> = None;
         for i in &xact.posts {
             let post = journal.get_post(*i);
@@ -122,30 +123,31 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         // if !saw_cost && top_post
         if top_post.is_some() {
             // log::debug("there were no costs, and a valid top_post")
-            
+
             let mut x = balance.amounts.iter().nth(0).unwrap();
             let mut y = balance.amounts.iter().nth(1).unwrap();
 
             // if x && y
-            if x.commodity_index != top_post.unwrap().amount.unwrap().commodity_index {
-                (x, y) = (y, x);
-            }
+            if !x.is_zero() && !y.is_zero() {
+                if x.commodity_index != top_post.unwrap().amount.unwrap().commodity_index {
+                    (x, y) = (y, x);
+                }
 
-            let comm = x.commodity_index;
-            let per_unit_cost = (*y / *x).abs();
+                let comm = x.commodity_index;
+                let per_unit_cost = (*y / *x).abs();
 
-            for i in &xact.posts {
-                let post = journal.posts.get_mut(*i).unwrap();
-                let amt = post.amount.unwrap();
+                for i in &xact.posts {
+                    let post = journal.posts.get_mut(*i).unwrap();
+                    let amt = post.amount.unwrap();
 
-                if amt.commodity_index == comm {
-                    balance -= amt;
-                    post.cost = Some(per_unit_cost * amt);
-                    balance += post.cost.unwrap();
+                    if amt.commodity_index == comm {
+                        balance -= amt;
+                        post.cost = Some(per_unit_cost * amt);
+                        balance += post.cost.unwrap();
+                    }
                 }
             }
         }
-        todo!("complete")
     }
 
     // if (has_date())
