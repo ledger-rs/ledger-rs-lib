@@ -1,6 +1,6 @@
 use std::{
     fmt,
-    ops::{Add, AddAssign, Div, Mul},
+    ops::{Add, AddAssign, Div, Mul, SubAssign},
 };
 
 use rust_decimal::prelude::FromPrimitive;
@@ -25,14 +25,11 @@ impl Amount {
         }
     }
 
+    /// Returns an absolute (positive) Amount.
     pub fn abs(&self) -> Amount {
-        if self.quantity.is_sign_positive() {
-            let mut clone = self.clone();
-            clone.quantity.set_sign_negative();
-            clone
-        } else {
-            self.clone()
-        }
+        let mut result = self.clone();
+        result.quantity.set_sign_positive();
+        result
     }
 
     /// Creates a new Amount instance.
@@ -175,6 +172,38 @@ impl Div for Amount {
     }
 }
 
+impl Mul<Amount> for Amount {
+    type Output = Amount;
+
+    fn mul(self, other: Amount) -> Amount {
+        let quantity = self.quantity * other.quantity;
+
+        let commodity_index = if self.commodity_index.is_none() {
+            other.commodity_index
+        } else {
+            self.commodity_index
+        };
+
+        Amount::new(quantity, commodity_index)
+    }
+}
+
+impl From<i32> for Amount {
+    fn from(value: i32) -> Self {
+        Amount::new(Decimal::from(value), None)
+    }
+}
+
+impl SubAssign<Amount> for Amount {
+    fn sub_assign(&mut self, other: Amount) {
+        if self.commodity_index != other.commodity_index {
+            panic!("The commodities do not match");
+        }
+
+        self.quantity -= other.quantity;
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Decimal(rust_decimal::Decimal);
 
@@ -243,6 +272,12 @@ impl Mul<Decimal> for Decimal {
 
     fn mul(self, other: Decimal) -> Decimal {
         Self(self.0 * other.0)
+    }
+}
+
+impl SubAssign<Decimal> for Decimal {
+    fn sub_assign(&mut self, other: Decimal) {
+        self.0 -= other.0;
     }
 }
 

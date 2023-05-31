@@ -3,7 +3,7 @@ use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use crate::{
     balance::Balance,
     journal::{Journal, PostIndex, XactIndex},
-    parser,
+    parser, post::Post,
 };
 
 pub struct Xact {
@@ -105,18 +105,53 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         todo!("handle")
     }
 
-    if null_post.is_none() && xact.posts.len() == 2 {
+    if null_post.is_none() && balance.amounts.len() == 2 {
         // When an xact involves two different commodities (regardless of how
         // many posts there are) determine the conversion ratio by dividing the
         // total value of one commodity by the total value of the other.  This
         // establishes the per-unit cost for this post for both commodities.
+        
+        let mut top_post: Option<&Post> = None;
+        for i in &xact.posts {
+            let post = journal.get_post(*i);
+            if post.amount.is_some() && top_post.is_none() {
+                top_post = Some(post);
+            }
+        }
+
+        // if !saw_cost && top_post
+        if top_post.is_some() {
+            // log::debug("there were no costs, and a valid top_post")
+            
+            let mut x = balance.amounts.iter().nth(0).unwrap();
+            let mut y = balance.amounts.iter().nth(1).unwrap();
+
+            // if x && y
+            if x.commodity_index != top_post.unwrap().amount.unwrap().commodity_index {
+                (x, y) = (y, x);
+            }
+
+            let comm = x.commodity_index;
+            let per_unit_cost = (*y / *x).abs();
+
+            for i in &xact.posts {
+                let post = journal.posts.get_mut(*i).unwrap();
+                let amt = post.amount.unwrap();
+
+                if amt.commodity_index == comm {
+                    balance -= amt;
+                    post.cost = Some(per_unit_cost * amt);
+                    balance += post.cost.unwrap();
+                }
+            }
+        }
         todo!("complete")
     }
 
     // if (has_date())
     {
         for post_index in &xact.posts {
-            let p = journal.get_post(*post_index);
+            let p = journal.posts.get_mut(*post_index).unwrap();
             if p.cost.is_none() {
                 continue;
             }
@@ -127,14 +162,23 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 panic!("A posting's cost must be of a different commodity than its amount");
             }
 
-            // Cost breakdown
-            // TODO: virtual cost does not create a price
-            let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
-            // let breakdown = journal
-            //     .commodity_pool
-            //     .exchange(amt, cost, false, true, today);
+            {
+                // Cost breakdown
+                // TODO: virtual cost does not create a price
 
-            todo!("complete")
+                let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
+                let breakdown = journal
+                    .commodity_pool
+                    .exchange(amt, cost, false, true, today);
+                // add price
+                if amt.commodity_index != cost.commodity_index {
+                    journal
+                        .commodity_pool
+                        .add_price(amt.commodity_index.unwrap(), today, *cost);
+                }
+
+                p.amount = Some(breakdown.amount);
+            }
         }
     }
 

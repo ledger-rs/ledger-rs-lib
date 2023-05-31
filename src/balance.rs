@@ -1,10 +1,12 @@
+use std::ops::{SubAssign, AddAssign};
+
 /**
  * balance.h + .cc
  *
  * Intended to help with storing amounts in multiple commodities.
  */
 
-use crate::amount::Amount;
+use crate::amount::{Amount, Decimal};
 
 /// Balance
 #[derive(Debug)]
@@ -48,6 +50,31 @@ impl Balance {
                 self.amounts.push(Amount::copy_from(amount));
             }
         };
+    }
+}
+
+impl SubAssign<Amount> for Balance {
+    fn sub_assign(&mut self, amount: Amount) {
+        match self
+            .amounts
+            .iter_mut()
+            .find(|amt| amt.commodity_index == amount.commodity_index)
+        {
+            Some(existing_amount) => {
+                // append to the amount
+                *existing_amount -= amount;
+            }
+            None => {
+                // Balance not found for the commodity. Create new.
+                self.amounts.push(Amount::copy_from(&amount.inverse()));
+            }
+        };
+    }
+}
+
+impl AddAssign<Amount> for Balance {
+    fn add_assign(&mut self, other: Amount) {
+        self.add(&other);
     }
 }
 
@@ -160,5 +187,17 @@ mod tests {
             Some(CommodityIndex::new(0)),
             balance.amounts.iter().nth(0).unwrap().commodity_index
         );
+    }
+
+    #[test]
+    fn test_sub_assign() {
+        let mut bal = Balance::new();
+        let amount = Amount::new(10.into(), Some(0.into()));
+        let expected = amount.inverse();
+
+        bal -= amount;
+
+        assert_eq!(1, bal.amounts.len());
+        assert_eq!(expected, bal.amounts[0]);
     }
 }

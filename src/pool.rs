@@ -81,17 +81,11 @@ impl CommodityPool {
         self.commodity_history.get_commodity(index)
     }
 
-    // pub fn exchange(
-    //     &mut self,
-    //     commodity_index: CommodityIndex,
-    //     per_unit_cost: Amount,
-    //     moment: NaiveDateTime,
-    // ) {
-    //     self.add_price(commodity_index, moment, per_unit_cost);
-    // }
 
+    /// This is the exchange() method but, due to mutability of references, it **does not**
+    /// create new prices. This needs to be explicitly done by the caller.
     pub fn exchange(
-        &mut self,
+        &self,
         amount: &Amount,
         cost: &Amount,
         is_per_unit: bool,
@@ -122,10 +116,19 @@ impl CommodityPool {
             && amount.commodity_index != per_unit_cost.commodity_index
         {
             // self.exchange(amount.commodity_index.unwrap(), per_unit_cost, moment,);
-            self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
+            // self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
         }
 
-        todo!()
+        let mut breakdown = CostBreakdown::new();
+        // final cost
+        breakdown.final_cost = if !is_per_unit { *cost } else { *cost * amount.abs() };
+
+        // if annotation
+        breakdown.basis_cost = breakdown.final_cost;
+
+        breakdown.amount = *amount;
+
+        breakdown
     }
 
     pub fn parse_price_directive(&mut self, line: &str) {
@@ -161,9 +164,15 @@ impl CommodityPool {
 }
 
 pub struct CostBreakdown {
-    amount: Amount,
-    final_cost: Amount,
-    basis_cost: Amount,
+    pub amount: Amount,
+    pub final_cost: Amount,
+    pub basis_cost: Amount,
+}
+
+impl CostBreakdown {
+    pub fn new() -> Self {
+        Self { amount: 0.into(), final_cost: 0.into(), basis_cost: 0.into() }
+    }
 }
 
 #[cfg(test)]

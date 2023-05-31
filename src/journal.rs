@@ -4,7 +4,6 @@
 use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity};
 
 pub type AccountIndex = usize;
-// pub type CommodityIndex = usize;
 pub type PostIndex = usize;
 pub type XactIndex = usize;
 
@@ -70,6 +69,10 @@ impl Journal {
 
     pub fn get_post(&self, index: PostIndex) -> &Post {
         &self.posts[index]
+    }
+
+    pub fn get_post_mut(&mut self, index: PostIndex) -> &mut Post {
+        self.posts.get_mut(index).unwrap()
     }
 
     pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
