@@ -16,5 +16,9 @@ fn test_creating_account_tree() {
 
     // Assert
     assert_eq!(5, journal.accounts.len());
-    assert_eq!("Expenses", journal.accounts.iter().nth(0).unwrap().name);
+    assert_eq!("", journal.accounts.iter().nth(0).unwrap().name);
+    assert_eq!("Expenses", journal.accounts.iter().nth(1).unwrap().name);
+    assert_eq!("Food", journal.accounts.iter().nth(2).unwrap().name);
+    assert_eq!("Assets", journal.accounts.iter().nth(3).unwrap().name);
+    assert_eq!("Cash", journal.accounts.iter().nth(4).unwrap().name);
 }
