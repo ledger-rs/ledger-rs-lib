@@ -15,6 +15,6 @@ fn test_creating_account_tree() {
     ledger_rs_lib::parse_file(file_path, &mut journal);
 
     // Assert
-    assert_eq!(4, journal.accounts.len());
+    assert_eq!(5, journal.accounts.len());
     assert_eq!("Expenses", journal.accounts.iter().nth(0).unwrap().name);
 }
