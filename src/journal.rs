@@ -1,10 +1,7 @@
-use std::collections::HashMap;
-
-use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity};
-
 /**
  * Journal
  */
+use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity};
 
 pub type AccountIndex = usize;
 // pub type CommodityIndex = usize;

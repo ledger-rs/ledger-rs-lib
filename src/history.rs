@@ -39,14 +39,14 @@ impl CommodityHistory {
     /// source: EUR
     /// date
     /// price: 1.12 USD
-    pub fn add_price(&mut self, commodity: CommodityIndex, date: NaiveDateTime, price: Amount) {
-        assert!(Some(commodity) != price.commodity_index);
+    pub fn add_price(&mut self, commodity_index: CommodityIndex, date: NaiveDateTime, price: Amount) {
+        assert!(Some(commodity_index) != price.commodity_index);
 
-        let index = match self.graph.find_edge(commodity, price.commodity_index.unwrap()) {
+        let index = match self.graph.find_edge(commodity_index, price.commodity_index.unwrap()) {
             Some(index) => index,
             None => {
                 let dest = price.commodity_index.unwrap();
-                self.graph.add_edge(commodity, dest, PriceMap::new())
+                self.graph.add_edge(commodity_index, dest, PriceMap::new())
             },
         };
         let prices = self.graph.edge_weight_mut(index).unwrap();

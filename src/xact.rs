@@ -130,9 +130,9 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
             // Cost breakdown
             // TODO: virtual cost does not create a price
             let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
-            let breakdown = journal
-                .commodity_pool
-                .exchange_breakdown(amt, cost, false, true, today, &journal);
+            // let breakdown = journal
+            //     .commodity_pool
+            //     .exchange(amt, cost, false, true, today);
 
             todo!("complete")
         }

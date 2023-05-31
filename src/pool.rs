@@ -1,7 +1,7 @@
 /**
  * Commodity Pool
  */
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use petgraph::stable_graph::NodeIndex;
@@ -11,7 +11,7 @@ use crate::{
     commodity::Commodity,
     history::CommodityHistory,
     parser::{ISO_DATE_FORMAT, ISO_TIME_FORMAT},
-    scanner, journal::Journal,
+    scanner,
 };
 
 /// Commodity Index is the index of the node in the history graph.
@@ -36,8 +36,8 @@ impl CommodityPool {
         }
     }
 
-    pub fn add_price(&mut self, commodity: CommodityIndex, date: NaiveDateTime, price: Amount) {
-        self.commodity_history.add_price(commodity, date, price)
+    pub fn add_price(&mut self, commodity_index: CommodityIndex, date: NaiveDateTime, price: Amount) {
+        self.commodity_history.add_price(commodity_index, date, price)
     }
 
     /// Creates a new Commodity for the given Symbol.
@@ -81,20 +81,22 @@ impl CommodityPool {
         self.commodity_history.get_commodity(index)
     }
 
-    pub fn exchange(&self, commodity_index: CommodityIndex, per_unit_cost: Amount, moment: NaiveDateTime, journal: &Journal) {
-        let commodity = journal.get_commodity(commodity_index);
+    // pub fn exchange(
+    //     &mut self,
+    //     commodity_index: CommodityIndex,
+    //     per_unit_cost: Amount,
+    //     moment: NaiveDateTime,
+    // ) {
+    //     self.add_price(commodity_index, moment, per_unit_cost);
+    // }
 
-        todo!()
-    }
-
-    pub fn exchange_breakdown(
-        &self,
+    pub fn exchange(
+        &mut self,
         amount: &Amount,
         cost: &Amount,
         is_per_unit: bool,
         add_price: bool,
         moment: NaiveDateTime,
-        journal: &Journal
     ) -> CostBreakdown {
         // amount.commodity_index
 
@@ -115,8 +117,12 @@ impl CommodityPool {
         // Do not record commodity exchanges where amount's commodity has a
         // fixated price, since this does not establish a market value for the
         // base commodity.
-        if add_price && !per_unit_cost.is_zero() && amount.commodity_index != per_unit_cost.commodity_index {
-            self.exchange(amount.commodity_index.unwrap(), per_unit_cost, moment, journal);
+        if add_price
+            && !per_unit_cost.is_zero()
+            && amount.commodity_index != per_unit_cost.commodity_index
+        {
+            // self.exchange(amount.commodity_index.unwrap(), per_unit_cost, moment,);
+            self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
         }
 
         todo!()
@@ -162,12 +168,8 @@ pub struct CostBreakdown {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
-    use chrono::NaiveDateTime;
-
-    use crate::amount::{Amount, Decimal};
     use super::CommodityPool;
+    use crate::amount::Decimal;
 
     #[test]
     fn test_adding_commodity() {
@@ -230,28 +232,6 @@ mod tests {
         assert_eq!(&Decimal::from(1.12), rates.values().nth(0).unwrap());
     }
 
-    // #[test]
-    fn test_exchange() {
-        let mut pool = CommodityPool::new();
-        let eur = pool.create("EUR");
-        let usd = pool.create("USD");
-        let today = NaiveDateTime::from_str("2023-05-10").unwrap();
-        let price = Amount::new(1.25.into(), Some(usd));
-        pool.add_price(eur, today, price);
-
-        // let actual = pool.exchange(eur, Amount::new(15.into(), commodity_index), moment, journal);
-
-        todo!("complete")
-    }
-
-    // TODO: complete
-    // #[test]
-    fn test_exchange_breakdown() {
-        let pool = CommodityPool::new();
-
-        // pool.exchange_breakdown(amount, cost, is_per_unit, add_price, moment);
-        todo!()
-    }
 }
 
 #[cfg(test)]

@@ -25,9 +25,7 @@ use std::{
 use chrono::NaiveDate;
 
 use crate::{
-    account::Account,
     amount::Amount,
-    commodity::Commodity,
     journal::{Journal, XactIndex},
     pool::CommodityIndex,
     post::Post,

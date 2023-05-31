@@ -1,5 +1,4 @@
 use std::{
-    error::Error,
     fmt,
     ops::{Add, AddAssign, Div, Mul},
 };
@@ -184,10 +183,6 @@ const ZERO: Decimal = Decimal(rust_decimal::Decimal::ZERO);
 impl Decimal {
     pub const ZERO: Decimal = ZERO;
 
-    // pub fn new() -> Self {
-    //     Self(rust_decimal::Decimal::new())
-    // }
-
     pub fn from_str(str: &str) -> Result<Self, anyhow::Error> {
         Ok(Self(rust_decimal::Decimal::from_str_exact(str)?))
     }
@@ -239,7 +234,7 @@ impl Div<Decimal> for Decimal {
     type Output = Decimal;
 
     fn div(self, other: Decimal) -> Decimal {
-        self / other
+        Self(self.0.div(other.0))
     }
 }
 
@@ -247,7 +242,7 @@ impl Mul<Decimal> for Decimal {
     type Output = Decimal;
 
     fn mul(self, other: Decimal) -> Decimal {
-        self * other
+        Self(self.0 * other.0)
     }
 }
 
