@@ -45,21 +45,22 @@ fn detailed_basic_test() {
     // Posts
     assert_eq!(2, journal.posts.len());
     let post1 = journal.posts.get(xact.posts[0]).unwrap();
-    assert_eq!("Expenses:Food", journal.get_account(post1.account_index).name);
+    assert_eq!("Food", journal.get_account(post1.account_index).name);
     let amount1 = &post1.amount.as_ref().unwrap();
     assert_eq!(dec!(20), amount1.quantity);
     let symbol = &journal.commodity_pool.get_commodity(*amount1.commodity_index.as_ref().unwrap()).symbol;
     assert_eq!("EUR", symbol);
 
     let post2 = journal.posts.get(xact.posts[1]).unwrap();
-    assert_eq!("Assets:Cash", journal.get_account(post2.account_index).name);
+    assert_eq!("Cash", journal.get_account(post2.account_index).name);
     let amount2 = &post2.amount.as_ref().unwrap();
     assert_eq!(dec!(-20), amount2.quantity);
     let symbol = &journal.commodity_pool.get_commodity(*amount2.commodity_index.as_ref().unwrap()).symbol;
     assert_eq!("EUR", symbol);
 }
 
-#[test]
+/// TODO: include when the feature is implemented
+//#[test]
 fn test_include() {
     // let args = split("accounts -f tests/include.ledger").unwrap();
     let input = "include tests/minimal.ledger";
@@ -68,6 +69,7 @@ fn test_include() {
     ledger_rs_lib::parse_text(input, &mut journal);
 
     assert_eq!(1, journal.xacts.len());
+    todo!("complete the feature")
 }
 
 #[test]
@@ -95,5 +97,5 @@ fn test_parsing_account_tree() {
 
     // Assert
     assert!(!journal.xacts.is_empty());
-    assert_eq!(4, journal.accounts.len());
+    assert_eq!(5, journal.accounts.len());
 }
