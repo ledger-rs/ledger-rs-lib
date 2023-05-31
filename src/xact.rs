@@ -168,15 +168,16 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 // Cost breakdown
                 // TODO: virtual cost does not create a price
 
-                let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
+                // let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
+                let moment = xact.date.unwrap().and_hms_opt(0, 0, 0).unwrap();
                 let breakdown = journal
                     .commodity_pool
-                    .exchange(amt, cost, false, true, today);
+                    .exchange(amt, cost, false, true, moment);
                 // add price
                 if amt.commodity_index != cost.commodity_index {
                     journal
                         .commodity_pool
-                        .add_price(amt.commodity_index.unwrap(), today, *cost);
+                        .add_price(amt.commodity_index.unwrap(), moment, *cost);
                 }
 
                 p.amount = Some(breakdown.amount);

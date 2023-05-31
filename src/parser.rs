@@ -617,7 +617,7 @@ mod parser_tests {
 
 #[cfg(test)]
 mod posting_parsing_tests {
-    use crate::journal::Journal;
+    use crate::{journal::Journal, amount::Decimal, utilities::create_date};
 
     #[test]
     fn test_parsing_buy_lot() {
@@ -631,8 +631,16 @@ mod posting_parsing_tests {
         assert_eq!(1, j.xacts.len());
         assert_eq!(4, j.accounts.len());
         assert_eq!(2, j.commodity_pool.commodities.len());
-
-        todo!("check the price")
+        // price
+        assert_eq!(2, j.commodity_pool.commodity_history.graph.node_count());
+        assert_eq!(1, j.commodity_pool.commodity_history.graph.edge_count());
+        // Check price: 10 VEUR @ 12.75 EUR
+        let price = j.commodity_pool.commodity_history.graph.edge_weight(0.into()).unwrap();
+        let expected_date = create_date("2023-05-01").unwrap();
+        // let existing_key = price.keys().nth(0).unwrap();
+        assert!(price.contains_key(&expected_date));
+        let value = price.get(&expected_date).unwrap();
+        assert_eq!(Decimal::from(12.75), *value);
     }
 }
 

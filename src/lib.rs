@@ -20,6 +20,7 @@ mod pool;
 mod post;
 mod report;
 mod scanner;
+mod utilities;
 mod xact;
 
 /// Entry point.
