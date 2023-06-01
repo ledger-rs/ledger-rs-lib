@@ -12,7 +12,7 @@ use crate::{
     parser,
     pool::{CommodityIndex, CommodityPool},
     post::Post,
-    xact::Xact,
+    xact::Xact, amount::Amount,
 };
 
 pub type AccountIndex = usize;
@@ -76,6 +76,13 @@ impl Journal {
 
     pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
         self.commodity_pool.get_commodity(index)
+    }
+
+    pub fn get_amount_commodity(&self, amount: Amount) -> Option<&Commodity> {
+        let Some(index) = amount.commodity_index
+        else { return None; };
+        
+        Some(self.get_commodity(index))
     }
 
     pub fn get_post(&self, index: PostIndex) -> &Post {

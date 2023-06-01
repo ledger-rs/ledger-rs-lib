@@ -4,7 +4,7 @@
 
 use std::{collections::HashMap, vec};
 
-use crate::journal::{AccountIndex, Journal, PostIndex};
+use crate::{journal::{AccountIndex, Journal, PostIndex}, balance::Balance};
 
 #[derive(Debug, PartialEq)]
 pub struct Account {
@@ -50,10 +50,19 @@ impl Account {
         Some(*self.accounts.get(name).unwrap())
     }
 
-    pub fn amount(&self, journal: &Journal) {
-        todo!()
+    /// Returns the amount of this account only.
+    pub fn amount(&self, journal: &Journal) -> Balance {
+        let mut bal = Balance::new();
+
+        for index in &self.post_indices {
+            let post = journal.get_post(*index);
+            bal.add(&post.amount.unwrap());
+        }
+
+        bal
     }
 
+    /// Returns the balance of this account and all sub-accounts.
     pub fn total(&self, journal: &Journal) {
         // let total;
 
@@ -73,8 +82,7 @@ impl Account {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{journal::Journal, parser, parse_file};
-
+    use crate::{journal::Journal, parser, parse_file, amount::Decimal};
     use super::Account;
 
     #[test]
@@ -103,9 +111,13 @@ mod tests {
         parse_file("tests/basic.ledger", &mut journal);
         let index = journal.find_account("Assets:Cash").unwrap();
         let account = journal.get_account(index);
+        
         let actual = account.amount(&journal);
 
-        todo!("assert")
+        assert!(!actual.amounts.is_empty());
+        assert_eq!(Decimal::from(-20), actual.amounts[0].quantity);
+        let commodity = journal.get_amount_commodity(actual.amounts[0]).unwrap();
+        assert_eq!("EUR", commodity.symbol);
     }
 
     // #[test]

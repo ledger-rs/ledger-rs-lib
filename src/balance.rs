@@ -1,4 +1,6 @@
 /*!
+ * Stores the balance
+ * 
  * balance.h + .cc
  *
  * Intended to help with storing amounts in multiple commodities.
@@ -10,7 +12,7 @@
 
 /// Balance
 #[derive(Debug)]
-pub(crate) struct Balance {
+pub struct Balance {
     /// Map of commodity index, Amount
     // pub amounts: HashMap<CommodityIndex, Amount>, // try Symbol/Amount for easier search.
     // amounts: HashMap<String, Amount>
