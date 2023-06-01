@@ -124,7 +124,14 @@ impl Journal {
         account_index
     }
 
-    pub fn find_account(&self, name: &str) -> Option<AccountIndex> {
+    pub fn find_account(&self, name: &str) -> Option<&Account> {
+        let Some(index) = self.find_account_index(name)
+        else {return None};
+
+        Some(self.get_account(index))
+    }
+
+    pub fn find_account_index(&self, name: &str) -> Option<AccountIndex> {
         self.find_sub_account(0, name)
     }
 

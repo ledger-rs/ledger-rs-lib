@@ -64,18 +64,20 @@ impl Account {
 
     /// Returns the balance of this account and all sub-accounts.
     pub fn total(&self, journal: &Journal) -> Balance {
-        let total = Balance::new();
+        let mut total = Balance::new();
 
         // iterate through children and get their totals
-        for (name, index) in &self.accounts {
+        for (_, index) in &self.accounts {
             let subacct = journal.get_account(*index);
             let subtotal = subacct.total(journal);
-            // total.add(amount)
-            todo!("add to total");
+
+            total += subtotal;
         }
 
-        // let amount = 
-        todo!()
+        // Add the balance of this account
+        total += self.amount(journal);
+
+        total
     }
 }
 
@@ -83,8 +85,7 @@ impl Account {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{journal::{Journal, self}, parser, parse_file, amount::Decimal};
-    use super::Account;
+    use crate::{journal::Journal, parser, parse_file, amount::Decimal};
 
     #[test]
     fn test_fullname() {
@@ -95,7 +96,7 @@ mod tests {
 "#;
         parser::read_into_journal(Cursor::new(input), &mut j);
 
-        let Some(acct_id) = j.find_account("Expenses:Food")
+        let Some(acct_id) = j.find_account_index("Expenses:Food")
             else {panic!("account not found");};
         let account = j.get_account(acct_id);
 
@@ -110,7 +111,7 @@ mod tests {
     fn test_amount() {
         let mut journal = Journal::new();
         parse_file("tests/basic.ledger", &mut journal);
-        let index = journal.find_account("Assets:Cash").unwrap();
+        let index = journal.find_account_index("Assets:Cash").unwrap();
         let account = journal.get_account(index);
         
         let actual = account.amount(&journal);
@@ -121,14 +122,16 @@ mod tests {
         assert_eq!("EUR", commodity.symbol);
     }
 
-    // #[test]
+    #[test]
     fn test_total() {
         let mut journal = Journal::new();
         parse_file("tests/two-xact-sub-acct.ledger", &mut journal);
-        let acct = Account::new("Assets");
+        let assets = journal.find_account("Assets").unwrap();
         
-        let actual = acct.total(&journal);
+        let actual = assets.total(&journal);
 
-        todo!()
+        assert_eq!(1, actual.amounts.len());
+        assert_eq!(actual.amounts[0].quantity, (-30).into());
+        assert_eq!(actual.amounts[0].commodity_index, Some(0.into()));
     }
 }
