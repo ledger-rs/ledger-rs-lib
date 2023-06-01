@@ -164,7 +164,7 @@ impl Journal {
     /// account_t * account_t::find_account(
     /// but in order not to mix mutable and immutable access, the function is separated into
     /// find_account and create_account.
-    pub fn create_sub_account(
+    fn create_sub_account(
         &mut self,
         root_id: AccountIndex,
         acct_name: &str,

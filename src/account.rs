@@ -86,7 +86,7 @@ mod tests {
 "#;
         parser::read_into_journal(Cursor::new(input), &mut j);
 
-        let Some(acct_id) = j.create_sub_account(0, "Expenses:Food", false)
+        let Some(acct_id) = j.find_account("Expenses:Food")
             else {panic!("account not found");};
         let account = j.get_account(acct_id);
 
