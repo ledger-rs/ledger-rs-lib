@@ -5,6 +5,8 @@ A brand new attempt at Ledger, starting from blank slate.
 
 [Early Work In Progress!]
 
+![](https://img.shields.io/crates/v/ledger-rs-lib?style=plastic)
+
 # Introduction
 
 This library is aiming to implement the plain-text accounting principles, as demonstrated by Ledger-cli, Hledger, Beancount, etc. The base for development is [Ledger-cli](https://github.com/ledger/ledger/), from which the underlying model and concepts were applied.
