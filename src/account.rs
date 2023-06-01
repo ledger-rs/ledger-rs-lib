@@ -63,13 +63,14 @@ impl Account {
     }
 
     /// Returns the balance of this account and all sub-accounts.
-    pub fn total(&self, journal: &Journal) {
-        // let total;
+    pub fn total(&self, journal: &Journal) -> Balance {
+        let total = Balance::new();
 
         // iterate through children and get their totals
         for (name, index) in &self.accounts {
             let subacct = journal.get_account(*index);
             let subtotal = subacct.total(journal);
+            // total.add(amount)
             todo!("add to total");
         }
 
@@ -82,7 +83,7 @@ impl Account {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{journal::Journal, parser, parse_file, amount::Decimal};
+    use crate::{journal::{Journal, self}, parser, parse_file, amount::Decimal};
     use super::Account;
 
     #[test]
@@ -122,9 +123,11 @@ mod tests {
 
     // #[test]
     fn test_total() {
-        let acct = Account::new("Cash");
+        let mut journal = Journal::new();
+        parse_file("tests/two-xact-sub-acct.ledger", &mut journal);
+        let acct = Account::new("Assets");
         
-        // let actual = acct.total();
+        let actual = acct.total(&journal);
 
         todo!()
     }

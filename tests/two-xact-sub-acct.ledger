@@ -1,0 +1,9 @@
+; Two transactions with two accounts under the same parent.
+
+2023-04-21 Supermarket
+    Expenses:Food  20 EUR
+    Assets:Cash
+
+2023-04-22 Supermarket
+    Expenses:Dining  10 EUR
+    Assets:Checking
