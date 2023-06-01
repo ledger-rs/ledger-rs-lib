@@ -6,7 +6,14 @@
  */
 use std::io::Read;
 
-use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity, parser};
+use crate::{
+    account::Account,
+    commodity::Commodity,
+    parser,
+    pool::{CommodityIndex, CommodityPool},
+    post::Post,
+    xact::Xact,
+};
 
 pub type AccountIndex = usize;
 pub type PostIndex = usize;
@@ -14,7 +21,7 @@ pub type XactIndex = usize;
 
 pub struct Journal {
     pub master: AccountIndex,
-    
+
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
     pub posts: Vec<Post>,
@@ -30,7 +37,6 @@ impl Journal {
             xacts: vec![],
             posts: vec![],
             accounts: vec![],
-
             // sources: Vec<fileinfo?>
         };
 
@@ -104,19 +110,66 @@ impl Journal {
 
         // todo: expand_aliases
 
-        let account_index = self.find_or_create_account(0, name, true);
+        let account_index = self.create_sub_account(0, name, true);
 
         // todo: add any validity checks here.
 
         account_index
     }
 
-    // pub fn find_account(&self, name: &str) -> Option<AccountIndex> {
-    //     self.find_or_create_account(0, name, false)
-    // }
+    pub fn find_account(&self, name: &str) -> Option<AccountIndex> {
+        self.find_sub_account(0, name)
+    }
+
+    /// Finds account by full name.
+    /// i.e. "Assets:Cash"
+    /// returns account index, if found
+    pub fn find_sub_account(&self, parent_id: AccountIndex, name: &str) -> Option<AccountIndex> {
+        let parent = self.accounts.get(parent_id).unwrap();
+        if parent.accounts.contains_key(name) {
+            return Some(*parent.accounts.get(name).unwrap());
+        }
+
+        let first: &str;
+        let rest: &str;
+        if let Some(separator_index) = name.find(':') {
+            // Contains separators
+            first = &name[..separator_index];
+            rest = &name[separator_index + 1..];
+        } else {
+            // take all
+            first = name;
+            rest = "";
+        }
+
+        let mut account_index: Option<AccountIndex>;
+        if !parent.accounts.contains_key(first) {
+            return None;
+        } else {
+            account_index = Some(*parent.accounts.get(first).unwrap());
+        }
+
+        // Search recursively.
+        if !rest.is_empty() {
+            account_index = self
+                .find_sub_account(account_index.unwrap(), rest);
+        }
+
+        account_index
+    }
 
     /// Create an account tree from the account full-name.
-    pub fn find_or_create_account(&mut self, root_id: AccountIndex, acct_name: &str, auto_create: bool) -> Option<AccountIndex> {
+    /// 
+    /// In Ledger, this is
+    /// account_t * account_t::find_account(
+    /// but in order not to mix mutable and immutable access, the function is separated into
+    /// find_account and create_account.
+    pub fn create_sub_account(
+        &mut self,
+        root_id: AccountIndex,
+        acct_name: &str,
+        auto_create: bool,
+    ) -> Option<AccountIndex> {
         let parent = self.accounts.get(root_id).unwrap();
         if parent.accounts.contains_key(acct_name) {
             return Some(*parent.accounts.get(acct_name).unwrap());
@@ -138,8 +191,8 @@ impl Journal {
         let mut account_index: AccountIndex;
         if !parent.accounts.contains_key(first) {
             if !auto_create {
-                return None
-            }
+                return None;
+            } // else
 
             // create and add to the store.
             let mut new_account = Account::new(first);
@@ -156,16 +209,18 @@ impl Journal {
 
         // Search recursively.
         if !rest.is_empty() {
-            account_index = self.find_or_create_account(account_index, rest, auto_create).unwrap()
+            account_index = self
+                .create_sub_account(account_index, rest, auto_create)
+                .unwrap()
         }
 
         Some(account_index)
     }
 
     /// Read journal source (file or string).
-    /// 
+    ///
     /// std::size_t journal_t::read(parse_context_stack_t& context)
-    /// 
+    ///
     /// returns number of transactions parsed
     pub fn read<T: Read>(&mut self, source: T) -> usize {
         // read_textual
@@ -179,8 +234,8 @@ impl Journal {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{account::Account, post::Post};
     use super::Journal;
+    use crate::{account::Account, parse_file, post::Post};
 
     #[test]
     fn test_add_account_index() {
@@ -200,8 +255,18 @@ mod tests {
         let index = journal.add_account(a);
 
         let actual = journal.get_account(index);
-        
+
         assert_eq!(expected, *actual);
+    }
+
+    #[test]
+    fn test_find_account() {
+        let mut journal = Journal::new();
+        parse_file("tests/basic.ledger", &mut journal);
+
+        let actual = journal.find_account("Assets:Cash");
+
+        assert!(actual.is_some());
     }
 
     #[test]

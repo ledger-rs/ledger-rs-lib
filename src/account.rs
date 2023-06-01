@@ -73,7 +73,7 @@ impl Account {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{journal::Journal, parser};
+    use crate::{journal::Journal, parser, parse_file};
 
     use super::Account;
 
@@ -86,7 +86,7 @@ mod tests {
 "#;
         parser::read_into_journal(Cursor::new(input), &mut j);
 
-        let Some(acct_id) = j.find_or_create_account(0, "Expenses:Food", false)
+        let Some(acct_id) = j.create_sub_account(0, "Expenses:Food", false)
             else {panic!("account not found");};
         let account = j.get_account(acct_id);
 
@@ -99,10 +99,11 @@ mod tests {
 
     #[test]
     fn test_amount() {
-        let journal = Journal::new();
-        let acct = Account::new("Cash");
-
-        let actual = acct.amount(&journal);
+        let mut journal = Journal::new();
+        parse_file("tests/basic.ledger", &mut journal);
+        let index = journal.find_account("Assets:Cash").unwrap();
+        let account = journal.get_account(index);
+        let actual = account.amount(&journal);
 
         todo!("assert")
     }
