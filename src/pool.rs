@@ -1,4 +1,4 @@
-/**
+/*!
  * Commodity Pool
  */
 use std::collections::HashMap;

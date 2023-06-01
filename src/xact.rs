@@ -1,4 +1,11 @@
-use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
+/*!
+ * Transaction module
+ * 
+ * Transaction, or Xact abbreviated, is the main element of the Journal.
+ * It contains contains Postings.
+ */
+
+use chrono::NaiveDate;
 
 use crate::{
     balance::Balance,
@@ -11,7 +18,6 @@ pub struct Xact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
-    // pub posts: Vec<Post>,
     pub posts: Vec<PostIndex>,
     pub note: Option<String>,
     // pub balance: Amount,

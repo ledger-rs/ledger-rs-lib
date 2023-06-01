@@ -1,9 +1,9 @@
-use ledger_rs_lib::journal::Journal;
-
-/**
+/*!
  * Functional tests
  * 
  */
+
+use ledger_rs_lib::journal::Journal;
 
 /// TODO: complete the functionality and the test
 //#[test]

@@ -1,8 +1,8 @@
-use ledger_rs_lib::{journal::Journal, amount::Decimal};
-
-/**
+/*!
  * Tests for the library functionality useful for 3rd-party software.
  */
+
+ use ledger_rs_lib::{journal::Journal, amount::Decimal};
 
 /// Verify the validity of a new transaction.
 #[test]

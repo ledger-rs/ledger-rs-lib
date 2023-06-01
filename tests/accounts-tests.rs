@@ -1,4 +1,4 @@
-/**
+/*!
  * Test operations with accounts
  */
 

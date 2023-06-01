@@ -1,11 +1,11 @@
+/*!
+ * Posting
+ */
+
 use crate::{
     amount::Amount,
     journal::{AccountIndex, XactIndex},
 };
-
-/**
- * Posting
- */
 
 #[derive(Debug, PartialEq)]
 pub struct Post {

@@ -1,10 +1,10 @@
-use chrono::NaiveDate;
-use ledger_rs_lib::{journal::Journal, amount::Decimal};
-
-/**
+/*!
  * External parser tests
  */
 
+ use chrono::NaiveDate;
+ use ledger_rs_lib::{journal::Journal, amount::Decimal};
+ 
 #[test]
 fn smoke_test_parsing() {
     let file_path = "tests/minimal.ledger";

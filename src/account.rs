@@ -1,10 +1,10 @@
+/*!
+ * Account
+ */
+
 use std::{collections::HashMap, vec};
 
 use crate::journal::{AccountIndex, Journal, PostIndex};
-
-/**
- * Account
- */
 
 #[derive(Debug, PartialEq)]
 pub struct Account {

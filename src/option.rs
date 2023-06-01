@@ -1,7 +1,7 @@
-/**
- * option.cc
- *
+/*!
  * Processes command arguments and options.
+ *
+ * option.cc
  *
  * In Ledger, these are handled in lookup() and lookup_option() funcions in:
  * - global

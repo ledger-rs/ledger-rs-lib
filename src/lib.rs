@@ -1,30 +1,59 @@
-/**
- * Ledger-rs library
- *
- * Implements all the logic and provides an entry point to 3rd-party code.
- */
+/*!
+# Ledger-rs library
+
+Ledger-cli functionality implemented in Rust
+
+Still at a very stage. Early work-in-progress.
+
+The basic functionality demo:
+
+Given a `basic.ledger` text file, with the contents
+
+```
+2023-04-21 Supermarket
+    Expenses:Food  20 EUR
+    Assets:Cash
+```
+
+you can use the library to parse the transactions from the file and provide a basic 
+report on account balances
+
+```
+    let actual = ledger_rs_lib::run_command("b -f basic.ledger");
+
+    assert!(!actual.is_empty());
+    assert_eq!(5, actual.len());
+    assert_eq!("Account  has balance ", actual[0]);
+    assert_eq!("Account Assets has balance ", actual[1]);
+    assert_eq!("Account Assets:Cash has balance -20 EUR", actual[2]);
+    assert_eq!("Account Expenses has balance ", actual[3]);
+    assert_eq!("Account Expenses:Food has balance 20 EUR", actual[4]);
+```
+*/
 use std::{fs::File, io::Cursor};
 
 use journal::Journal;
 use option::InputOptions;
 
-mod account;
+/// Account definition and operations
+pub mod account;
+/// Amount and the Decimal numeric type
 pub mod amount;
 mod balance;
-mod commodity;
-mod history;
+pub mod commodity;
+pub mod history;
 pub mod journal;
-pub mod option;
-mod parser;
+mod option;
+pub mod parser;
 mod pool;
-mod post;
-mod report;
-mod scanner;
-mod utilities;
-mod xact;
+pub mod post;
+pub mod report;
+pub mod scanner;
+pub mod utilities;
+pub mod xact;
 
-/// Entry point.
-/// The commands and arguments sent to the CLI are recognized and processed here. This is
+/// An entry point for the CLIs.
+/// The commands and arguments sent to the CLI are processed here. This is
 /// so that 3rd-party clients can pass argv and get the same result.
 /// The arguments should be compatible with Ledger, so that the functionality is comparable.
 ///
@@ -33,6 +62,14 @@ pub fn run(args: Vec<String>) -> Vec<String> {
     let (commands, options) = option::process_arguments(args);
 
     execute_command(commands, options)
+}
+
+/// A convenient entry point if you want to use a command string directly.
+/// command: &str A Ledger-style command, i.e. "balance -f journal.ledger"
+/// 
+pub fn run_command(command: &str) -> Vec<String> {
+    let args = shell_words::split(command).unwrap();
+    run(args)
 }
 
 /// global::execute_command equivalent
@@ -102,6 +139,10 @@ pub fn parse_file(file_path: &str, journal: &mut Journal) {
     parser::read_into_journal(file, journal);
 }
 
+/// Parses text containing Ledger-style journal.
+/// text: &str  A Ledger-style journal. The same content that is normally 
+///             stored in text files
+/// journal: &mut Journal  The result are stored in the given Journal instance.
 pub fn parse_text(text: &str, journal: &mut Journal) {
     let source = Cursor::new(text);
     parser::read_into_journal(source, journal);

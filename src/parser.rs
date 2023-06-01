@@ -1,6 +1,7 @@
-use core::panic;
-/**
+/*!
  * Parser with iterators
+ * 
+ * Parses string tokens into model entities (Account, Transaction, Post, Amount...)
  *
  * The main idea here is to minimize memory allocations.
  * The parsing is done in functions, not objects.
@@ -14,6 +15,7 @@ use core::panic;
  * the collections in the Journal.
  * It also creates links among the models. This functionality is from finalize() function.
  */
+use core::panic;
 use std::{
     env,
     io::{BufRead, BufReader, Read},

@@ -1,3 +1,7 @@
+/*!
+ * Amount
+ */
+
 use std::{
     fmt,
     ops::{Add, AddAssign, Div, Mul, SubAssign},
@@ -6,10 +10,6 @@ use std::{
 use rust_decimal::prelude::FromPrimitive;
 
 use crate::pool::CommodityIndex;
-
-/**
- * Amount
- */
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Amount {

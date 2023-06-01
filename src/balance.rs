@@ -1,12 +1,12 @@
-use std::ops::{SubAssign, AddAssign};
-
-/**
+/*!
  * balance.h + .cc
  *
  * Intended to help with storing amounts in multiple commodities.
  */
 
-use crate::amount::{Amount, Decimal};
+ use std::ops::{SubAssign, AddAssign};
+ 
+ use crate::amount::Amount;
 
 /// Balance
 #[derive(Debug)]

@@ -1,5 +1,8 @@
-/**
+/*!
  * Journal
+ * The main model object. The journal files are parsed into the Journal structure.
+ * Provides methods for fetching and iterating over the contained elements
+ * (transactions, posts, accounts...).
  */
 use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity};
 

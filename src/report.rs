@@ -1,8 +1,8 @@
-/**
- * Reports
+/*!
+ * Reports module containing the report definitions
  */
 
- use crate::{balance::Balance, journal::Journal};
+use crate::{balance::Balance, journal::Journal};
 
 /// Accounts report. Command: `accounts`.
 ///

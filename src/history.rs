@@ -1,6 +1,7 @@
-/**
- * history.h + .cc
+/*!
  * Commodity price history
+ *
+ * history.h + .cc
  * 
  * Commodities are nodes (vertices).
  * 

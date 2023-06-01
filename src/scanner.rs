@@ -1,5 +1,7 @@
-/**
+/*!
  * Scanner scans the input text and returns tokens (groups of characters) back for parsing.
+ * Scans/tokenizes the journal files.
+ * There are scanner functions for every element of the journal.
  */
 
 /// Parse Xact header record.

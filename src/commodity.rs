@@ -1,4 +1,6 @@
-/**
+/*!
+ * Commodity definition
+ * 
  * commodity.cc
  */
 
