@@ -6,7 +6,10 @@
  * Intended to help with storing amounts in multiple commodities.
  */
 
-use std::ops::{AddAssign, SubAssign};
+use std::{
+    fmt,
+    ops::{AddAssign, SubAssign},
+};
 
 use crate::amount::Amount;
 
@@ -85,6 +88,16 @@ impl AddAssign<Balance> for Balance {
         for amount in other.amounts {
             self.add(&amount);
         }
+    }
+}
+
+impl fmt::Display for Balance {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for amount in &self.amounts {
+            write!(f, "{}", amount.quantity)?;
+            // amount.commodity_index
+        }
+        Ok(())
     }
 }
 

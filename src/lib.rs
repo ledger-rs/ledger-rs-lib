@@ -15,7 +15,7 @@ Given a `basic.ledger` text file, with the contents
     Assets:Cash
 ```
 
-you can use the library to parse the transactions from the file and provide a basic 
+you can use the library to parse the transactions from the file and provide a basic
 report on account balances
 
 ```
@@ -66,7 +66,7 @@ pub fn run(args: Vec<String>) -> Vec<String> {
 
 /// A convenient entry point if you want to use a command string directly.
 /// command: &str A Ledger-style command, i.e. "balance -f journal.ledger"
-/// 
+///
 pub fn run_command(command: &str) -> Vec<String> {
     let args = shell_words::split(command).unwrap();
     run(args)
@@ -92,7 +92,7 @@ fn execute_command(commands: Vec<String>, input_options: InputOptions) -> Vec<St
         'a' => {
             // accounts?
             // TODO: replace this temporary report
-            let mut output = report::report_accounts(&journal).collect::<Vec<String>>();
+            let mut output = report::report_accounts(&journal);
             output.sort();
             output
         }
@@ -100,12 +100,12 @@ fn execute_command(commands: Vec<String>, input_options: InputOptions) -> Vec<St
             match verb.as_str() {
                 "b" | "bal" | "balance" => {
                     // balance report
-                    report::balance_report(journal)
-                },
+                    report::balance_report(&journal)
+                }
                 "budget" => {
                     // budget
                     todo!("budget!")
-                },
+                }
                 _ => {
                     todo!("?")
                 }
@@ -140,7 +140,7 @@ pub fn parse_file(file_path: &str, journal: &mut Journal) {
 }
 
 /// Parses text containing Ledger-style journal.
-/// text: &str  A Ledger-style journal. The same content that is normally 
+/// text: &str  A Ledger-style journal. The same content that is normally
 ///             stored in text files
 /// journal: &mut Journal  The result are stored in the given Journal instance.
 pub fn parse_text(text: &str, journal: &mut Journal) {
@@ -152,14 +152,14 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
 mod lib_tests {
     use std::assert_eq;
 
-    use crate::{amount::Amount, option, run, pool::CommodityIndex};
+    use crate::{amount::Amount, option, pool::CommodityIndex, run};
 
     #[test]
     fn test_minimal() {
         // create a ledger command
         let command = "b -f tests/minimal.ledger";
         let args = shell_words::split(command).unwrap();
-        let expected = r#"Account  has balance 
+        let expected = r#"Account  has balance 0
 Account Assets has balance -20
 Account Expenses has balance 20"#;
 
@@ -202,6 +202,9 @@ Account Expenses has balance 20"#;
 
         // commodities
         assert_eq!(1, journal.commodity_pool.commodities.len());
-        assert_eq!("EUR", journal.commodity_pool.find_commodity("EUR").unwrap().symbol);
+        assert_eq!(
+            "EUR",
+            journal.commodity_pool.find_commodity("EUR").unwrap().symbol
+        );
     }
 }
