@@ -4,7 +4,9 @@
  * Provides methods for fetching and iterating over the contained elements
  * (transactions, posts, accounts...).
  */
-use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity};
+use std::io::Read;
+
+use crate::{xact::Xact, account::Account, post::Post, pool::{CommodityPool, CommodityIndex}, commodity::Commodity, parser};
 
 pub type AccountIndex = usize;
 pub type PostIndex = usize;
@@ -159,10 +161,24 @@ impl Journal {
 
         Some(account_index)
     }
+
+    /// Read journal source (file or string).
+    /// 
+    /// std::size_t journal_t::read(parse_context_stack_t& context)
+    /// 
+    /// returns number of transactions parsed
+    pub fn read<T: Read>(&mut self, source: T) -> usize {
+        // read_textual
+        parser::read_into_journal(source, self);
+
+        self.xacts.len()
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use crate::{account::Account, post::Post};
     use super::Journal;
 
@@ -242,5 +258,20 @@ mod tests {
         let actual = j.get_master_account();
 
         assert_eq!("", actual.name);
+    }
+
+    #[test]
+    fn test_read() {
+        let src = r#"2023-05-01 Test
+  Expenses:Food  20 EUR
+  Assets:Cash
+"#;
+        let mut j = Journal::new();
+
+        // Act
+        let num_xact = j.read(Cursor::new(src));
+
+        // Assert
+        assert_eq!(1, num_xact);
     }
 }

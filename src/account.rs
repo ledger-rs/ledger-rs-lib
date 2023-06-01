@@ -49,6 +49,24 @@ impl Account {
     pub fn get_account(&self, name: &str) -> Option<AccountIndex> {
         Some(*self.accounts.get(name).unwrap())
     }
+
+    pub fn amount(&self, journal: &Journal) {
+        todo!()
+    }
+
+    pub fn total(&self, journal: &Journal) {
+        // let total;
+
+        // iterate through children and get their totals
+        for (name, index) in &self.accounts {
+            let subacct = journal.get_account(*index);
+            let subtotal = subacct.total(journal);
+            todo!("add to total");
+        }
+
+        // let amount = 
+        todo!()
+    }
 }
 
 #[cfg(test)]
@@ -56,6 +74,8 @@ mod tests {
     use std::io::Cursor;
 
     use crate::{journal::Journal, parser};
+
+    use super::Account;
 
     #[test]
     fn test_fullname() {
@@ -75,5 +95,24 @@ mod tests {
         assert_eq!(5, j.accounts.len());
         assert_eq!("Food", account.name);
         assert_eq!("Expenses:Food", actual);
+    }
+
+    #[test]
+    fn test_amount() {
+        let journal = Journal::new();
+        let acct = Account::new("Cash");
+
+        let actual = acct.amount(&journal);
+
+        todo!("assert")
+    }
+
+    // #[test]
+    fn test_total() {
+        let acct = Account::new("Cash");
+        
+        // let actual = acct.total();
+
+        todo!()
     }
 }

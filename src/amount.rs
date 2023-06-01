@@ -154,10 +154,6 @@ impl Div for Amount {
     type Output = Amount;
 
     fn div(self, rhs: Self) -> Self::Output {
-        // if self.quantity.is_zero() || rhs.quantity.is_zero() {
-        //     todo!("handle no quantity");
-        // }
-
         let mut result = Amount::new(0.into(), None);
 
         if self.commodity_index.is_none() {
