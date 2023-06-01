@@ -9,7 +9,7 @@ The basic functionality demo:
 
 Given a `basic.ledger` text file, with the contents
 
-```
+```ledger
 2023-04-21 Supermarket
     Expenses:Food  20 EUR
     Assets:Cash
@@ -19,7 +19,7 @@ you can use the library to parse the transactions from the file and provide a ba
 report on account balances
 
 ```
-    let actual = ledger_rs_lib::run_command("b -f basic.ledger");
+    let actual = ledger_rs_lib::run_command("b -f tests/basic.ledger");
 
     assert!(!actual.is_empty());
     assert_eq!(5, actual.len());
