@@ -3,7 +3,7 @@
 
 Ledger-cli functionality implemented in Rust
 
-Still at a very stage. Early work-in-progress.
+Early work-in-progress.
 
 The basic functionality demo:
 
