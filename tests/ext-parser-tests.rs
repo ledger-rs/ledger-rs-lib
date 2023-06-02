@@ -3,7 +3,7 @@
  */
 
  use chrono::NaiveDate;
- use ledger_rs_lib::{journal::Journal, amount::Decimal};
+ use ledger_rs_lib::{journal::Journal, amount::Decimal, parse_file};
  
 #[test]
 fn smoke_test_parsing() {
@@ -97,4 +97,14 @@ fn test_parsing_account_tree() {
     // Assert
     assert!(!journal.xacts.is_empty());
     assert_eq!(5, journal.accounts.len());
+}
+
+// #[test]
+fn test_parsing_lots() {
+    let mut journal = Journal::new();
+
+    parse_file("tests/trade-buy-sell.ledger", &mut journal);
+
+    // Assert
+    todo!()
 }

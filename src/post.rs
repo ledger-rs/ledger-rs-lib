@@ -21,6 +21,8 @@ pub struct Post {
     // assigned_amount
     // checkin
     // checkout
+
+    pub note: Option<String>,
 }
 
 impl Post {
@@ -29,14 +31,23 @@ impl Post {
         account_index: AccountIndex,
         xact_index: XactIndex,
         amount: Option<Amount>,
-        cost: Option<Amount>
+        cost: Option<Amount>,
+        note: Option<&str>,
     ) -> Self {
         Self {
             account_index,
             xact: xact_index,
             amount,
             cost,
+            note: match note {
+                Some(content) => Some(content.to_owned()),
+                None => None,
+            }
         }
+    }
+
+    pub fn add_note(&mut self, note: &str) {
+        self.note = Some(note.into());
     }
 }
 

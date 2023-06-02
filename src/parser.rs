@@ -1,6 +1,6 @@
 /*!
  * Parser with iterators
- * 
+ *
  * Parses string tokens into model entities (Account, Transaction, Post, Amount...)
  *
  * The main idea here is to minimize memory allocations.
@@ -216,11 +216,15 @@ impl<'j, T: Read> Parser<'j, T> {
             .parse_price_directive(&self.buffer);
     }
 
-    fn xact_directive(&mut self) {
+    fn create_xact(&mut self) -> XactIndex {
         let tokens = scanner::tokenize_xact_header(&self.buffer);
         let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
         // Add xact to the journal
-        let xact_index = self.journal.add_xact(xact);
+        self.journal.add_xact(xact)
+    }
+
+    fn xact_directive(&mut self) {
+        let xact_index = self.create_xact();
 
         // Read the Xact contents (Posts, Comments, etc.)
         // Read until separator (empty line).
@@ -256,7 +260,7 @@ impl<'j, T: Read> Parser<'j, T> {
                             // Process the Xact content line. Could be a Comment or a Post.
                             match input.chars().peekable().peek() {
                                 Some(';') => {
-                                    todo!("trailing note")
+                                    self.parse_trailing_note(xact_index);
                                 }
                                 _ => {
                                     parse_post(input, xact_index, &mut self.journal);
@@ -314,6 +318,34 @@ impl<'j, T: Read> Parser<'j, T> {
             panic!("Include file not found");
         }
     }
+
+    /// Parses the trailing note from the buffer.
+    /// xact_index = The index of the current transaction, being parsed.
+    /// The note is added either to the transaction or the last post, based on it's position.
+    /// 
+    fn parse_trailing_note(&mut self, xact_index: XactIndex) {
+        // This is a trailing note, and possibly a metadata info tag
+        // It is added to the previous element (xact/post).
+
+        let note = self.buffer.trim_start();
+        // The note starts with the comment character `;`.
+        let note = note[1..].trim();
+        if note.is_empty() {
+            return;
+        }
+
+        let xact = self.journal.xacts.get(xact_index).unwrap();
+        if xact.posts.is_empty() {
+            // The first comment. Add to the xact.
+            let xact_mut = self.journal.xacts.get_mut(xact_index).unwrap();
+            xact_mut.add_note(note);
+        } else {
+            // Post comment. Add to the previous posting.
+            let last_post_index = xact.posts.last().unwrap();
+            let post = self.journal.get_post_mut(*last_post_index);
+            post.add_note(note);
+        }
+    }
 }
 
 /// Parses Post from the buffer, adds it to the Journal and links
@@ -344,10 +376,14 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     }
     let cost = Amount::parse(tokens[3], price_commodity_index);
 
+    // note
+    // TODO: parse note
+    let note = None;
+
     let post_index;
     {
         // Create Post, link Xact, Account, Commodity
-        let post = Post::new(account_index, xact_index, amount, cost);
+        let post = Post::new(account_index, xact_index, amount, cost, note);
         post_index = journal.add_post(post);
     }
 
@@ -619,7 +655,10 @@ mod parser_tests {
 
 #[cfg(test)]
 mod posting_parsing_tests {
-    use crate::{journal::Journal, amount::Decimal, utilities::create_date};
+    use std::io::Cursor;
+
+    use crate::{amount::Decimal, journal::Journal, utilities::create_date};
+    use super::Parser;
 
     #[test]
     fn test_parsing_buy_lot() {
@@ -637,20 +676,61 @@ mod posting_parsing_tests {
         assert_eq!(2, j.commodity_pool.commodity_history.graph.node_count());
         assert_eq!(1, j.commodity_pool.commodity_history.graph.edge_count());
         // Check price: 10 VEUR @ 12.75 EUR
-        let price = j.commodity_pool.commodity_history.graph.edge_weight(0.into()).unwrap();
+        let price = j
+            .commodity_pool
+            .commodity_history
+            .graph
+            .edge_weight(0.into())
+            .unwrap();
         let expected_date = create_date("2023-05-01").unwrap();
         // let existing_key = price.keys().nth(0).unwrap();
         assert!(price.contains_key(&expected_date));
         let value = price.get(&expected_date).unwrap();
         assert_eq!(Decimal::from(12.75), *value);
     }
+
+    #[test]
+    fn test_parsing_trailing_xact_comment() {
+        let input = r#"2023-03-02 Payee
+    ; this is xact comment
+    Expenses  20 EUR
+    Assets
+"#;
+        let journal = &mut Journal::new();
+        let mut parser = Parser::new(Cursor::new(input), journal);
+
+        parser.parse();
+
+        // Assert
+        assert!(journal.xacts[0].note.is_some());
+        assert_eq!(Some("this is xact comment".to_string()), journal.xacts[0].note);
+    }
+
+    #[test]
+    fn test_parsing_trailing_post_comment() {
+        let input = r#"2023-03-02 Payee
+    Expenses  20 EUR
+    ; this is post comment
+    Assets
+"#;
+        let journal = &mut Journal::new();
+        let mut parser = Parser::new(Cursor::new(input), journal);
+
+        parser.parse();
+
+        // Assert
+        assert!(journal.posts[0].note.is_some());
+        assert!(journal.posts[1].note.is_none());
+        assert_eq!(Some("this is post comment".to_string()), journal.posts[0].note);
+    }
 }
 
 #[cfg(test)]
 mod amount_parsing_tests {
-    use crate::{journal::Journal, parser::parse_post, pool::CommodityIndex, xact::Xact, amount::Decimal};
-
     use super::Amount;
+    use crate::{
+        amount::Decimal, journal::Journal, parser::parse_post, pool::CommodityIndex, xact::Xact,
+    };
 
     fn setup() -> Journal {
         let mut journal = Journal::new();

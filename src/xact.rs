@@ -71,6 +71,10 @@ impl Xact {
             aux_date: _aux_date,
         }
     }
+
+    pub fn add_note(&mut self, note: &str) {
+        self.note = Some(note.into());
+    }
 }
 
 /// Finalize transaction.
