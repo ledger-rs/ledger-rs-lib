@@ -7,7 +7,7 @@ use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, SubAssign},
 };
 
-use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
 use crate::pool::CommodityIndex;
 
@@ -250,6 +250,12 @@ impl From<i32> for Decimal {
 impl From<f32> for Decimal {
     fn from(value: f32) -> Self {
         Decimal(rust_decimal::Decimal::from_f32(value).unwrap())
+    }
+}
+
+impl Into<i32> for Decimal {
+    fn into(self) -> i32 {
+        self.0.to_i32().unwrap()
     }
 }
 

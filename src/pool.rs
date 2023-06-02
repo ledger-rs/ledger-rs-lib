@@ -123,7 +123,9 @@ impl CommodityPool {
         // final cost
         breakdown.final_cost = if !is_per_unit { *cost } else { *cost * amount.abs() };
 
-        // if annotation
+        // if annotation && annotation.price
+        //   breakdown.basis_cost = = (*current_annotation->price * amount);
+        // else
         breakdown.basis_cost = breakdown.final_cost;
 
         breakdown.amount = *amount;
@@ -163,6 +165,15 @@ impl CommodityPool {
     }
 }
 
+/// Cost Breakdown is used to track the commodity costs.
+/// i.e. when lots are used
+/// 
+/// `-10 VEUR {20 EUR} [2023-04-01] @ 25 EUR`
+/// 
+/// The amount is -10 VEUR,
+/// per unit cost is 25 EUR,
+/// basis cost = 200 EUR
+/// final cost = 250 EUR
 pub struct CostBreakdown {
     pub amount: Amount,
     pub final_cost: Amount,

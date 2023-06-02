@@ -31,7 +31,7 @@ use crate::{
     journal::{Journal, XactIndex},
     pool::CommodityIndex,
     post::Post,
-    scanner,
+    scanner::{self, PostTokens},
     xact::Xact,
 };
 
@@ -322,7 +322,7 @@ impl<'j, T: Read> Parser<'j, T> {
     /// Parses the trailing note from the buffer.
     /// xact_index = The index of the current transaction, being parsed.
     /// The note is added either to the transaction or the last post, based on it's position.
-    /// 
+    ///
     fn parse_trailing_note(&mut self, xact_index: XactIndex) {
         // This is a trailing note, and possibly a metadata info tag
         // It is added to the previous element (xact/post).
@@ -353,33 +353,15 @@ impl<'j, T: Read> Parser<'j, T> {
 fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     let tokens = scanner::scan_post(input);
 
-    let account_index;
-    {
-        // Create Account, add to collection
-        account_index = journal.register_account(tokens.account).unwrap();
-    }
-
-    let commodity_index: Option<CommodityIndex>;
-    {
-        // Create Commodity, add to collection
-        commodity_index = journal.commodity_pool.find_or_create(tokens.symbol);
-    }
+    // Create Account, add to collection
+    let account_index = journal.register_account(tokens.account).unwrap();
+    // Create Commodity, add to collection
+    let commodity_index = journal.commodity_pool.find_or_create(tokens.symbol);
     // create amount
     let amount = Amount::parse(tokens.quantity, commodity_index);
 
     // handle cost (2nd amount)
-    let price_commodity_index = journal.commodity_pool.find_or_create(tokens.cost_symbol);
-    // parse cost (per-unit vs total)
-    let cost = Amount::parse(tokens.cost_quantity, price_commodity_index);
-    if tokens.is_per_unit {
-        // per-unit cost
-        let Some(mut cost_val) = cost else {
-            panic!("Cost is None!");
-        };
-
-        cost_val *= amount.unwrap();
-    }
-    // Total cost is already the end-value.
+    let cost = parse_cost(&tokens, &amount, journal);
 
     // note
     // TODO: parse note
@@ -403,6 +385,29 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
         let xact = journal.xacts.get_mut(xact_index).unwrap();
         xact.posts.push(post_index);
     }
+}
+
+fn parse_cost(tokens: &PostTokens, amount: &Option<Amount>, journal: &mut Journal) -> Option<Amount> {
+    if tokens.cost_quantity.is_empty() || amount.is_none() {
+        return None;
+    }
+    
+    let price_commodity_index = journal.commodity_pool.find_or_create(tokens.cost_symbol);
+
+    // parse cost (per-unit vs total)
+    let mut cost = Amount::parse(tokens.cost_quantity, price_commodity_index);
+    if tokens.is_per_unit {
+        // per-unit cost
+        let Some(mut cost_val) = cost else {
+            panic!("Cost is None!");
+        };
+
+        cost_val *= amount.unwrap();
+        cost = Some(cost_val);
+    }
+    // Total cost is already the end-value.
+
+    cost
 }
 
 #[cfg(test)]
@@ -505,6 +510,7 @@ mod parser_tests {
     use std::{assert_eq, io::Cursor};
 
     use crate::{
+        amount::Decimal,
         journal::Journal,
         parser::{self, read_into_journal},
     };
@@ -590,45 +596,35 @@ mod parser_tests {
         read_into_journal(cursor, &mut journal);
 
         // Assert
+
         let xact = journal.xacts.first().unwrap();
         assert_eq!("Supermarket", xact.payee);
-
         let posts = journal.get_posts(&xact.posts);
         assert_eq!(2, posts.len());
 
         // post 1
         let p1 = posts[0];
-        assert_eq!("Investment", journal.get_account(p1.account_index).name);
+        let account = journal.get_post_account(p1);
+        assert_eq!("Investment", account.name);
+        let parent = journal.get_account(account.parent_index.unwrap());
+        assert_eq!("Assets", parent.name);
         // amount
         let Some(a1) = &p1.amount else {panic!()};
         assert_eq!("20", a1.quantity.to_string());
-        let comm1 = journal
-            .commodity_pool
-            .commodity_history
-            .get_commodity(a1.commodity_index.unwrap());
+        let comm1 = journal.get_commodity(a1.commodity_index.unwrap());
         assert_eq!("VEUR", comm1.symbol);
         let Some(ref cost1) = p1.cost else { panic!()};
         // cost
-        assert_eq!("10", cost1.quantity.to_string());
-        assert_eq!(
-            "EUR",
-            journal
-                .commodity_pool
-                .commodity_history
-                .get_commodity(cost1.commodity_index.unwrap())
-                .symbol
-        );
+        assert_eq!(200, cost1.quantity.into());
+        assert_eq!("EUR", journal.get_amount_commodity(*cost1).unwrap().symbol);
 
         // post 2
         let p2 = posts[1];
-        assert_eq!("Assets", journal.get_account(p2.account_index).name);
+        assert_eq!("Assets", journal.get_post_account(p2).name);
         // amount
         let Some(a2) = &p2.amount else {panic!()};
         assert_eq!("-20", a2.quantity.to_string());
-        let comm2 = journal
-            .commodity_pool
-            .commodity_history
-            .get_commodity(a2.commodity_index.unwrap());
+        let comm2 = journal.get_commodity(a2.commodity_index.unwrap());
         assert_eq!("VEUR", comm2.symbol);
 
         assert!(p2.cost.is_none());
@@ -662,8 +658,8 @@ mod parser_tests {
 mod posting_parsing_tests {
     use std::io::Cursor;
 
-    use crate::{amount::Decimal, journal::Journal, utilities::create_date};
     use super::Parser;
+    use crate::{amount::Decimal, journal::Journal, parse_file, utilities::create_date};
 
     #[test]
     fn test_parsing_buy_lot() {
@@ -671,7 +667,7 @@ mod posting_parsing_tests {
         let mut j = Journal::new();
 
         // Act
-        crate::parse_file(file_path, &mut j);
+        parse_file(file_path, &mut j);
 
         // Assert
         assert_eq!(1, j.xacts.len());
@@ -691,7 +687,25 @@ mod posting_parsing_tests {
         // let existing_key = price.keys().nth(0).unwrap();
         assert!(price.contains_key(&expected_date));
         let value = price.get(&expected_date).unwrap();
-        assert_eq!(Decimal::from(12.75), *value);
+        assert_eq!(Decimal::from(127.5), *value);
+    }
+
+    #[test]
+    fn test_buy_lot_cost() {
+        let file_path = "tests/lot.ledger";
+        let mut j = Journal::new();
+
+        // Act
+        parse_file(file_path, &mut j);
+
+        // Assert the price of "10 VEUR @ 12.75 EUR" must to be 127.50 EUR
+        let xact = j.xacts.get(0).unwrap();
+        let post = j.get_post(xact.posts[0]);
+        let cost = post.cost.unwrap();
+        assert_eq!(cost.quantity, 127.5.into());
+
+        let eur_index = j.commodity_pool.find_index("EUR").cloned();
+        assert_eq!(cost.commodity_index, eur_index);
     }
 
     #[test]
@@ -708,7 +722,10 @@ mod posting_parsing_tests {
 
         // Assert
         assert!(journal.xacts[0].note.is_some());
-        assert_eq!(Some("this is xact comment".to_string()), journal.xacts[0].note);
+        assert_eq!(
+            Some("this is xact comment".to_string()),
+            journal.xacts[0].note
+        );
     }
 
     #[test]
@@ -726,7 +743,10 @@ mod posting_parsing_tests {
         // Assert
         assert!(journal.posts[0].note.is_some());
         assert!(journal.posts[1].note.is_none());
-        assert_eq!(Some("this is post comment".to_string()), journal.posts[0].note);
+        assert_eq!(
+            Some("this is post comment".to_string()),
+            journal.posts[0].note
+        );
     }
 }
 

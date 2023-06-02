@@ -142,7 +142,16 @@ fn tokenize_payee(input: &str) -> (&str, &str) {
 /// input: &str  Post content
 /// returns (account, quantity, symbol, cost_q, cost_s, is_per_unit)
 pub(crate) fn scan_post(input: &str) -> PostTokens {
+    // clear the initial whitespace.
     let input = input.trim_start();
+
+    // todo: state = * cleared, ! pending
+
+    if input.is_empty() || input.chars().nth(0) == Some(';') {
+        panic!("Posting has no account")
+    }
+
+    // todo: virtual, deferred account [] () <>
 
     // two spaces is a separator betweer the account and amount.
     // Eventually, also support the tab as a separator:
@@ -179,7 +188,8 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
     }
 }
 
-/// Scans the first Amount from the input and returns:
+/// Scans the first Amount from the input
+/// returns:
 /// (Quantity, Symbol, remainder)
 ///
 fn scan_amount(input: &str) -> (&str, &str, &str) {
@@ -320,6 +330,16 @@ fn scan_price_element(input: &str) -> (&str, &str) {
 
     // date, rest
     (&input[..separator_index], &input[separator_index..])
+}
+
+/// identifies the next element, the content until the next separator.
+fn next_element(input: &str) -> Option<&str> {
+    // assuming the element starts at the beginning, no whitespace.
+    if let Some(next_sep) = find_next_separator(input) {
+        Some(&input[..next_sep])
+    } else { 
+        None
+    }
 }
 
 #[cfg(test)]
@@ -660,6 +680,19 @@ mod scanner_tests_post {
         assert_eq!("VAS", tokens.symbol);
         assert_eq!("10", tokens.cost_quantity);
         assert_eq!("AUD", tokens.cost_symbol);
+    }
+
+    // TODO: #[test]
+    fn test_scan_sale_lot() {
+        let input = "    Assets:Stocks  -10 VEUR {20 EUR} [2023-04-01] @ 25 EUR";
+
+        let tokens = scan_post(input);
+
+        // Assert
+        assert_eq!("Assets:Stocks", tokens.account);
+        assert_eq!("-10", tokens.quantity);
+        assert_eq!("25", tokens.cost_quantity);
+        assert_eq!("EUR", tokens.cost_symbol);
     }
 }
 

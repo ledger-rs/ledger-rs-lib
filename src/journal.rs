@@ -97,6 +97,10 @@ impl Journal {
         indices.iter().map(|i| &self.posts[*i]).collect()
     }
 
+    pub fn get_post_account(&self, post: &Post) -> &Account {
+        self.get_account(post.account_index)
+    }
+
     pub fn get_master_account(&self) -> &Account {
         self.accounts.get(0).expect("master account")
     }
