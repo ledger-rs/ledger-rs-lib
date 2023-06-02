@@ -4,6 +4,33 @@
  * There are scanner functions for every element of the journal.
  */
 
+pub(crate) struct PostTokens<'a> {
+    pub account: &'a str,
+    pub quantity: &'a str,
+    pub symbol: &'a str,
+    pub cost_quantity: &'a str,
+    pub cost_symbol: &'a str,
+    pub is_per_unit: bool,
+}
+
+struct CostTokens<'a> {
+    pub quantity: &'a str,
+    pub symbol: &'a str,
+    pub is_per_unit: bool,
+    pub remainder: &'a str,
+}
+
+impl<'a> CostTokens<'a> {
+    pub fn new() -> Self {
+        Self {
+            quantity: "",
+            symbol: "",
+            is_per_unit: false,
+            remainder: "",
+        }
+    }
+}
+
 /// Parse Xact header record.
 /// 2023-05-05=2023-05-01 Payee  ; Note
 ///
@@ -12,9 +39,9 @@
 /// Check for .is_empty() after receiving the result and handle appropriately.
 ///
 /// Ledger's documentation specifies the following format
-/// 
+///
 /// DATE[=EDATE] [*|!] [(CODE)] DESC
-/// 
+///
 /// but the DESC is not mandatory. <Unspecified Payee> is used in that case.
 /// So, the Payee/Description is mandatory in the model but not in the input.
 pub(crate) fn tokenize_xact_header(input: &str) -> [&str; 4] {
@@ -113,8 +140,8 @@ fn tokenize_payee(input: &str) -> (&str, &str) {
 ///   SYM[ ][-]NUM [@ AMOUNT]
 ///
 /// input: &str  Post content
-/// returns [account, amount]
-pub(crate) fn scan_post(input: &str) -> [&str; 5] {
+/// returns (account, quantity, symbol, cost_q, cost_s, is_per_unit)
+pub(crate) fn scan_post(input: &str) -> PostTokens {
     let input = input.trim_start();
 
     // two spaces is a separator betweer the account and amount.
@@ -124,17 +151,31 @@ pub(crate) fn scan_post(input: &str) -> [&str; 5] {
         Some(i) => {
             let account = &input[..i];
             let (quantity, symbol, input) = scan_amount(&input[i + 2..]);
-            let (cost_q, cost_s, _input) = match input.is_empty() {
-                true => ("", "", ""),
+            let cost_tokens = match input.is_empty() {
+                true => CostTokens::new(),
                 false => scan_cost(input),
             };
 
             // TODO: handle post comment
             // scan_xyz(input)
 
-            return [account, quantity, symbol, cost_q, cost_s];
+            return PostTokens {
+                account,
+                quantity,
+                symbol,
+                cost_quantity: cost_tokens.quantity,
+                cost_symbol: cost_tokens.symbol,
+                is_per_unit: cost_tokens.is_per_unit,
+            };
         }
-        None => [input.trim_end(), "", "", "", ""],
+        None => PostTokens {
+            account: input.trim_end(),
+            quantity: "",
+            symbol: "",
+            cost_quantity: "",
+            cost_symbol: "",
+            is_per_unit: false,
+        },
     }
 }
 
@@ -198,31 +239,43 @@ fn scan_symbol(input: &str) -> (&str, &str) {
 ///
 /// The first is per-unit cost and the second is the total cost.
 /// Returns
-/// [quantity, symbol, remainder]
-fn scan_cost(input: &str) -> (&str, &str, &str) {
+/// [quantity, symbol, remainder, is_per_unit]
+fn scan_cost(input: &str) -> CostTokens {
     // @ or () or @@
     if input.chars().peekable().peek() != Some(&'@') {
-        return ("", "", "");
+        return CostTokens {
+            quantity: "",
+            symbol: "",
+            is_per_unit: false,
+            remainder: "",
+        };
     }
 
     // We have a price.
     // () is a virtual cost. Ignore for now.
 
-    if input.chars().nth(1) != Some('@') {
+    let (first_char, is_per_unit) = if input.chars().nth(1) != Some('@') {
         // per-unit cost
-        let input = &input[2..].trim_start();
-        let (quantity, symbol, input) = scan_amount(input);
-        (quantity, symbol, input)
+        (2, true)
     } else {
-        todo!("total cost")
+        // total cost
+        (3, false)
+    };
+    let input = &input[first_char..].trim_start();
+    let (quantity, symbol, input) = scan_amount(input);
+    CostTokens {
+        quantity,
+        symbol,
+        is_per_unit,
+        remainder: input,
     }
 }
 
 /// Scans the Price directive
-/// 
+///
 /// i.e.  
 /// P 2022-03-03 13:00:00 EUR 1.12 USD
-/// 
+///
 /// returns [date, time, commodity, quantity, price_commodity]
 pub(crate) fn scan_price_directive(input: &str) -> [&str; 5] {
     // Skip the starting P and whitespace.
@@ -268,7 +321,6 @@ fn scan_price_element(input: &str) -> (&str, &str) {
     // date, rest
     (&input[..separator_index], &input[separator_index..])
 }
-
 
 #[cfg(test)]
 mod scanner_tests_xact {
@@ -362,8 +414,8 @@ mod scanner_tests_xact {
 
 #[cfg(test)]
 mod scanner_tests_post {
-    use crate::scanner::scan_amount;
     use super::{scan_post, scan_symbol};
+    use crate::scanner::scan_amount;
 
     #[test]
     fn test_tokenize_post_full() {
@@ -373,13 +425,11 @@ mod scanner_tests_post {
         let tokens = scan_post(input);
 
         // Assert
-        let mut iterator = tokens.into_iter();
-
-        assert_eq!("Assets", iterator.next().unwrap());
-        assert_eq!("20", iterator.next().unwrap());
-        assert_eq!("VEUR", iterator.next().unwrap());
-        assert_eq!("25.6", iterator.next().unwrap());
-        assert_eq!("EUR", iterator.next().unwrap());
+        assert_eq!("Assets", tokens.account);
+        assert_eq!("20", tokens.quantity);
+        assert_eq!("VEUR", tokens.symbol);
+        assert_eq!("25.6", tokens.cost_quantity);
+        assert_eq!("EUR", tokens.cost_symbol);
     }
 
     #[test]
@@ -390,14 +440,12 @@ mod scanner_tests_post {
         let tokens = scan_post(input);
 
         // Assert
-        let mut iterator = tokens.into_iter();
-
-        assert_eq!("Assets", iterator.next().unwrap());
-        assert_eq!("20", iterator.next().unwrap());
-        assert_eq!("EUR", iterator.next().unwrap());
-        assert_eq!("", iterator.next().unwrap());
-        assert_eq!("", iterator.next().unwrap());
-        assert_eq!(None, iterator.next());
+        assert_eq!("Assets", tokens.account);
+        assert_eq!("20", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
+        assert_eq!("", tokens.cost_quantity);
+        assert_eq!("", tokens.cost_symbol);
+        assert_eq!(false, tokens.is_per_unit);
     }
 
     #[test]
@@ -408,10 +456,8 @@ mod scanner_tests_post {
         let tokens = scan_post(input);
 
         // Assert
-        let mut iterator = tokens.into_iter();
-
-        assert_eq!("Assets", iterator.next().unwrap());
-        assert_eq!("20", iterator.next().unwrap());
+        assert_eq!("Assets", tokens.account);
+        assert_eq!("20", tokens.quantity);
     }
 
     #[test]
@@ -422,22 +468,20 @@ mod scanner_tests_post {
         let tokens = scan_post(input);
 
         // Assert
-        let mut iterator = tokens.into_iter();
-
-        assert_eq!("Assets", iterator.next().unwrap());
-        assert_eq!("", iterator.next().unwrap());
+        assert_eq!("Assets", tokens.account);
+        assert_eq!("", tokens.quantity);
     }
 
     #[test]
     fn test_tokenize_amount() {
         let input = "  Assets  25 EUR";
 
-        let actual = scan_post(input);
+        let tokens = scan_post(input);
 
-        assert_eq!("25", actual[1]);
-        assert_eq!("EUR", actual[2]);
-        assert_eq!("", actual[3]);
-        assert_eq!("", actual[4]);
+        assert_eq!("25", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
+        assert_eq!("", tokens.cost_quantity);
+        assert_eq!("", tokens.cost_symbol);
     }
 
     #[test]
@@ -446,8 +490,8 @@ mod scanner_tests_post {
 
         let actual = scan_post(input);
 
-        assert_eq!("-25", actual[1]);
-        assert_eq!("EUR", actual[2]);
+        assert_eq!("-25", actual.quantity);
+        assert_eq!("EUR", actual.symbol);
     }
 
     #[test]
@@ -456,8 +500,8 @@ mod scanner_tests_post {
 
         let actual = scan_post(input);
 
-        assert_eq!("25.0", actual[1]);
-        assert_eq!("EUR", actual[2]);
+        assert_eq!("25.0", actual.quantity);
+        assert_eq!("EUR", actual.symbol);
     }
 
     #[test]
@@ -466,8 +510,8 @@ mod scanner_tests_post {
 
         let actual = scan_post(input);
 
-        assert_eq!("25,00", actual[1]);
-        assert_eq!("EUR", actual[2]);
+        assert_eq!("25,00", actual.quantity);
+        assert_eq!("EUR", actual.symbol);
     }
 
     #[test]
@@ -476,8 +520,8 @@ mod scanner_tests_post {
 
         let actual = scan_post(input);
 
-        assert_eq!("25,0.01", actual[1]);
-        assert_eq!("EUR", actual[2]);
+        assert_eq!("25,0.01", actual.quantity);
+        assert_eq!("EUR", actual.symbol);
     }
 
     #[test]
@@ -486,33 +530,34 @@ mod scanner_tests_post {
 
         let actual = scan_post(input);
 
-        assert_eq!("25", actual[1]);
-        assert_eq!("€", actual[2]);
+        assert_eq!("25", actual.quantity);
+        assert_eq!("€", actual.symbol);
     }
 
     #[test]
     fn test_scan_amount_number_first_ws() {
         let input = "  Expenses  25,0.01 EUR";
+
         let actual = scan_post(input);
 
-        assert_eq!("Expenses", actual[0]);
-        assert_eq!("25,0.01", actual[1]);
-        assert_eq!("EUR", actual[2]);
-        assert_eq!("", actual[3]);
-        assert_eq!("", actual[4]);
+        assert_eq!("Expenses", actual.account);
+        assert_eq!("25,0.01", actual.quantity);
+        assert_eq!("EUR", actual.symbol);
+        assert_eq!("", actual.cost_quantity);
+        assert_eq!("", actual.cost_symbol);
     }
 
     #[test]
     fn test_scan_amount_number_first() {
         let input = "  Expenses  25,0.01EUR";
 
-        let actual = scan_post(input);
+        let tokens = scan_post(input);
 
-        assert_eq!("Expenses", actual[0]);
-        assert_eq!("25,0.01", actual[1]);
-        assert_eq!("EUR", actual[2]);
-        assert_eq!("", actual[3]);
-        assert_eq!("", actual[4]);
+        assert_eq!("Expenses", tokens.account);
+        assert_eq!("25,0.01", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
+        assert_eq!("", tokens.cost_quantity);
+        assert_eq!("", tokens.cost_symbol);
     }
 
     #[test]
@@ -592,29 +637,29 @@ mod scanner_tests_post {
     fn test_scanning_cost() {
         let input = "  Account  5 VAS @ 13.21 AUD";
 
-        let actual = scan_post(input);
+        let tokens = scan_post(input);
 
         // Check that the cost has been scanned
-        assert_eq!("Account", actual[0]);
-        assert_eq!("5", actual[1]);
-        assert_eq!("VAS", actual[2]);
-        assert_eq!("13.21", actual[3]);
-        assert_eq!("AUD", actual[4]);
+        assert_eq!("Account", tokens.account);
+        assert_eq!("5", tokens.quantity);
+        assert_eq!("VAS", tokens.symbol);
+        assert_eq!("13.21", tokens.cost_quantity);
+        assert_eq!("AUD", tokens.cost_symbol);
+        assert_eq!(true, tokens.is_per_unit);
     }
 
-    // #[test]
-    /// TODO: complete this test
+    #[test]
     fn test_scanning_total_cost() {
         let input = "  Account  5 VAS @@ 10 AUD";
 
-        let actual = scan_post(input);
+        let tokens = scan_post(input);
 
         // Check that the cost has been scanned
-        assert_eq!("Account", actual[0]);
-        assert_eq!("5", actual[1]);
-        assert_eq!("VAS", actual[2]);
-        assert_eq!("10", actual[3]);
-        assert_eq!("AUD", actual[4]);
+        assert_eq!("Account", tokens.account);
+        assert_eq!("5", tokens.quantity);
+        assert_eq!("VAS", tokens.symbol);
+        assert_eq!("10", tokens.cost_quantity);
+        assert_eq!("AUD", tokens.cost_symbol);
     }
 }
 
@@ -626,10 +671,12 @@ mod scanner_tests_amount {
     fn test_scanning_costs() {
         let input = "@ 25.86 EUR";
 
-        let (quantity, symbol, remainder) = scan_cost(input);
+        let tokens = scan_cost(input);
 
-        assert_eq!("25.86", quantity);
-        assert_eq!("EUR", symbol);
+        assert_eq!("25.86", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
+        assert_eq!(true, tokens.is_per_unit);
+        assert_eq!("", tokens.remainder);
     }
 }
 

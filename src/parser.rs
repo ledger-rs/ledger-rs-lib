@@ -356,26 +356,30 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     let account_index;
     {
         // Create Account, add to collection
-        account_index = journal.register_account(tokens[0]).unwrap();
+        account_index = journal.register_account(tokens.account).unwrap();
     }
 
     let commodity_index: Option<CommodityIndex>;
     {
         // Create Commodity, add to collection
-        let symbol = tokens[2];
-        commodity_index = journal.commodity_pool.find_or_create(symbol);
+        commodity_index = journal.commodity_pool.find_or_create(tokens.symbol);
     }
     // create amount
-    let amount = Amount::parse(tokens[1], commodity_index);
+    let amount = Amount::parse(tokens.quantity, commodity_index);
 
     // handle cost (2nd amount)
-    let price_commodity_index: Option<CommodityIndex>;
-    {
-        let symbol = tokens[4];
-        price_commodity_index = journal.commodity_pool.find_or_create(symbol);
+    let price_commodity_index = journal.commodity_pool.find_or_create(tokens.cost_symbol);
+    // parse cost (per-unit vs total)
+    let cost = Amount::parse(tokens.cost_quantity, price_commodity_index);
+    if tokens.is_per_unit {
+        // per-unit cost
+        let Some(mut cost_val) = cost else {
+            panic!("Cost is None!");
+        };
+
+        cost_val *= amount.unwrap();
     }
-    // TODO: parse cost (per-unit vs total)
-    let cost = Amount::parse(tokens[3], price_commodity_index);
+    // Total cost is already the end-value.
 
     // note
     // TODO: parse note

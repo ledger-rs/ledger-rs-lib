@@ -100,10 +100,28 @@ fn test_parsing_account_tree() {
 }
 
 #[test]
-fn test_parsing_lots() {
+fn test_parsing_lots_per_unit() {
     let mut journal = Journal::new();
 
     parse_file("tests/trade-buy-sell.ledger", &mut journal);
+
+    // Assert
+
+    // xacts
+    assert!(!journal.xacts.is_empty());
+    assert_eq!(2, journal.xacts.len());
+
+    // posts
+    assert_eq!(4, journal.posts.len());
+    let expected_cost = Amount::new(25.into(), Some(1.into()));
+    assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
+}
+
+#[test]
+fn test_parsing_lots_full_price() {
+    let mut journal = Journal::new();
+
+    parse_file("tests/trade-buy-sell-full-price.ledger", &mut journal);
 
     // Assert
 

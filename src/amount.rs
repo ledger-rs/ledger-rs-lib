@@ -4,7 +4,7 @@
 
 use std::{
     fmt,
-    ops::{Add, AddAssign, Div, Mul, SubAssign},
+    ops::{Add, AddAssign, Div, Mul, MulAssign, SubAssign},
 };
 
 use rust_decimal::prelude::FromPrimitive;
@@ -200,6 +200,18 @@ impl SubAssign<Amount> for Amount {
     }
 }
 
+impl MulAssign<Amount> for Amount {
+    fn mul_assign(&mut self, rhs: Amount) {
+        // multiply the quantity
+        self.quantity *= rhs.quantity;
+
+        // get the other commodity, if we don't have one.
+        if self.commodity_index.is_none() && rhs.commodity_index.is_some() {
+            self.commodity_index = rhs.commodity_index;
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Decimal(rust_decimal::Decimal);
 
@@ -271,6 +283,12 @@ impl Mul<Decimal> for Decimal {
     }
 }
 
+impl MulAssign<Decimal> for Decimal {
+    fn mul_assign(&mut self, rhs: Decimal) {
+        self.0 *= rhs.0;
+    }
+}
+
 impl SubAssign<Decimal> for Decimal {
     fn sub_assign(&mut self, other: Decimal) {
         self.0 -= other.0;
@@ -305,5 +323,13 @@ mod tests {
         let c = a / b;
 
         assert_eq!(expected, c);
+    }
+
+    #[test]
+    fn test_multiply_assign() {
+        let a = Amount::from(10);
+        let b = Amount::from(5);
+
+        let actual = a * b;
     }
 }
