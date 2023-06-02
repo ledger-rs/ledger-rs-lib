@@ -3,7 +3,7 @@
  */
 
  use chrono::NaiveDate;
- use ledger_rs_lib::{journal::Journal, amount::{Decimal, Amount}, parse_file};
+ use ledger_rs_lib::{journal::Journal, amount::{Decimal, Amount}, parse_file, pool::CommodityIndex};
  
 #[test]
 fn smoke_test_parsing() {
@@ -113,8 +113,11 @@ fn test_parsing_lots_per_unit() {
 
     // posts
     assert_eq!(4, journal.posts.len());
-    let expected_cost = Amount::new(25.into(), Some(1.into()));
+    let cur_index: CommodityIndex = 1.into();
+    let expected_cost = Amount::new(25.into(), Some(cur_index));
     assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
+    let cur = journal.get_commodity(cur_index);
+    assert_eq!("EUR", cur.symbol);
 }
 
 #[test]

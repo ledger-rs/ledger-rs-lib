@@ -678,6 +678,18 @@ mod scanner_tests_amount {
         assert_eq!(true, tokens.is_per_unit);
         assert_eq!("", tokens.remainder);
     }
+
+    #[test]
+    fn test_scanning_cost_full() {
+        let input = "@@ 25.86 EUR";
+
+        let tokens = scan_cost(input);
+
+        assert_eq!("25.86", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
+        assert_eq!(false, tokens.is_per_unit);
+        assert_eq!("", tokens.remainder);
+    }
 }
 
 #[cfg(test)]

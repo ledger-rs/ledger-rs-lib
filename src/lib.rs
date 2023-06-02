@@ -45,7 +45,7 @@ pub mod history;
 pub mod journal;
 mod option;
 pub mod parser;
-mod pool;
+pub mod pool;
 pub mod post;
 pub mod report;
 pub mod scanner;
