@@ -1,7 +1,7 @@
 [package]
 name = "ledger-rs-lib"
 description="A Ledger implementation in Rust"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Alen Šiljak <dev@alensiljak.eu.org>"]
 license="AGPL-3.0"
