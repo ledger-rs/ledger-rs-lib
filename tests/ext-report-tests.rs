@@ -10,7 +10,7 @@ fn test_balance_minimal() {
     // Assert
     assert!(!actual.is_empty());
     assert_eq!(3, actual.len());
-    assert_eq!("Account  has balance ", actual[0]);
+    assert_eq!("Account  has balance 0", actual[0]);
     assert_eq!("Account Assets has balance -20", actual[1]);
     assert_eq!("Account Expenses has balance 20", actual[2])
 }
@@ -21,10 +21,10 @@ fn test_balance_basic() {
 
     assert!(!actual.is_empty());
     assert_eq!(5, actual.len());
-    assert_eq!("Account  has balance ", actual[0]);
-    assert_eq!("Account Assets has balance ", actual[1]);
+    assert_eq!("Account  has balance 0 EUR", actual[0]);
+    assert_eq!("Account Assets has balance -20 EUR", actual[1]);
     assert_eq!("Account Assets:Cash has balance -20 EUR", actual[2]);
-    assert_eq!("Account Expenses has balance ", actual[3]);
+    assert_eq!("Account Expenses has balance 20 EUR", actual[3]);
     assert_eq!("Account Expenses:Food has balance 20 EUR", actual[4]);
 }
 
@@ -54,6 +54,7 @@ fn test_account_filter() {
 /// Just two accounts.
 #[test]
 fn test_balance_plain() {
+    // TODO: This would be the Ledger output:
     let expected = r#"Account Balances
    -20 Assets
     20 Expenses
@@ -63,10 +64,10 @@ fn test_balance_plain() {
 
     assert!(!actual.is_empty());
     assert_eq!(5, actual.len());
-    assert_eq!("Account  has balance ", actual[0]);
-    assert_eq!("Account Assets has balance ", actual[1]);
+    assert_eq!("Account  has balance 0 EUR", actual[0]);
+    assert_eq!("Account Assets has balance -20 EUR", actual[1]);
     assert_eq!("Account Assets:Cash has balance -20 EUR", actual[2]);
-    assert_eq!("Account Expenses has balance ", actual[3]);
+    assert_eq!("Account Expenses has balance 20 EUR", actual[3]);
     assert_eq!("Account Expenses:Food has balance 20 EUR", actual[4]);
 }
 

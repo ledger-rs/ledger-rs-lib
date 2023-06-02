@@ -46,7 +46,7 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
 
     let mut balance_line = String::new();
     let total = account.total(journal);
-    for amount in total.amounts.iter() {
+    for amount in total.amounts {
         balance_line += amount.quantity.to_string().as_str();
         if amount.commodity_index.is_some() {
             if let Some(i) = amount.commodity_index {
@@ -57,10 +57,15 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
             }
         }
     }
-    result.push(format!("Account {} has balance {}", account.name, balance_line));
+    result.push(format!("Account {} has balance {}", account.fullname(journal), balance_line));
+
+    // Sort child account names alphabetically. Mainly for consistent output.
+    let mut acct_names: Vec<_> = account.accounts.keys().collect();
+    acct_names.sort();
 
     // children amounts
-    for (_, index) in &account.accounts {
+    for acct_name in acct_names {
+        let index = account.accounts.get(acct_name).unwrap();
         let acct = journal.get_account(*index);
         result.extend(get_children_lines(acct, journal));
     }
@@ -149,9 +154,9 @@ mod tests {
 
         assert!(!actual.is_empty());
         assert_eq!(3, actual.len());
-        assert_eq!("Account Assets has balance -25", actual[0]);
-        assert_eq!("Account Expenses has balance 25", actual[1]);
-        assert_eq!("Account  has balance 0", actual[2]);
+        assert_eq!("Account  has balance 0 EUR", actual[0]);
+        assert_eq!("Account Assets has balance -25 EUR", actual[1]);
+        assert_eq!("Account Expenses has balance 25 EUR", actual[2]);
         // assert_eq!("Account  has balance ", actual[0]);
         // assert_eq!("Account Assets has balance -25 EUR", actual[1]);
         // assert_eq!("Account Expenses has balance 25 EUR", actual[2]);
@@ -200,9 +205,9 @@ mod tests {
         // Assert
         assert!(!actual.is_empty());
         assert_eq!(4, actual.len());
-        assert_eq!("Account  has balance -25EUR30USD", actual[0]);
-        assert_eq!("Account Assets has balance 30USD-25EUR", actual[1]);
-        assert_eq!("Account Assets:Cash USD has balance 30 USD", actual[2]);
-        assert_eq!("Account Assets:Cash EUR has balance -25 EUR", actual[3]);
+        assert_eq!("Account  has balance -25 EUR30 USD", actual[0]);
+        assert_eq!("Account Assets has balance -25 EUR30 USD", actual[1]);
+        assert_eq!("Account Assets:Cash EUR has balance -25 EUR", actual[2]);
+        assert_eq!("Account Assets:Cash USD has balance 30 USD", actual[3]);
     }
 }

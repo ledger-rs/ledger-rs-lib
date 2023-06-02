@@ -7,7 +7,6 @@
  */
 
 use std::{
-    fmt,
     ops::{AddAssign, SubAssign},
 };
 
@@ -91,15 +90,15 @@ impl AddAssign<Balance> for Balance {
     }
 }
 
-impl fmt::Display for Balance {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for amount in &self.amounts {
-            write!(f, "{}", amount.quantity)?;
-            // amount.commodity_index
-        }
-        Ok(())
-    }
-}
+// impl fmt::Display for Balance {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         for amount in &self.amounts {
+//             write!(f, "{}", amount.quantity)?;
+//             // amount.commodity_index
+//         }
+//         Ok(())
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

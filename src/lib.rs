@@ -23,10 +23,10 @@ report on account balances
 
     assert!(!actual.is_empty());
     assert_eq!(5, actual.len());
-    assert_eq!("Account  has balance ", actual[0]);
-    assert_eq!("Account Assets has balance ", actual[1]);
+    assert_eq!("Account  has balance 0 EUR", actual[0]);
+    assert_eq!("Account Assets has balance -20 EUR", actual[1]);
     assert_eq!("Account Assets:Cash has balance -20 EUR", actual[2]);
-    assert_eq!("Account Expenses has balance ", actual[3]);
+    assert_eq!("Account Expenses has balance 20 EUR", actual[3]);
     assert_eq!("Account Expenses:Food has balance 20 EUR", actual[4]);
 ```
 */

@@ -66,8 +66,13 @@ impl Account {
     pub fn total(&self, journal: &Journal) -> Balance {
         let mut total = Balance::new();
 
+        // Sort the accounts by name
+        let mut acct_names: Vec<_> = self.accounts.keys().collect();
+        acct_names.sort();
+
         // iterate through children and get their totals
-        for (_, index) in &self.accounts {
+        for acct_name in acct_names {
+            let index = self.accounts.get(acct_name).unwrap();
             let subacct = journal.get_account(*index);
             let subtotal = subacct.total(journal);
 
