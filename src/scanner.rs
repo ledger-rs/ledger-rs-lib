@@ -363,7 +363,6 @@ mod scanner_tests_xact {
 #[cfg(test)]
 mod scanner_tests_post {
     use crate::scanner::scan_amount;
-
     use super::{scan_post, scan_symbol};
 
     #[test]
@@ -600,6 +599,21 @@ mod scanner_tests_post {
         assert_eq!("5", actual[1]);
         assert_eq!("VAS", actual[2]);
         assert_eq!("13.21", actual[3]);
+        assert_eq!("AUD", actual[4]);
+    }
+
+    // #[test]
+    /// TODO: complete this test
+    fn test_scanning_total_cost() {
+        let input = "  Account  5 VAS @@ 10 AUD";
+
+        let actual = scan_post(input);
+
+        // Check that the cost has been scanned
+        assert_eq!("Account", actual[0]);
+        assert_eq!("5", actual[1]);
+        assert_eq!("VAS", actual[2]);
+        assert_eq!("10", actual[3]);
         assert_eq!("AUD", actual[4]);
     }
 }

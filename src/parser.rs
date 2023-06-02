@@ -374,6 +374,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
         let symbol = tokens[4];
         price_commodity_index = journal.commodity_pool.find_or_create(symbol);
     }
+    // TODO: parse cost (per-unit vs total)
     let cost = Amount::parse(tokens[3], price_commodity_index);
 
     // note
