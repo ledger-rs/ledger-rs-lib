@@ -17,8 +17,6 @@ pub(crate) struct PostTokens<'a> {
 struct AmountTokens<'a> {
     pub quantity: &'a str,
     pub symbol: &'a str,
-    /// Any remaining content
-    pub remainder: &'a str
 }
 
 struct CostTokens<'a> {
@@ -183,7 +181,7 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
     // there's more content
 
     let account = &input[..sep_index];
-    let amount_tokens = scan_amount(&input[sep_index + 2..]);
+    let (amount_tokens, input) = scan_amount(&input[sep_index + 2..]);
     let cost_tokens = match input.is_empty() {
         true => CostTokens::new(),
         false => scan_cost(input),
@@ -203,10 +201,13 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
 }
 
 /// Scans the first Amount from the input
-/// returns:
-/// (Quantity, Symbol, remainder)
+/// 
+/// returns: AmountTokens
 ///
-fn scan_amount(input: &str) -> AmountTokens {
+/// The amount line can be `-10 VEUR {20 EUR} [2023-04-01] @ 25 EUR`
+/// of which, the amount is "-10 VEUR" and the rest is the cost, stored in
+/// an annotation.
+fn scan_amount(input: &str) -> (AmountTokens, &str) {
     let input = input.trim_start();
 
     // Check the next character
@@ -216,20 +217,18 @@ fn scan_amount(input: &str) -> AmountTokens {
         // scan_amount_number_first(input)
         let (quantity, input) = scan_quantity(input);
         let (symbol, input) = scan_symbol(input);
-        AmountTokens {
+        (AmountTokens {
             quantity,
             symbol,
-            remainder: input,
-        }
+        }, input)
     } else {
         // scan_amount_symbol_first(input)
         let (symbol, input) = scan_symbol(input);
         let (quantity, input) = scan_quantity(input);
-        AmountTokens {
+        (AmountTokens {
             quantity,
             symbol,
-            remainder: input,
-        }
+        }, input)
     }
 }
 
@@ -294,7 +293,7 @@ fn scan_cost(input: &str) -> CostTokens {
         (3, false)
     };
     let input = &input[first_char..].trim_start();
-    let amount_tokens = scan_amount(input);
+    let (amount_tokens, input) = scan_amount(input);
 
     CostTokens {
         quantity: amount_tokens.quantity,
@@ -607,7 +606,7 @@ mod scanner_tests_post {
     fn test_scan_amount_symbol_first_ws() {
         let input = "EUR 25,0.01";
 
-        let tokens = scan_amount(input);
+        let (tokens, _) = scan_amount(input);
 
         assert_eq!("25,0.01", tokens.quantity);
         assert_eq!("EUR", tokens.symbol);
@@ -617,7 +616,7 @@ mod scanner_tests_post {
     fn test_scan_amount_symbol_first() {
         let input = "EUR25,0.01";
 
-        let tokens = scan_amount(input);
+        let (tokens, rest) = scan_amount(input);
 
         assert_eq!("25,0.01", tokens.quantity);
         assert_eq!("EUR", tokens.symbol);
@@ -627,7 +626,7 @@ mod scanner_tests_post {
     fn test_scan_amount_symbol_first_neg() {
         let input = "EUR-25,0.01";
 
-        let tokens = scan_amount(input);
+        let (tokens, rest) = scan_amount(input);
 
         assert_eq!("-25,0.01", tokens.quantity);
         assert_eq!("EUR", tokens.symbol);
@@ -639,11 +638,11 @@ mod scanner_tests_post {
     fn test_scan_quantity_full() {
         let input = "5 VECP @ 13.68 EUR";
 
-        let tokens = scan_amount(input);
+        let (tokens, rest) = scan_amount(input);
 
         assert_eq!("5", tokens.quantity);
         assert_eq!("VECP", tokens.symbol);
-        assert_eq!("@ 13.68 EUR", tokens.remainder);
+        assert_eq!("@ 13.68 EUR", rest);
     }
 
     #[test]
