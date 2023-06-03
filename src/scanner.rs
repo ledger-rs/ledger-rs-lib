@@ -4,10 +4,17 @@
  * There are scanner functions for every element of the journal.
  */
 
+/// Tokens after scanning a Posting line.
+/// 
+/// `    Assets:Stocks  -10 VEUR {20 EUR} [2023-04-01] @ 25 EUR`
+/// 
 pub(crate) struct PostTokens<'a> {
     pub account: &'a str,
     pub quantity: &'a str,
     pub symbol: &'a str,
+    pub price_quantity: &'a str,
+    pub price_commodity: &'a str,
+    pub price_date: &'a str,
     pub cost_quantity: &'a str,
     pub cost_symbol: &'a str,
     pub is_per_unit: bool,
@@ -17,6 +24,22 @@ pub(crate) struct PostTokens<'a> {
 struct AmountTokens<'a> {
     pub quantity: &'a str,
     pub symbol: &'a str,
+}
+
+struct AnnotationTokens<'a> {
+    quantity: &'a str,
+    symbol: &'a str,
+    date: &'a str,
+}
+
+impl<'a> AnnotationTokens<'a> {
+    pub fn empty() -> Self {
+        Self { 
+            quantity: "",
+            symbol: "",
+            date: "",
+        }
+    }
 }
 
 struct CostTokens<'a> {
@@ -58,7 +81,7 @@ pub(crate) fn tokenize_xact_header(input: &str) -> [&str; 4] {
     // Dates.
     // Date has to be at the beginning.
 
-    let (date, input) = tokenize_date(input);
+    let (date, input) = scan_date(input);
 
     // aux date
     let (aux_date, input) = tokenize_aux_date(input);
@@ -76,7 +99,7 @@ pub(crate) fn tokenize_xact_header(input: &str) -> [&str; 4] {
 /// Parse date from the input string.
 ///
 /// returns the (date string, remaining string)
-fn tokenize_date(input: &str) -> (&str, &str) {
+fn scan_date(input: &str) -> (&str, &str) {
     match input.find(|c| c == '=' || c == ' ') {
         Some(index) => {
             // offset = index;
@@ -147,10 +170,10 @@ fn tokenize_payee(input: &str) -> (&str, &str) {
 ///
 /// input: &str  Post content
 /// returns (account, quantity, symbol, cost_q, cost_s, is_per_unit)
-/// 
+///
 /// Reference methods:
 /// - amount_t::parse
-/// 
+///
 pub(crate) fn scan_post(input: &str) -> PostTokens {
     // clear the initial whitespace.
     let input = input.trim_start();
@@ -172,6 +195,9 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
             account: input.trim_end(),
             quantity: "",
             symbol: "",
+            price_quantity: "",
+            price_commodity: "",
+            price_date: "",
             cost_quantity: "",
             cost_symbol: "",
             is_per_unit: false,
@@ -182,6 +208,7 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
 
     let account = &input[..sep_index];
     let (amount_tokens, input) = scan_amount(&input[sep_index + 2..]);
+    let (annotation_tokens, input) = scan_annotations(input);
     let cost_tokens = match input.is_empty() {
         true => CostTokens::new(),
         false => scan_cost(input),
@@ -194,6 +221,9 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
         account,
         quantity: amount_tokens.quantity,
         symbol: amount_tokens.symbol,
+        price_quantity: annotation_tokens.quantity,
+        price_commodity: annotation_tokens.symbol,
+        price_date: annotation_tokens.date,
         cost_quantity: cost_tokens.quantity,
         cost_symbol: cost_tokens.symbol,
         is_per_unit: cost_tokens.is_per_unit,
@@ -201,7 +231,7 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
 }
 
 /// Scans the first Amount from the input
-/// 
+///
 /// returns: AmountTokens
 ///
 /// The amount line can be `-10 VEUR {20 EUR} [2023-04-01] @ 25 EUR`
@@ -217,19 +247,75 @@ fn scan_amount(input: &str) -> (AmountTokens, &str) {
         // scan_amount_number_first(input)
         let (quantity, input) = scan_quantity(input);
         let (symbol, input) = scan_symbol(input);
-        (AmountTokens {
-            quantity,
-            symbol,
-        }, input)
+        (AmountTokens { quantity, symbol }, input)
     } else {
         // scan_amount_symbol_first(input)
         let (symbol, input) = scan_symbol(input);
         let (quantity, input) = scan_quantity(input);
-        (AmountTokens {
-            quantity,
-            symbol,
-        }, input)
+        (AmountTokens { quantity, symbol }, input)
     }
+}
+
+fn scan_annotations(input: &str) -> (AnnotationTokens, &str) {
+    let mut input = input.trim_start();
+    if input.is_empty() {
+        return (AnnotationTokens::empty(), input);
+    }
+
+    let mut result = AnnotationTokens::empty();
+
+    loop {
+        let Some(next_char) = input.chars().nth(0)
+        else { break };
+        if next_char == '{' {
+            if !result.quantity.is_empty() {
+                panic!("Commodity specifies more than one price");
+            }
+
+            // todo: Is it per unit or total? {{25 EUR}}
+            // todo: is it fixated price {=xyz}
+
+            let (amount, rest) = scan_until(&input[1..], '}');
+            let (amount_tokens, _) = scan_amount(amount);
+
+            result.quantity = amount_tokens.quantity;
+            result.symbol = amount_tokens.symbol;
+
+            // Skip the closing curly brace.
+            input = &rest[1..];
+            // and the ws
+            input = input.trim_start();
+        } else if next_char == '[' {
+            if !result.date.is_empty() {
+                panic!("Commodity specifies more than one date");
+            }
+            let (date_input, rest) = scan_until(&input[1..], ']');
+            let (date, _) = scan_date(date_input);
+            
+            result.date = date;
+
+            // skip the closing ]
+            input = &rest[1..];
+            // and the ws
+            input = input.trim_start();
+        } else if next_char == '(' {
+            // Commodity specifies more than one valuation expression
+            
+            todo!("valuation expression")
+        } else {
+            break;
+        }
+    }
+
+    (result, input)
+}
+
+/// Scans until the given separator is found
+fn scan_until<'a>(input: &'a str, separator: char) -> (&'a str, &'a str) {
+    let Some(i) = input.find(separator)
+        else { panic!("work-out the correct return values") };
+
+    (&input[..i], &input[i..])
 }
 
 /// Reads the quantity string.
@@ -305,7 +391,7 @@ fn scan_cost(input: &str) -> CostTokens {
 
 /// Scans the Price directive
 ///
-/// i.e.  
+/// i.e.
 /// P 2022-03-03 13:00:00 EUR 1.12 USD
 ///
 /// returns [date, time, commodity, quantity, price_commodity]
@@ -366,7 +452,7 @@ fn next_element(input: &str) -> Option<&str> {
 
 #[cfg(test)]
 mod scanner_tests_xact {
-    use super::{tokenize_date, tokenize_xact_header};
+    use super::{scan_date, tokenize_xact_header};
 
     #[test]
     fn test_parsing_xact_header() {
@@ -435,7 +521,7 @@ mod scanner_tests_xact {
     fn test_date_w_aux() {
         let input = "2023-05-01=2023";
 
-        let (date, remains) = tokenize_date(input);
+        let (date, remains) = scan_date(input);
 
         assert_eq!("2023-05-01", date);
         assert_eq!("=2023", remains);
@@ -703,8 +789,47 @@ mod scanner_tests_post {
         assert_eq!("10", tokens.cost_quantity);
         assert_eq!("AUD", tokens.cost_symbol);
     }
+}
 
-    // TODO: #[test]
+#[cfg(test)]
+mod scan_annotations_tests {
+    use crate::scanner::scan_post;
+    use super::scan_annotations;
+
+    #[test]
+    fn test_scan_annotation_price() {
+        let input = "{20 EUR}";
+
+        let (tokens, rest) = scan_annotations(input);
+
+        assert_eq!("20", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
+        assert_eq!("", rest);
+    }
+
+    #[test]
+    fn test_scan_annotation_date() {
+        let input = "[2023-11-07]";
+
+        let (tokens, rest) = scan_annotations(input);
+
+        assert_eq!("2023-11-07", tokens.date);
+        assert_eq!("", rest);
+    }
+
+    #[test]
+    fn test_scan_annotation_price_and_date() {
+        let input = "{20 EUR} [2023-11-07]";
+
+        let (tokens, rest) = scan_annotations(input);
+
+        assert_eq!("20", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
+        assert_eq!("2023-11-07", tokens.date);
+        assert_eq!("", rest);
+    }
+
+    #[test]
     fn test_scan_sale_lot() {
         let input = "    Assets:Stocks  -10 VEUR {20 EUR} [2023-04-01] @ 25 EUR";
 
@@ -713,6 +838,12 @@ mod scanner_tests_post {
         // Assert
         assert_eq!("Assets:Stocks", tokens.account);
         assert_eq!("-10", tokens.quantity);
+        assert_eq!("VEUR", tokens.symbol);
+        // annotations
+        assert_eq!("20", tokens.price_quantity);
+        assert_eq!("EUR", tokens.price_commodity);
+        assert_eq!("2023-04-01", tokens.price_date);
+        // price
         assert_eq!("25", tokens.cost_quantity);
         assert_eq!("EUR", tokens.cost_symbol);
     }
