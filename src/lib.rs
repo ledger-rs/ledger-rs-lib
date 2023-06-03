@@ -35,9 +35,8 @@ use std::{fs::File, io::Cursor};
 use journal::Journal;
 use option::InputOptions;
 
-/// Account definition and operations
 pub mod account;
-/// Amount and the Decimal numeric type
+mod annotate;
 pub mod amount;
 mod balance;
 pub mod commodity;

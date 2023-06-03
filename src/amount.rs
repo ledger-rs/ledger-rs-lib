@@ -1,5 +1,5 @@
 /*!
- * Amount
+ * Amount and the Decimal numeric type
  */
 
 use std::{

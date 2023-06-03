@@ -1,5 +1,5 @@
 /*!
- * Account
+ * Account definition and operations
  */
 
 use std::{collections::HashMap, vec};

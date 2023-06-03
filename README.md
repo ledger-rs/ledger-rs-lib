@@ -118,3 +118,9 @@ Price
 ```
 P DATE SYMBOL PRICE
 ```
+
+## Lots
+
+The price of a commodity is stored in commodity annotations (`amount.h`).
+
+`annotate_commodity(amount_t price, [datetime_t date, string tag])`

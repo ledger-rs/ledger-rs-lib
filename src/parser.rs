@@ -355,10 +355,13 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
 
     // Create Account, add to collection
     let account_index = journal.register_account(tokens.account).unwrap();
+
     // Create Commodity, add to collection
     let commodity_index = journal.commodity_pool.find_or_create(tokens.symbol);
     // create amount
     let amount = Amount::parse(tokens.quantity, commodity_index);
+
+    // TODO: parse annotations
 
     // handle cost (2nd amount)
     let cost = parse_cost(&tokens, &amount, journal);

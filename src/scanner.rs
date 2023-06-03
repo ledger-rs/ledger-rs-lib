@@ -13,6 +13,14 @@ pub(crate) struct PostTokens<'a> {
     pub is_per_unit: bool,
 }
 
+/// Structure for the tokens from scanning the Amount part of the Posting.
+struct AmountTokens<'a> {
+    pub quantity: &'a str,
+    pub symbol: &'a str,
+    /// Any remaining content
+    pub remainder: &'a str
+}
+
 struct CostTokens<'a> {
     pub quantity: &'a str,
     pub symbol: &'a str,
@@ -141,6 +149,10 @@ fn tokenize_payee(input: &str) -> (&str, &str) {
 ///
 /// input: &str  Post content
 /// returns (account, quantity, symbol, cost_q, cost_s, is_per_unit)
+/// 
+/// Reference methods:
+/// - amount_t::parse
+/// 
 pub(crate) fn scan_post(input: &str) -> PostTokens {
     // clear the initial whitespace.
     let input = input.trim_start();
@@ -156,43 +168,45 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
     // two spaces is a separator betweer the account and amount.
     // Eventually, also support the tab as a separator:
     // something like |p| p == "  " || p  == '\t'
-    match input.find("  ") {
-        Some(i) => {
-            let account = &input[..i];
-            let (quantity, symbol, input) = scan_amount(&input[i + 2..]);
-            let cost_tokens = match input.is_empty() {
-                true => CostTokens::new(),
-                false => scan_cost(input),
-            };
 
-            // TODO: handle post comment
-            // scan_xyz(input)
-
-            return PostTokens {
-                account,
-                quantity,
-                symbol,
-                cost_quantity: cost_tokens.quantity,
-                cost_symbol: cost_tokens.symbol,
-                is_per_unit: cost_tokens.is_per_unit,
-            };
-        }
-        None => PostTokens {
+    let Some(sep_index) = input.find("  ") else {
+        return PostTokens {
             account: input.trim_end(),
             quantity: "",
             symbol: "",
             cost_quantity: "",
             cost_symbol: "",
             is_per_unit: false,
-        },
-    }
+        }
+    };
+
+    // there's more content
+
+    let account = &input[..sep_index];
+    let amount_tokens = scan_amount(&input[sep_index + 2..]);
+    let cost_tokens = match input.is_empty() {
+        true => CostTokens::new(),
+        false => scan_cost(input),
+    };
+
+    // TODO: handle post comment
+    // scan_xyz(input)
+
+    return PostTokens {
+        account,
+        quantity: amount_tokens.quantity,
+        symbol: amount_tokens.symbol,
+        cost_quantity: cost_tokens.quantity,
+        cost_symbol: cost_tokens.symbol,
+        is_per_unit: cost_tokens.is_per_unit,
+    };
 }
 
 /// Scans the first Amount from the input
 /// returns:
 /// (Quantity, Symbol, remainder)
 ///
-fn scan_amount(input: &str) -> (&str, &str, &str) {
+fn scan_amount(input: &str) -> AmountTokens {
     let input = input.trim_start();
 
     // Check the next character
@@ -202,12 +216,20 @@ fn scan_amount(input: &str) -> (&str, &str, &str) {
         // scan_amount_number_first(input)
         let (quantity, input) = scan_quantity(input);
         let (symbol, input) = scan_symbol(input);
-        (quantity, symbol, input)
+        AmountTokens {
+            quantity,
+            symbol,
+            remainder: input,
+        }
     } else {
         // scan_amount_symbol_first(input)
         let (symbol, input) = scan_symbol(input);
         let (quantity, input) = scan_quantity(input);
-        (quantity, symbol, input)
+        AmountTokens {
+            quantity,
+            symbol,
+            remainder: input,
+        }
     }
 }
 
@@ -272,10 +294,11 @@ fn scan_cost(input: &str) -> CostTokens {
         (3, false)
     };
     let input = &input[first_char..].trim_start();
-    let (quantity, symbol, input) = scan_amount(input);
+    let amount_tokens = scan_amount(input);
+
     CostTokens {
-        quantity,
-        symbol,
+        quantity: amount_tokens.quantity,
+        symbol: amount_tokens.symbol,
         is_per_unit,
         remainder: input,
     }
@@ -337,7 +360,7 @@ fn next_element(input: &str) -> Option<&str> {
     // assuming the element starts at the beginning, no whitespace.
     if let Some(next_sep) = find_next_separator(input) {
         Some(&input[..next_sep])
-    } else { 
+    } else {
         None
     }
 }
@@ -584,30 +607,30 @@ mod scanner_tests_post {
     fn test_scan_amount_symbol_first_ws() {
         let input = "EUR 25,0.01";
 
-        let (quantity, symbol, rest) = scan_amount(input);
+        let tokens = scan_amount(input);
 
-        assert_eq!("25,0.01", quantity);
-        assert_eq!("EUR", symbol);
+        assert_eq!("25,0.01", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
     }
 
     #[test]
     fn test_scan_amount_symbol_first() {
         let input = "EUR25,0.01";
 
-        let (quantity, symbol, rest) = scan_amount(input);
+        let tokens = scan_amount(input);
 
-        assert_eq!("25,0.01", quantity);
-        assert_eq!("EUR", symbol);
+        assert_eq!("25,0.01", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
     }
 
     #[test]
     fn test_scan_amount_symbol_first_neg() {
         let input = "EUR-25,0.01";
 
-        let (quantity, symbol, rest) = scan_amount(input);
+        let tokens = scan_amount(input);
 
-        assert_eq!("-25,0.01", quantity);
-        assert_eq!("EUR", symbol);
+        assert_eq!("-25,0.01", tokens.quantity);
+        assert_eq!("EUR", tokens.symbol);
         // assert_eq!("", actual[2]);
         // assert_eq!("", actual[3]);
     }
@@ -616,11 +639,11 @@ mod scanner_tests_post {
     fn test_scan_quantity_full() {
         let input = "5 VECP @ 13.68 EUR";
 
-        let (quantity, symbol, remainder) = scan_amount(input);
+        let tokens = scan_amount(input);
 
-        assert_eq!("5", quantity);
-        assert_eq!("VECP", symbol);
-        assert_eq!("@ 13.68 EUR", remainder);
+        assert_eq!("5", tokens.quantity);
+        assert_eq!("VECP", tokens.symbol);
+        assert_eq!("@ 13.68 EUR", tokens.remainder);
     }
 
     #[test]
