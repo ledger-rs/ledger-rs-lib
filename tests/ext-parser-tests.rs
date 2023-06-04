@@ -158,7 +158,7 @@ fn test_parsing_lots_full_price() {
     assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
 }
 
-// #[test]
+// TODO: #[test]
 fn test_lot_sale() {
     // arrange
     let input = r#"2023-05-01 Sell Stocks
@@ -173,11 +173,21 @@ fn test_lot_sale() {
     // assert
     assert_eq!(1, journal.xacts.len());
     assert_eq!(2, journal.posts.len());
+    assert_eq!(2, journal.commodity_pool.len());
+
+    let veur = journal.commodity_pool.find_index("VEUR").cloned();
+    let eur = journal.commodity_pool.find_index("EUR").cloned();
 
     let sale_post = &journal.posts[1];
     assert_eq!(sale_post.amount.unwrap().quantity, (-10).into());
+    assert_eq!(sale_post.amount.unwrap().commodity_index, veur);
     
-    todo!("test cost")
+    // annotations
+    // todo!("annotations")
+
+    // cost
+    assert_eq!(sale_post.cost.unwrap().quantity, (250).into());
+    assert_eq!(sale_post.cost.unwrap().commodity_index, eur);
 }
 
 // #[test]

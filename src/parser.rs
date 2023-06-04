@@ -28,6 +28,7 @@ use chrono::NaiveDate;
 
 use crate::{
     amount::Amount,
+    annotate::Annotation,
     journal::{Journal, XactIndex},
     pool::CommodityIndex,
     post::Post,
@@ -362,6 +363,14 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     let amount = Amount::parse(tokens.quantity, commodity_index);
 
     // TODO: parse annotations
+    {
+        let test = Annotation::parse(
+            tokens.price_date,
+            tokens.price_quantity,
+            tokens.price_commodity,
+            journal,
+        );
+    }
 
     // handle cost (2nd amount)
     let cost = parse_cost(&tokens, &amount, journal);
@@ -390,11 +399,15 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     }
 }
 
-fn parse_cost(tokens: &PostTokens, amount: &Option<Amount>, journal: &mut Journal) -> Option<Amount> {
+fn parse_cost(
+    tokens: &PostTokens,
+    amount: &Option<Amount>,
+    journal: &mut Journal,
+) -> Option<Amount> {
     if tokens.cost_quantity.is_empty() || amount.is_none() {
         return None;
     }
-    
+
     let price_commodity_index = journal.commodity_pool.find_or_create(tokens.cost_symbol);
 
     // parse cost (per-unit vs total)

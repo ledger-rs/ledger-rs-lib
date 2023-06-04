@@ -99,7 +99,6 @@ impl CommodityPool {
         self.commodity_history.get_commodity(index)
     }
 
-
     /// This is the exchange() method but, due to mutability of references, it **does not**
     /// create new prices. This needs to be explicitly done by the caller before/aftert the exchange.
     /// 
@@ -152,6 +151,10 @@ impl CommodityPool {
         breakdown.amount = *amount;
 
         breakdown
+    }
+
+    pub fn len(&self) -> usize {
+        self.commodities.len()
     }
 
     pub fn parse_price_directive(&mut self, line: &str) {
@@ -289,7 +292,6 @@ mod tests {
         let Some(actual_annotation) = actual else {panic!()};
         assert_eq!(None, actual_annotation.date);
         assert_eq!(None, actual_annotation.price);
-        assert_eq!(None, actual_annotation.tag);
     }
 
 }

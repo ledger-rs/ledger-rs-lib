@@ -34,12 +34,12 @@ impl Amount {
 
     /// Creates a new Amount instance.
     /// Parses the quantity only and uses the given commodity index.
-    pub fn parse(amount: &str, commodity_index: Option<CommodityIndex>) -> Option<Self> {
-        if amount.is_empty() {
+    pub fn parse(quantity: &str, commodity_index: Option<CommodityIndex>) -> Option<Self> {
+        if quantity.is_empty() {
             return None;
         }
 
-        let quantity_result = Decimal::from_str(amount);
+        let quantity_result = Decimal::from_str(quantity);
         if quantity_result.is_err() {
             return None;
         }
