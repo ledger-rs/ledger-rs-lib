@@ -60,6 +60,10 @@ impl CommodityHistory {
         self.graph.node_weight(index).expect("index should be valid")
     }
 
+    pub fn get_commodity_mut(&mut self, index: NodeIndex) -> &mut Commodity {
+        self.graph.node_weight_mut(index).expect("index should be valid")
+    }
+
     pub fn map_prices(&self) {
         todo!()
     }

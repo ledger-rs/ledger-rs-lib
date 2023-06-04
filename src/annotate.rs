@@ -9,11 +9,11 @@ use chrono::NaiveDate;
 
 use crate::amount::Amount;
 
-pub(crate) struct Annotation {
-    price: Option<Amount>,
-    date: Option<NaiveDate>,
-    tag: Option<String>,
-    // value_expr
+pub struct Annotation {
+    pub price: Option<Amount>,
+    pub date: Option<NaiveDate>,
+    pub tag: Option<String>,
+    // pub value_expr:
 }
 
 impl Annotation {

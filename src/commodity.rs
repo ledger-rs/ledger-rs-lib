@@ -19,7 +19,7 @@ pub struct Commodity {
     // annotated_commodity
     // parent
     // qualified_symbol: Option<String>
-    annotated: bool
+    pub annotated: bool
 }
 
 impl Commodity {

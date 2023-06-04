@@ -14,7 +14,7 @@ use crate::{
     commodity::Commodity,
     history::CommodityHistory,
     parser::{ISO_DATE_FORMAT, ISO_TIME_FORMAT},
-    scanner,
+    scanner, annotate::Annotation,
 };
 
 /// Commodity Index is the index of the node in the history graph.
@@ -23,7 +23,8 @@ pub type CommodityIndex = NodeIndex;
 pub struct CommodityPool {
     /// Map (symbol, commodity)
     pub(crate) commodities: HashMap<String, NodeIndex>,
-    // pub(crate) annotated_commodities: HashMap<String, Commodity>,
+    /// Commodity annotations. symbol, annotation
+    pub(crate) annotated_commodities: HashMap<String, Annotation>,
     pub(crate) commodity_history: CommodityHistory,
     // null_commodity: Commodity
     // default_commodity: Commodity
@@ -35,7 +36,7 @@ impl CommodityPool {
     pub fn new() -> Self {
         Self {
             commodities: HashMap::new(),
-            // annotated_commodities: HashMap::new(),
+            annotated_commodities: HashMap::new(),
             commodity_history: CommodityHistory::new(),
         }
     }
@@ -57,6 +58,19 @@ impl CommodityPool {
         self.commodities.insert(symbol.to_owned(), i);
 
         i
+    }
+
+    /// Create an annotated commodity.
+    pub fn create_annotated(&mut self, symbol: &str, annotation: Annotation) -> CommodityIndex {
+        let index = self.create(symbol);
+
+        let c = self.commodity_history.get_commodity_mut(index);
+        c.annotated = true;
+        
+        // Add annotation
+        self.annotated_commodities.insert(symbol.to_owned(), annotation);
+
+        index
     }
 
     pub fn find_index(&self, symbol: &str) -> Option<&CommodityIndex> {
@@ -196,7 +210,7 @@ impl CostBreakdown {
 #[cfg(test)]
 mod tests {
     use super::CommodityPool;
-    use crate::amount::Decimal;
+    use crate::{amount::Decimal, annotate::Annotation};
 
     #[test]
     fn test_adding_commodity() {
@@ -209,7 +223,6 @@ mod tests {
         // Assert
         assert_eq!(1, pool.commodities.len());
         assert!(pool.commodities.contains_key("EUR"));
-        // assert_eq!(Some(symbol), pool.commodities.get(symbol));
     }
 
     #[test]
@@ -257,6 +270,26 @@ mod tests {
         assert_eq!("2022-03-03 13:00:00", datetime_string);
         // rate
         assert_eq!(&Decimal::from(1.12), rates.values().nth(0).unwrap());
+    }
+
+    /// Annotation must exist for the given symbol after creation.
+    #[test]
+    fn test_create_annotated() {
+        // arrange
+        let symbol = "EUR";
+        let annotation = Annotation::new(None, None);
+        let mut pool = CommodityPool::new();
+
+        // act
+        pool.create_annotated(symbol, annotation);
+
+        // assert
+        let actual = pool.annotated_commodities.get(symbol);
+        assert!(actual.is_some());
+        let Some(actual_annotation) = actual else {panic!()};
+        assert_eq!(None, actual_annotation.date);
+        assert_eq!(None, actual_annotation.price);
+        assert_eq!(None, actual_annotation.tag);
     }
 
 }
