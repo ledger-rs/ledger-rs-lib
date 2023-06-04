@@ -7,7 +7,7 @@ use ledger_rs_lib::{
     amount::{Amount, Decimal},
     journal::Journal,
     parse_file,
-    pool::CommodityIndex,
+    pool::CommodityIndex, parse_text,
 };
 
 #[test]
@@ -158,7 +158,29 @@ fn test_parsing_lots_full_price() {
     assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
 }
 
-// TODO: #[test]
+// #[test]
+fn test_lot_sale() {
+    // arrange
+    let input = r#"2023-05-01 Sell Stocks
+    Assets:Stocks  -10 VEUR {20 EUR} [2023-04-01] @ 25 EUR
+    Assets:Cash
+"#;
+    let mut journal = Journal::new();
+
+    // act
+    parse_text(input, &mut journal);
+
+    // assert
+    assert_eq!(1, journal.xacts.len());
+    assert_eq!(2, journal.posts.len());
+
+    let sale_post = &journal.posts[1];
+    assert_eq!(sale_post.amount.unwrap().quantity, (-10).into());
+    
+    todo!("test cost")
+}
+
+// #[test]
 fn test_parsing_trade_lot() {
     let mut journal = Journal::new();
 
@@ -170,5 +192,5 @@ fn test_parsing_trade_lot() {
     let posts = journal.get_posts(&sale_xact.posts);
     let sale_post = posts[0];
     assert_eq!(sale_post.amount.unwrap().quantity, (-10).into());
-    assert_eq!(Decimal::from(25), sale_post.cost.unwrap().quantity);
+    assert_eq!(Decimal::from(-250), sale_post.cost.unwrap().quantity);
 }

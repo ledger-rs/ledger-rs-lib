@@ -1,5 +1,8 @@
 /*!
  * Commodity Pool
+ * 
+ * The Commodities collection contains all the commodities.
+ * 
  */
 use std::collections::HashMap;
 
@@ -20,7 +23,7 @@ pub type CommodityIndex = NodeIndex;
 pub struct CommodityPool {
     /// Map (symbol, commodity)
     pub(crate) commodities: HashMap<String, NodeIndex>,
-    // annotated_commodities: HashMap<String, Commodity>,
+    // pub(crate) annotated_commodities: HashMap<String, Commodity>,
     pub(crate) commodity_history: CommodityHistory,
     // null_commodity: Commodity
     // default_commodity: Commodity
@@ -32,6 +35,7 @@ impl CommodityPool {
     pub fn new() -> Self {
         Self {
             commodities: HashMap::new(),
+            // annotated_commodities: HashMap::new(),
             commodity_history: CommodityHistory::new(),
         }
     }
@@ -83,7 +87,10 @@ impl CommodityPool {
 
 
     /// This is the exchange() method but, due to mutability of references, it **does not**
-    /// create new prices. This needs to be explicitly done by the caller.
+    /// create new prices. This needs to be explicitly done by the caller before/aftert the exchange.
+    /// 
+    /// "Exchange one commodity for another, while recording the factored price."
+    /// 
     pub fn exchange(
         &self,
         amount: &Amount,

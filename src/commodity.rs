@@ -19,12 +19,12 @@ pub struct Commodity {
     // annotated_commodity
     // parent
     // qualified_symbol: Option<String>
-    // annotated: bool
+    annotated: bool
 }
 
 impl Commodity {
     pub fn new(symbol: &str) -> Self {
-        Self { symbol: symbol.to_owned() }
+        Self { symbol: symbol.to_owned(), annotated: false }
     }
 
     // pub fn parse(symbol: &str) -> Option<Self> {
