@@ -40,7 +40,7 @@ impl CommodityHistory {
     /// source: EUR
     /// date
     /// price: 1.12 USD
-    pub fn add_price(&mut self, commodity_index: CommodityIndex, date: NaiveDateTime, price: Amount) {
+    pub fn add_price(&mut self, commodity_index: CommodityIndex, datetime: NaiveDateTime, price: Amount) {
         assert!(Some(commodity_index) != price.commodity_index);
 
         let index = match self.graph.find_edge(commodity_index, price.commodity_index.unwrap()) {
@@ -53,7 +53,7 @@ impl CommodityHistory {
         let prices = self.graph.edge_weight_mut(index).unwrap();
 
         // Add the rate.
-        prices.insert(date, price.quantity);
+        prices.insert(datetime, price.quantity);
     }
 
     pub fn get_commodity(&self, index: NodeIndex) -> &Commodity {
@@ -75,6 +75,13 @@ impl CommodityHistory {
     fn print_map(&self) {
         todo!()
     }
+}
+
+/// Represents a price of a commodity.
+pub struct Price {
+    pub commodity_index: CommodityIndex,
+    pub datetime: NaiveDateTime,
+    pub price: Amount
 }
 
 #[cfg(test)]

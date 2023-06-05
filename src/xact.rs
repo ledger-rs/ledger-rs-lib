@@ -180,10 +180,13 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
                 // let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
                 let moment = xact.date.unwrap().and_hms_opt(0, 0, 0).unwrap();
-                let breakdown = journal
+                let (breakdown, new_price_opt) = journal
                     .commodity_pool
                     .exchange(amt, cost, false, true, moment);
-                // add price
+                // add price(s)
+                if let Some(new_price) = new_price_opt {
+                    journal.commodity_pool.add_price_struct(new_price);
+                }
                 if amt.commodity_index != cost.commodity_index {
                     journal
                         .commodity_pool

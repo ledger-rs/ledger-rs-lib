@@ -13,7 +13,7 @@ use crate::{
     amount::{Amount, Decimal},
     annotate::Annotation,
     commodity::Commodity,
-    history::CommodityHistory,
+    history::{CommodityHistory, Price},
     parser::{ISO_DATE_FORMAT, ISO_TIME_FORMAT},
     scanner,
 };
@@ -42,14 +42,24 @@ impl CommodityPool {
         }
     }
 
+    pub fn add_price_struct(&mut self, price: Price) {
+        self.commodity_history
+            .add_price(price.commodity_index, price.datetime, price.price);
+    }
+
+    /// Adds a new price point.
+    /// i.e. (1) EUR = 1.12 USD
+    /// commodity_index = index of the commodity, i.e. `EUR`
+    /// date = date of pricing
+    /// price: Amount = the price of the commodity, i.e. `1.12 USD`
     pub fn add_price(
         &mut self,
         commodity_index: CommodityIndex,
-        date: NaiveDateTime,
+        datetime: NaiveDateTime,
         price: Amount,
     ) {
         self.commodity_history
-            .add_price(commodity_index, date, price)
+            .add_price(commodity_index, datetime, price)
     }
 
     /// Creates a new Commodity for the given Symbol.
@@ -121,7 +131,7 @@ impl CommodityPool {
         is_per_unit: bool,
         add_price: bool,
         moment: NaiveDateTime,
-    ) -> CostBreakdown {
+    ) -> (CostBreakdown, Option<Price>) {
         // amount.commodity_index
 
         // annotations
@@ -148,12 +158,20 @@ impl CommodityPool {
         // Do not record commodity exchanges where amount's commodity has a
         // fixated price, since this does not establish a market value for the
         // base commodity.
+        let new_price: Option<Price>;
         if add_price
             && !per_unit_cost.is_zero()
             && amount.commodity_index != per_unit_cost.commodity_index
         {
             // self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
-            // TODO: add the price somehow!
+            // Instead, return the new price and have the caller store it.
+            new_price = Some(Price {
+                commodity_index: amount.commodity_index.unwrap(),
+                datetime: moment,
+                price: per_unit_cost,
+            });
+        } else {
+            new_price = None;
         }
 
         let mut breakdown = CostBreakdown::new();
@@ -175,7 +193,7 @@ impl CommodityPool {
 
         breakdown.amount = *amount;
 
-        breakdown
+        (breakdown, new_price)
     }
 
     pub fn len(&self) -> usize {
@@ -241,11 +259,15 @@ impl CostBreakdown {
 
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDate;
-
     use super::CommodityPool;
-    use crate::{amount::{Decimal, Amount}, annotate::Annotation, journal::Journal, parser::{parse_datetime, parse_amount}};
-  
+    use crate::{
+        amount::{Amount, Decimal},
+        annotate::Annotation,
+        journal::Journal,
+        parse_file, parse_text,
+        parser::{parse_amount, parse_datetime},
+    };
+
     #[test]
     fn test_adding_commodity() {
         let symbol = "EUR";
@@ -336,12 +358,34 @@ mod tests {
         let moment = parse_datetime("2023-05-01").unwrap();
         let amount = &parse_amount("-10 VEUR", journal).unwrap();
         let cost = &parse_amount("25 EUR", journal).unwrap();
-        
-        let actual = journal.commodity_pool.exchange(amount, cost, true, false, moment);
+
+        let actual = journal
+            .commodity_pool
+            .exchange(amount, cost, true, false, moment);
 
         // assert
-        // journal.
+        // journal.ex
         // todo!("assert")
+    }
+
+    /// Test exchanging a currency after a price directive is parsed
+    // #[test]
+    fn test_exchange() {
+        let line = "P 2022-03-03 13:00:00 EUR 1.12 USD";
+        let mut journal = Journal::new();
+
+        parse_text(line, &mut journal);
+
+        todo!()
+    }
+
+    /// Test exchanging a currency after an implicit price is created from an exchange xact
+    // #[test]
+    fn test_exchange_implicit() {
+        let mut journal = Journal::new();
+        parse_file("tests/trade.ledger", &mut journal);
+
+        todo!()
     }
 }
 
