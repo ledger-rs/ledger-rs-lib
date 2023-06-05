@@ -51,6 +51,8 @@ impl Balance {
             }
             None => {
                 // Balance not found for the commodity. Create new.
+                log::debug!("Balance not found. Creating for {:?}", amount);
+                
                 self.amounts.push(Amount::copy_from(amount));
             }
         };
