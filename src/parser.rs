@@ -67,7 +67,7 @@ pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Option<Amount> {
 /// Panics if parsing fails.
 pub fn parse_amount_parts(quantity: &str, commodity: &str, journal: &mut Journal) -> Option<Amount> {
     // Create Commodity, add to collection
-    let commodity_index = journal.commodity_pool.find_or_create(commodity);
+    let commodity_index = journal.commodity_pool.find_or_create(commodity, None);
 
     Amount::parse(quantity, commodity_index)
 }
@@ -394,7 +394,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
         // details.price /= amount
 
         // store annotation
-        journal.commodity_pool.create_annotated(tokens.symbol, annotation);
+        journal.commodity_pool.find_or_create(tokens.symbol, Some(annotation));
     }
 
     // handle cost (2nd amount)

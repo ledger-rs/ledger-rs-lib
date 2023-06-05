@@ -31,7 +31,7 @@ impl Annotation {
 
     pub fn parse(date: &str, quantity: &str, commodity_symbol: &str, journal: &mut Journal) -> Self {
         // parse amount
-        let commodity_index = journal.commodity_pool.find_or_create(commodity_symbol);
+        let commodity_index = journal.commodity_pool.find_or_create(commodity_symbol, None);
         let amount = Amount::parse(quantity, commodity_index);
         Self {
             price: amount,

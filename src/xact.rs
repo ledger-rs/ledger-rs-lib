@@ -95,11 +95,17 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
         let post = journal.posts.get(*post_index).expect("post");
 
-        // amount = post.cost ? post.amount
-        // for now, just use the amount
-        if post.amount.is_some() {
+        log::debug!("finalizing {:?}", post);
+
+        let amount = if post.cost.is_some() {
+            post.cost
+        } else {
+            post.amount
+        };
+
+        if amount.is_some() {
             // Add to balance.
-            let Some(amt) = &post.amount
+            let Some(amt) = &amount
                 else {panic!("should not happen")};
 
             balance.add(amt);
@@ -215,6 +221,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         let amt = if balance.amounts.len() == 1 {
             // only one commodity
             let amt_bal = balance.amounts.iter().nth(0).unwrap();
+
+            log::debug!("null-post amount reversing {:?}", amt_bal);
 
             amt_bal.inverse()
         } else {

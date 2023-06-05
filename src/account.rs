@@ -130,37 +130,27 @@ mod tests {
         assert_eq!("EUR", commodity.symbol);
     }
 
+    /// Test calculation of the account totals.
     #[test_log::test]
     fn test_total() {
         let mut journal = Journal::new();
         parse_file("tests/two-xact-sub-acct.ledger", &mut journal);
         let assets = journal.find_account("Assets").unwrap();
 
+        // act
         let actual = assets.total(&journal);
 
-        assert_eq!(2, actual.amounts.len());
-        println!(
+        // assert
+        assert_eq!(1, actual.amounts.len());
+        log::debug!(
             "Amount 1: {:?}, {:?}",
             actual.amounts[0],
             journal
                 .commodity_pool
                 .get_commodity(actual.amounts[0].commodity_index.unwrap())
         );
-        println!(
-            "Amount 2: {:?}, {:?}",
-            actual.amounts[1],
-            journal
-                .commodity_pool
-                .get_commodity(actual.amounts[1].commodity_index.unwrap())
-        );
 
-        // assert_eq!(actual.amounts[0].quantity, (-20).into());
-        // assert_eq!(actual.amounts[0].commodity_index, Some(0.into()));
-
-        // assert_eq!(actual.amounts[1].quantity, (-10).into());
-        // assert_eq!(actual.amounts[1].commodity_index, Some(1.into()));
-
-        assert_eq!(actual.amounts[1].quantity, (-30).into());
-        assert_eq!(actual.amounts[1].commodity_index, Some(1.into()));
+        assert_eq!(actual.amounts[0].quantity, (-30).into());
+        assert_eq!(actual.amounts[0].commodity_index, Some(0.into()));
     }
 }

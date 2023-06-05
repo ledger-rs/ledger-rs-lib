@@ -122,6 +122,8 @@ impl Journal {
 
         // todo: expand_aliases
 
+        log::debug!("Creating sub-account {:?}", name);
+
         let account_index = self.create_sub_account(0, name, true);
 
         // todo: add any validity checks here.

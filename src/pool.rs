@@ -63,10 +63,21 @@ impl CommodityPool {
     }
 
     /// Creates a new Commodity for the given Symbol.
-    pub fn create(&mut self, symbol: &str) -> CommodityIndex {
+    pub fn create(&mut self, symbol: &str, annotation: Option<Annotation>) -> CommodityIndex {
         // todo: handle double quotes
 
-        let c = Commodity::new(symbol);
+        let mut c = Commodity::new(symbol);
+
+        // Annotation
+        if let Some(ann) = annotation {
+            // Create an annotated commodity.
+            // TODO: assert that the commodity does not have an annotation already.
+
+            c.annotated = true;
+
+            // Add annotation
+            self.annotated_commodities.insert(symbol.to_owned(), ann);
+        }
 
         // add to price history graph.
         let i = self.commodity_history.add_commodity(c);
@@ -74,23 +85,9 @@ impl CommodityPool {
         // Add index to map.
         self.commodities.insert(symbol.to_owned(), i);
 
+        log::debug!("Commodity {:?} created. Total: {:?}", symbol, i);
+
         i
-    }
-
-    /// Create an annotated commodity.
-    pub fn create_annotated(&mut self, symbol: &str, annotation: Annotation) -> CommodityIndex {
-        // TODO: assert that the commodity does not have an annotation already.
-
-        let index = self.create(symbol);
-
-        let c = self.commodity_history.get_commodity_mut(index);
-        c.annotated = true;
-
-        // Add annotation
-        self.annotated_commodities
-            .insert(symbol.to_owned(), annotation);
-
-        index
     }
 
     pub fn find_index(&self, symbol: &str) -> Option<&CommodityIndex> {
@@ -104,14 +101,28 @@ impl CommodityPool {
         }
     }
 
-    pub fn find_or_create(&mut self, symbol: &str) -> Option<CommodityIndex> {
+    pub fn find_or_create(
+        &mut self,
+        symbol: &str,
+        annotation: Option<Annotation>,
+    ) -> Option<CommodityIndex> {
         if symbol.is_empty() {
             return None;
         }
 
-        match self.find_index(symbol) {
-            Some(i) => Some(*i),
-            None => Some(self.create(symbol)),
+        if let Some(i) = self.commodities.get(symbol) {
+            // check if annotation exists and add if not.
+            if annotation.is_some() && !self.annotated_commodities.contains_key(symbol) {
+                // append annotation
+                self.annotated_commodities
+                    .insert(symbol.to_owned(), annotation.unwrap());
+            }
+
+            Some(*i)
+        } else {
+            log::debug!("Creating commodity {:?}", symbol);
+
+            Some(self.create(symbol, annotation))
         }
     }
 
@@ -214,14 +225,14 @@ impl CommodityPool {
         let datetime = NaiveDateTime::new(date, time);
 
         // commodity
-        let Some(commodity_index) = self.find_or_create(tokens[2])
+        let Some(commodity_index) = self.find_or_create(tokens[2], None)
             else {panic!("could not add commodity")};
 
         // quantity
         let quantity = Decimal::from_str(tokens[3]).expect("quantity parsed");
 
         // cost commodity
-        let cost_commodity_index = self.find_or_create(tokens[4]);
+        let cost_commodity_index = self.find_or_create(tokens[4], None);
 
         // cost
         let cost = Amount::new(quantity, cost_commodity_index);
@@ -274,7 +285,7 @@ mod tests {
         let mut pool = CommodityPool::new();
 
         // Act
-        pool.create(symbol);
+        pool.create(symbol, None);
 
         // Assert
         assert_eq!(1, pool.commodities.len());
@@ -337,7 +348,7 @@ mod tests {
         let mut pool = CommodityPool::new();
 
         // act
-        pool.create_annotated(symbol, annotation);
+        pool.create(symbol, Some(annotation));
 
         // assert
         let actual = pool.annotated_commodities.get(symbol);
