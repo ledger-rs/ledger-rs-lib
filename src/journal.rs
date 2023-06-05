@@ -122,8 +122,6 @@ impl Journal {
 
         // todo: expand_aliases
 
-        log::debug!("Creating sub-account {:?}", name);
-
         let account_index = self.create_sub_account(0, name, true);
 
         // todo: add any validity checks here.
@@ -220,6 +218,8 @@ impl Journal {
             new_account.parent_index = Some(root_id);
 
             account_index = self.add_account(new_account);
+
+            log::debug!("Created account {:?}, index {:?}", first, account_index);
 
             // Add to local map
             let root_mut = self.accounts.get_mut(root_id).unwrap();

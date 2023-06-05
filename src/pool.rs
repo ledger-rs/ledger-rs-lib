@@ -85,7 +85,7 @@ impl CommodityPool {
         // Add index to map.
         self.commodities.insert(symbol.to_owned(), i);
 
-        log::debug!("Commodity {:?} created. Total: {:?}", symbol, i);
+        log::debug!("Commodity {:?} created. index: {:?}", symbol, i);
 
         i
     }
@@ -120,8 +120,6 @@ impl CommodityPool {
 
             Some(*i)
         } else {
-            log::debug!("Creating commodity {:?}", symbol);
-
             Some(self.create(symbol, annotation))
         }
     }

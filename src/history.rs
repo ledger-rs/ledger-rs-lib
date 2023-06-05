@@ -43,6 +43,8 @@ impl CommodityHistory {
     pub fn add_price(&mut self, commodity_index: CommodityIndex, datetime: NaiveDateTime, price: Amount) {
         assert!(Some(commodity_index) != price.commodity_index);
 
+        log::debug!("adding price for {:?}, date: {:?}, price: {:?}", commodity_index, datetime, price);
+
         let index = match self.graph.find_edge(commodity_index, price.commodity_index.unwrap()) {
             Some(index) => index,
             None => {
@@ -78,6 +80,7 @@ impl CommodityHistory {
 }
 
 /// Represents a price of a commodity.
+#[derive(Debug)]
 pub struct Price {
     pub commodity_index: CommodityIndex,
     pub datetime: NaiveDateTime,
