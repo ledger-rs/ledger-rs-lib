@@ -11,7 +11,9 @@ use chrono::NaiveDate;
 use crate::{amount::Amount, parser::ISO_DATE_FORMAT, journal::Journal};
 
 pub struct Annotation {
+    /// Price per unit. The {} value in the Lot syntax.
     pub price: Option<Amount>,
+    /// The [] date in the Lot syntax.
     pub date: Option<NaiveDate>,
     // pub tag: Option<String>,
     // pub value_expr:

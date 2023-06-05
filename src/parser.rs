@@ -24,7 +24,7 @@ use std::{
     todo,
 };
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 use crate::{
     amount::Amount,
@@ -45,10 +45,31 @@ pub(crate) fn read_into_journal<T: Read>(source: T, journal: &mut Journal) {
     parser.parse();
 }
 
+/// Parses ISO-formatted date string, like 2023-07-23
 pub(crate) fn parse_date(date_str: &str) -> NaiveDate {
     // todo: support more date formats?
 
     NaiveDate::parse_from_str(date_str, ISO_DATE_FORMAT).expect("date parsed")
+}
+
+/// Create DateTime from date string only.
+pub fn parse_datetime(iso_str: &str) -> Result<NaiveDateTime, anyhow::Error> {
+    Ok(NaiveDateTime::new(NaiveDate::parse_from_str(iso_str, ISO_DATE_FORMAT)?, NaiveTime::MIN))
+}
+
+pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Option<Amount> {
+    let (tokens, _) = scanner::scan_amount(amount_str);
+    parse_amount_parts(tokens.quantity, tokens.symbol, journal)
+}
+
+/// Parse amount parts (quantity, commodity), i.e. "25", "AUD".
+/// Returns Amount.
+/// Panics if parsing fails.
+pub fn parse_amount_parts(quantity: &str, commodity: &str, journal: &mut Journal) -> Option<Amount> {
+    // Create Commodity, add to collection
+    let commodity_index = journal.commodity_pool.find_or_create(commodity);
+
+    Amount::parse(quantity, commodity_index)
 }
 
 struct Parser<'j, T: Read> {
@@ -357,19 +378,23 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     // Create Account, add to collection
     let account_index = journal.register_account(tokens.account).unwrap();
 
-    // Create Commodity, add to collection
-    let commodity_index = journal.commodity_pool.find_or_create(tokens.symbol);
     // create amount
-    let amount = Amount::parse(tokens.quantity, commodity_index);
+    let amount = parse_amount_parts(tokens.quantity, tokens.symbol, journal);
 
-    // TODO: parse annotations
+    // parse and add annotations.
     {
-        let test = Annotation::parse(
+        let annotation = Annotation::parse(
             tokens.price_date,
             tokens.price_quantity,
             tokens.price_commodity,
             journal,
         );
+
+        // TODO: if the cost price is total (not per unit)
+        // details.price /= amount
+
+        // store annotation
+        journal.commodity_pool.create_annotated(tokens.symbol, annotation);
     }
 
     // handle cost (2nd amount)
@@ -408,10 +433,9 @@ fn parse_cost(
         return None;
     }
 
-    let price_commodity_index = journal.commodity_pool.find_or_create(tokens.cost_symbol);
-
     // parse cost (per-unit vs total)
-    let mut cost = Amount::parse(tokens.cost_quantity, price_commodity_index);
+    let mut cost = parse_amount_parts(tokens.cost_quantity, tokens.cost_symbol, journal);
+
     if tokens.is_per_unit {
         // per-unit cost
         let Some(mut cost_val) = cost else {
@@ -675,7 +699,7 @@ mod posting_parsing_tests {
     use std::io::Cursor;
 
     use super::Parser;
-    use crate::{amount::Decimal, journal::Journal, parse_file, utilities::create_date};
+    use crate::{amount::Decimal, journal::Journal, parse_file, parser::parse_datetime};
 
     #[test]
     fn test_parsing_buy_lot() {
@@ -699,7 +723,7 @@ mod posting_parsing_tests {
             .graph
             .edge_weight(0.into())
             .unwrap();
-        let expected_date = create_date("2023-05-01").unwrap();
+        let expected_date = parse_datetime("2023-05-01").unwrap();
         // let existing_key = price.keys().nth(0).unwrap();
         assert!(price.contains_key(&expected_date));
         let value = price.get(&expected_date).unwrap();

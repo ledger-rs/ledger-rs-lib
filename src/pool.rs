@@ -1,8 +1,8 @@
 /*!
  * Commodity Pool
- * 
+ *
  * The Commodities collection contains all the commodities.
- * 
+ *
  */
 use std::collections::HashMap;
 
@@ -11,10 +11,11 @@ use petgraph::stable_graph::NodeIndex;
 
 use crate::{
     amount::{Amount, Decimal},
+    annotate::Annotation,
     commodity::Commodity,
     history::CommodityHistory,
     parser::{ISO_DATE_FORMAT, ISO_TIME_FORMAT},
-    scanner, annotate::Annotation,
+    scanner,
 };
 
 /// Commodity Index is the index of the node in the history graph.
@@ -41,8 +42,14 @@ impl CommodityPool {
         }
     }
 
-    pub fn add_price(&mut self, commodity_index: CommodityIndex, date: NaiveDateTime, price: Amount) {
-        self.commodity_history.add_price(commodity_index, date, price)
+    pub fn add_price(
+        &mut self,
+        commodity_index: CommodityIndex,
+        date: NaiveDateTime,
+        price: Amount,
+    ) {
+        self.commodity_history
+            .add_price(commodity_index, date, price)
     }
 
     /// Creates a new Commodity for the given Symbol.
@@ -62,13 +69,16 @@ impl CommodityPool {
 
     /// Create an annotated commodity.
     pub fn create_annotated(&mut self, symbol: &str, annotation: Annotation) -> CommodityIndex {
+        // TODO: assert that the commodity does not have an annotation already.
+
         let index = self.create(symbol);
 
         let c = self.commodity_history.get_commodity_mut(index);
         c.annotated = true;
-        
+
         // Add annotation
-        self.annotated_commodities.insert(symbol.to_owned(), annotation);
+        self.annotated_commodities
+            .insert(symbol.to_owned(), annotation);
 
         index
     }
@@ -101,11 +111,11 @@ impl CommodityPool {
 
     /// This is the exchange() method but, due to mutability of references, it **does not**
     /// create new prices. This needs to be explicitly done by the caller before/aftert the exchange.
-    /// 
+    ///
     /// "Exchange one commodity for another, while recording the factored price."
-    /// 
+    ///
     pub fn exchange(
-        &self,
+        &mut self,
         amount: &Amount,
         cost: &Amount,
         is_per_unit: bool,
@@ -114,7 +124,14 @@ impl CommodityPool {
     ) -> CostBreakdown {
         // amount.commodity_index
 
-        // annotations?
+        // annotations
+        let annotation_opt: Option<&Annotation> =
+            if let Some(commodity_index) = amount.commodity_index {
+                let commodity = self.get_commodity(commodity_index);
+                self.annotated_commodities.get(&commodity.symbol)
+            } else {
+                None
+            };
 
         let mut per_unit_cost = if is_per_unit || amount.is_zero() {
             cost.abs()
@@ -135,18 +152,26 @@ impl CommodityPool {
             && !per_unit_cost.is_zero()
             && amount.commodity_index != per_unit_cost.commodity_index
         {
-            // self.exchange(amount.commodity_index.unwrap(), per_unit_cost, moment,);
             // self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
+            // TODO: add the price somehow!
         }
 
         let mut breakdown = CostBreakdown::new();
         // final cost
-        breakdown.final_cost = if !is_per_unit { *cost } else { *cost * amount.abs() };
+        breakdown.final_cost = if !is_per_unit {
+            *cost
+        } else {
+            *cost * amount.abs()
+        };
 
-        // if annotation && annotation.price
-        //   breakdown.basis_cost = = (*current_annotation->price * amount);
-        // else
-        breakdown.basis_cost = breakdown.final_cost;
+        // "exchange: basis-cost    = "
+        if let Some(annotation) = annotation_opt {
+            if let Some(ann_price) = annotation.price {
+                breakdown.basis_cost = ann_price * (*amount);
+            }
+        } else {
+            breakdown.basis_cost = breakdown.final_cost;
+        }
 
         breakdown.amount = *amount;
 
@@ -191,9 +216,9 @@ impl CommodityPool {
 
 /// Cost Breakdown is used to track the commodity costs.
 /// i.e. when lots are used
-/// 
+///
 /// `-10 VEUR {20 EUR} [2023-04-01] @ 25 EUR`
-/// 
+///
 /// The amount is -10 VEUR,
 /// per unit cost is 25 EUR,
 /// basis cost = 200 EUR
@@ -206,15 +231,21 @@ pub struct CostBreakdown {
 
 impl CostBreakdown {
     pub fn new() -> Self {
-        Self { amount: 0.into(), final_cost: 0.into(), basis_cost: 0.into() }
+        Self {
+            amount: 0.into(),
+            final_cost: 0.into(),
+            basis_cost: 0.into(),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::CommodityPool;
-    use crate::{amount::Decimal, annotate::Annotation};
+    use chrono::NaiveDate;
 
+    use super::CommodityPool;
+    use crate::{amount::{Decimal, Amount}, annotate::Annotation, journal::Journal, parser::{parse_datetime, parse_amount}};
+  
     #[test]
     fn test_adding_commodity() {
         let symbol = "EUR";
@@ -294,6 +325,24 @@ mod tests {
         assert_eq!(None, actual_annotation.price);
     }
 
+    // TODO: #[test]
+    fn test_exchange_stores_base_cost() {
+        let input = r#"2023-05-01 Sell Stocks
+    Assets:Stocks  -10 VEUR {20 EUR} [2023-04-01] @ 25 EUR
+    Assets:Cash
+"#;
+        let journal = &mut Journal::new();
+        // parse_text(input, journal);
+        let moment = parse_datetime("2023-05-01").unwrap();
+        let amount = &parse_amount("-10 VEUR", journal).unwrap();
+        let cost = &parse_amount("25 EUR", journal).unwrap();
+        
+        let actual = journal.commodity_pool.exchange(amount, cost, true, false, moment);
+
+        // assert
+        // journal.
+        // todo!("assert")
+    }
 }
 
 #[cfg(test)]

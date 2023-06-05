@@ -176,7 +176,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
             {
                 // Cost breakdown
-                // TODO: virtual cost does not create a price
+                // todo: virtual cost does not create a price
 
                 // let today = NaiveDateTime::new(Local::now().date_naive(), NaiveTime::MIN);
                 let moment = xact.date.unwrap().and_hms_opt(0, 0, 0).unwrap();

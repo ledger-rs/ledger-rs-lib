@@ -20,8 +20,24 @@ pub(crate) struct PostTokens<'a> {
     pub is_per_unit: bool,
 }
 
+impl PostTokens<'_> {
+    pub fn create_empty() -> Self {
+        Self {
+            account: "",
+            quantity: "",
+            symbol: "",
+            price_quantity: "",
+            price_commodity: "",
+            price_date: "",
+            cost_quantity: "",
+            cost_symbol: "",
+            is_per_unit: false,
+        }
+    }
+}
+
 /// Structure for the tokens from scanning the Amount part of the Posting.
-struct AmountTokens<'a> {
+pub struct AmountTokens<'a> {
     pub quantity: &'a str,
     pub symbol: &'a str,
 }
@@ -191,17 +207,9 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
     // something like |p| p == "  " || p  == '\t'
 
     let Some(sep_index) = input.find("  ") else {
-        return PostTokens {
-            account: input.trim_end(),
-            quantity: "",
-            symbol: "",
-            price_quantity: "",
-            price_commodity: "",
-            price_date: "",
-            cost_quantity: "",
-            cost_symbol: "",
-            is_per_unit: false,
-        }
+        let mut post_tokens = PostTokens::create_empty();
+        post_tokens.account = input.trim_end();
+        return post_tokens;
     };
 
     // there's more content
@@ -237,7 +245,7 @@ pub(crate) fn scan_post(input: &str) -> PostTokens {
 /// The amount line can be `-10 VEUR {20 EUR} [2023-04-01] @ 25 EUR`
 /// of which, the amount is "-10 VEUR" and the rest is the cost, stored in
 /// an annotation.
-fn scan_amount(input: &str) -> (AmountTokens, &str) {
+pub fn scan_amount(input: &str) -> (AmountTokens, &str) {
     let input = input.trim_start();
 
     // Check the next character

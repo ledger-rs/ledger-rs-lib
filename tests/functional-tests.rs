@@ -20,3 +20,4 @@ P 2022-03-03 13:00:00 EUR 1.12 USD
     //j.
     todo!("check that the price was parsed")
 }
+
