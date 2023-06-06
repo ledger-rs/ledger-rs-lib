@@ -253,6 +253,14 @@ impl From<f32> for Decimal {
     }
 }
 
+/// Creates a Decimal value from a string. Panics if invalid.
+impl From<&str> for Decimal {
+    fn from(value: &str) -> Self {
+        Self(rust_decimal::Decimal::from_str_exact(value).unwrap())
+        // Decimal::from_str(value).unwrap()
+    }
+}
+
 impl Into<i32> for Decimal {
     fn into(self) -> i32 {
         self.0.to_i32().unwrap()

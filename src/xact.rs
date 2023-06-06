@@ -187,7 +187,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 let moment = xact.date.unwrap().and_hms_opt(0, 0, 0).unwrap();
                 let (breakdown, new_price_opt) = journal
                     .commodity_pool
-                    .exchange(amt, cost, false, true, moment);
+                    .exchange(amt, cost, false, moment);
                 // add price(s)
                 if let Some(new_price) = new_price_opt {
                     journal.commodity_pool.add_price_struct(new_price);

@@ -175,9 +175,6 @@ impl<'j, T: Read> Parser<'j, T> {
             }
         }
 
-        // TODO: lexer - create model elements from tokens
-        // TODO: store model elements in collections and link.
-
         Ok(())
     }
 
@@ -332,6 +329,7 @@ impl<'j, T: Read> Parser<'j, T> {
                 // let base = filename.file_name();
 
                 // TODO: read file
+                // read_into_journal(source, journal)
                 todo!("read file")
             }
         }

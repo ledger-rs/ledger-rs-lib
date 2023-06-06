@@ -130,7 +130,13 @@ impl CommodityPool {
 
     /// This is the exchange() method but, due to mutability of references, it **does not**
     /// create new prices. This needs to be explicitly done by the caller before/aftert the exchange.
+    /// 
+    /// Instead of passing the `add_price` parameter, invoke `add_price` on journal's commodity_pool.
+    /// `journal.commodity_pool.add_price_struct(new_price);`
     ///
+    /// Returns (CostBreakdown, New Price)
+    /// The New Price is the price that needs to be added to the Commodity Pool.
+    /// 
     /// "Exchange one commodity for another, while recording the factored price."
     ///
     pub fn exchange(
@@ -138,7 +144,6 @@ impl CommodityPool {
         amount: &Amount,
         cost: &Amount,
         is_per_unit: bool,
-        add_price: bool,
         moment: NaiveDateTime,
     ) -> (CostBreakdown, Option<Price>) {
         // amount.commodity_index
@@ -168,10 +173,8 @@ impl CommodityPool {
         // fixated price, since this does not establish a market value for the
         // base commodity.
         let new_price: Option<Price>;
-        if add_price
-            && !per_unit_cost.is_zero()
-            && amount.commodity_index != per_unit_cost.commodity_index
-        {
+        // if add_price
+        if !per_unit_cost.is_zero() && amount.commodity_index != per_unit_cost.commodity_index {
             // self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
             // Instead, return the new price and have the caller store it.
             new_price = Some(Price {
@@ -356,25 +359,28 @@ mod tests {
         assert_eq!(None, actual_annotation.price);
     }
 
-    // TODO: #[test]
+    /// Calling exchange will store the base cost.
+    #[test]
     fn test_exchange_stores_base_cost() {
         let input = r#"2023-05-01 Sell Stocks
     Assets:Stocks  -10 VEUR {20 EUR} [2023-04-01] @ 25 EUR
     Assets:Cash
 "#;
         let journal = &mut Journal::new();
-        // parse_text(input, journal);
-        let moment = parse_datetime("2023-05-01").unwrap();
-        let amount = &parse_amount("-10 VEUR", journal).unwrap();
-        let cost = &parse_amount("25 EUR", journal).unwrap();
 
-        let actual = journal
-            .commodity_pool
-            .exchange(amount, cost, true, false, moment);
+        parse_text(input, journal);
 
         // assert
-        // journal.ex
-        // todo!("assert")
+        // The prices (edges) are directional, so we need to get the edges for VEUR.
+        let veur = journal.commodity_pool.find_index("VEUR").unwrap();
+        let mut veur_edges = journal.commodity_pool.commodity_history.graph.edges(*veur);
+        let edge = veur_edges.next().unwrap();
+        let price_history = edge.weight();
+        assert_eq!(1, price_history.len());
+
+        let (datetime, quantity) = price_history.iter().nth(0).unwrap();
+        assert_eq!("2023-05-01 00:00:00", datetime.to_string());
+        assert_eq!(quantity, &25.into());
     }
 
     /// Test exchanging a currency after a price directive is parsed
