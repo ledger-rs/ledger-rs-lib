@@ -11,10 +11,10 @@
  * reference time before performing the search.
  */
 
-use std::{collections::HashMap, ops::Add};
+use std::{collections::{HashMap, BTreeMap}, ops::Add, rc::Rc, cell::RefCell};
 
 use chrono::NaiveDateTime;
-use petgraph::{algo::dijkstra, stable_graph::NodeIndex, Graph, visit::EdgeIndexable};
+use petgraph::{algo::dijkstra, stable_graph::NodeIndex, Graph};
 
 use crate::{
     amount::{Amount, Decimal},
@@ -23,11 +23,17 @@ use crate::{
 };
 
 // type PriceMap = HashMap<NaiveDateTime, Amount>;
-type PriceMap = HashMap<NaiveDateTime, Decimal>;
+type PriceMap = BTreeMap<NaiveDateTime, Decimal>;
+// type PriceMap = Rc<RefCell<BTreeMap<NaiveDateTime, Decimal>>>;
+
+// #[derive(Clone, Copy)]
+// pub(crate) struct PriceMap(BTreeMap<NaiveDateTime, Decimal>);
 
 pub(crate) struct CommodityHistory {
     pub(crate) graph: Graph<Commodity, PriceMap>,
 }
+
+// pub(crate) type CommodityHistory = Graph<Commodity, PriceMap>;
 
 impl CommodityHistory {
     pub fn new() -> Self {
@@ -76,6 +82,7 @@ impl CommodityHistory {
         let prices = self.graph.edge_weight_mut(index).unwrap();
 
         // Add the price to the price history.
+        // prices.entry(key) ?
         prices.insert(datetime, price.quantity);
     }
 
@@ -101,10 +108,11 @@ impl CommodityHistory {
         source: CommodityIndex,
         target: CommodityIndex,
         moment: NaiveDateTime,
+        oldest: NaiveDateTime,
     ) -> Price {
         assert_ne!(source, target);
 
-        // let actual = dijkstra(&self.graph, source, Some(target), |e| *e.weight());
+        let shortest_paths = dijkstra(&self.graph, source, Some(target), |e| 1);
 
         todo!()
     }
@@ -128,18 +136,26 @@ impl CommodityHistory {
     }
 }
 
-/// Returns the latest (newest) price from the prices hashmap.
-fn get_latest_price(prices: &HashMap<NaiveDateTime, Decimal>) -> Option<&Decimal> {
+/// Returns the latest (newest) price from the prices map.
+/// 
+/// BTree is doing all the work here, sorting the keys (dates).
+fn get_latest_price(prices: &BTreeMap<NaiveDateTime, Decimal>) -> Option<&Decimal> {
     if prices.is_empty() {
         return None;
     }
 
-    let mut dates: Vec<&NaiveDateTime> = prices.keys().collect();
-    dates.sort();
+    // let mut dates: Vec<&NaiveDateTime> = prices.keys().collect();
+    // dates.sort();
+    // let last_date = *dates.last().unwrap();
+    // prices.get(last_date)
 
-    let last_date = *dates.last().unwrap();
+    // BTreeMap does this for us.
+    if let Some((k, v)) = prices.last_key_value() {
+        Some(v)
+    } else {
+        None
+    }
 
-    prices.get(last_date)
 }
 
 /// Represents a price of a commodity.
@@ -162,12 +178,12 @@ mod tests {
     use chrono::Local;
     use petgraph::stable_graph::NodeIndex;
 
-    use super::CommodityHistory;
+    use super::{CommodityHistory, get_latest_price, PriceMap};
     use crate::{
         amount::{Amount, Decimal},
         commodity::Commodity,
         journal::Journal,
-        parser::{parse_amount, parse_datetime},
+        parser::{parse_amount, parse_datetime, parse_date},
     };
 
     #[test]
@@ -223,6 +239,22 @@ mod tests {
         let z = NodeIndex::new(y);
 
         assert_eq!(z, x);
+    }
+
+    /// Gets the latest price.
+    #[test]
+    fn test_get_latest_price() {
+        let mut prices = PriceMap::new();
+        prices.insert(parse_datetime("2023-05-05").unwrap(), Decimal::from(10));
+        prices.insert(parse_datetime("2023-05-01").unwrap(), Decimal::from(20));
+        prices.insert(parse_datetime("2023-05-10").unwrap(), Decimal::from(30));
+        prices.insert(parse_datetime("2023-05-02").unwrap(), Decimal::from(40));
+
+        // act 
+        let actual = get_latest_price(&prices);
+
+        assert!(actual.is_some());
+        assert_eq!(Decimal::from(30), *actual.unwrap());
     }
 
     #[test]
