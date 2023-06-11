@@ -132,6 +132,15 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal
     output
 }
 
+/// Calculates market price, `-X`
+/// 
+/// report.cc
+/// value_t report_t::fn_market(call_scope_t& args)
+/// 
+fn market(target_commodity: &str) {
+
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;

@@ -1,0 +1,9 @@
+; based on the given price and a transaction,
+; run the balance report with -X USD, 
+; to get the account balances in USD.
+
+P 2022-03-03 13:00:00 EUR 1.10 USD
+
+2023-01-10 Vacation
+    Expenses:Vacation  20 EUR
+    Assets:Cash

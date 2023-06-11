@@ -4,6 +4,10 @@
  * commodity.cc
  */
 
+use chrono::NaiveDateTime;
+
+use crate::amount::Amount;
+
 #[derive(Debug, PartialEq)]
 pub struct Commodity {
     pub symbol: String,
@@ -35,14 +39,35 @@ impl Commodity {
     // }
 }
 
-// struct PricePoint {
-//     when: NaiveDateTime,
-//     price: Amount
-// }
+/// commodity.cc
+/// 
+pub(crate) fn find_price(commodity: &Commodity, moment: NaiveDateTime, oldest: NaiveDateTime) {
+    // if commodity
+    let target = commodity;
+
+    // memoized_price_entry entry(moment, oldest, commodity)
+
+    // memoized_price_map map<memoized_price_entry, optional<price_point_t> >
+    // commodity.price_map.find(entry)
+
+    todo!()
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct PricePoint {
+    pub when: NaiveDateTime,
+    pub price: Amount
+}
+
+impl PricePoint {
+    pub fn new(when: NaiveDateTime, price: Amount) -> Self {
+        Self { when, price }
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use super::Commodity;
+    use super::{Commodity, find_price};
 
     #[test]
     fn test_comparison() {
@@ -60,4 +85,14 @@ mod tests {
         assert!(c1 != c2);
     }
 
+    #[test]
+    fn test_find_price() {
+        // arrange
+
+        // act
+        // let actual = find_price(commodity, moment, oldest);
+
+        // assert
+        todo!()
+    }
 }

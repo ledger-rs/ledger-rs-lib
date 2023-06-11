@@ -11,7 +11,7 @@ use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
 use crate::pool::CommodityIndex;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Amount {
     pub quantity: Decimal,
     pub commodity_index: Option<CommodityIndex>,

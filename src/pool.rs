@@ -101,6 +101,8 @@ impl CommodityPool {
         }
     }
 
+    /// Finds a commodity with the given symbol, or creates one.
+    /// 
     pub fn find_or_create(
         &mut self,
         symbol: &str,
@@ -109,6 +111,9 @@ impl CommodityPool {
         if symbol.is_empty() {
             return None;
         }
+
+        // Try using entry.
+        // self.commodities.entry(symbol).
 
         if let Some(i) = self.commodities.get(symbol) {
             // check if annotation exists and add if not.
@@ -273,11 +278,10 @@ impl CostBreakdown {
 mod tests {
     use super::CommodityPool;
     use crate::{
-        amount::{Amount, Decimal},
+        amount::Decimal,
         annotate::Annotation,
         journal::Journal,
         parse_file, parse_text,
-        parser::{parse_amount, parse_datetime},
     };
 
     #[test]
@@ -388,10 +392,13 @@ mod tests {
     fn test_exchange() {
         let line = "P 2022-03-03 13:00:00 EUR 1.12 USD";
         let mut journal = Journal::new();
-
         parse_text(line, &mut journal);
 
+        // act
+        // exchange_commodities()
         todo!()
+
+        // assert
     }
 
     /// Test exchanging a currency after an implicit price is created from an exchange xact
