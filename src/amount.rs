@@ -215,10 +215,12 @@ impl MulAssign<Amount> for Amount {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Decimal(rust_decimal::Decimal);
 
-const ZERO: Decimal = Decimal(rust_decimal::Decimal::ZERO);
+// const ZERO: Decimal = Decimal(rust_decimal::Decimal::ZERO);
+// const ONE: Decimal = Decimal(rust_decimal::Decimal::ONE);
 
 impl Decimal {
-    pub const ZERO: Decimal = ZERO;
+    pub const ZERO: Decimal = Decimal(rust_decimal::Decimal::ZERO);
+    pub const ONE: Decimal = Decimal(rust_decimal::Decimal::ONE);
 
     pub fn from_str(str: &str) -> Result<Self, anyhow::Error> {
         Ok(Self(rust_decimal::Decimal::from_str_exact(str)?))

@@ -13,8 +13,12 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use chrono::NaiveDateTime;
-use petgraph::{algo::dijkstra, stable_graph::NodeIndex, Graph};
+use chrono::{NaiveDateTime, Local};
+use petgraph::{
+    algo::{astar, dijkstra},
+    stable_graph::NodeIndex,
+    Graph,
+};
 
 use crate::{
     amount::{Amount, Decimal},
@@ -113,28 +117,57 @@ impl CommodityHistory {
         assert_ne!(source, target);
 
         // Dijkstra returns a map of destination NodeId, path cost.
-        let shortest_paths = dijkstra(&self.graph, source, Some(target), |_| 1);
-        if shortest_paths.is_empty() {
+        // let shortest_paths = dijkstra(&self.graph, source, Some(target), |_| 1);
+        // TODO: use the actual latest price value.
+        let shortest_path = astar(&self.graph, source, |finish| finish == target, |e| 1, |_| 0);
+        if shortest_path.is_none() {
             return None;
         }
 
         // Get the price.
-        // let keys = shortest_paths.keys();
-        // let path = shortest_paths.get(&target).expect("The path");
-        let Some(distance) = shortest_paths.get(&target) 
-        else {
-            return None;
-        };
-        
-        if *distance == 1 {
-            // direct link
-            self.get_direct_price(source, target)
-        } else {
-            // calculate the rate
-            todo!()
-        }
-        
+        // let Some(distance) = shortest_paths.get(&target)
+        // else {
+        //     return None;
+        // };
+        // cost, path
+        let Some((cost, path)) = shortest_path
+            else { panic!("Check this case") };
 
+        // if *distance == 1 {
+        //     // direct link
+        //     self.get_direct_price(source, target)
+        // } else {
+        //     // calculate the rate
+        //     todo!()
+        // }
+
+        let mut result = Amount::new(Decimal::ONE, Some(target));
+        let mut temp_source = source;
+        for temp_target in path {
+            // skip self
+            if temp_target == temp_source {
+                continue;
+            }
+
+            // get the price
+            // TODO: include the datetime
+            let temp_price = self.get_direct_price(temp_source, temp_target)
+                .expect("price"); // , moment, oldest);
+
+            // TODO: calculate the amount.
+            result *= temp_price.price;
+            // temp_price.when
+
+            // log::debug!("intermediate price from {:?} to {:?} = {:?}", temp_source, temp_target, temp_price);
+
+            // source for the next leg
+            temp_source = temp_target;
+        }
+
+        // TODO: What is the final date when multiple hops involved?
+        let when = Local::now().naive_local();
+        
+        Some(PricePoint::new(when, result))
     }
 
     /// Finds the price
@@ -212,7 +245,8 @@ mod tests {
         amount::{Amount, Decimal},
         commodity::{Commodity, PricePoint},
         journal::Journal,
-        parser::{parse_amount, parse_date, parse_datetime}, parse_file,
+        parse_file,
+        parser::{parse_amount, parse_date, parse_datetime},
     };
 
     #[test]
@@ -284,7 +318,10 @@ mod tests {
         let actual = get_latest_price(&prices);
 
         assert!(actual.is_some());
-        assert_eq!(PricePoint::new(newest_date, Amount::new(Decimal::from(30), None)), actual.unwrap());
+        assert_eq!(
+            PricePoint::new(newest_date, Amount::new(Decimal::from(30), None)),
+            actual.unwrap()
+        );
     }
 
     #[test]
@@ -311,7 +348,10 @@ mod tests {
         // assert_eq!(eur_index, actual.commodity_index);
         // assert_eq!("2023-05-01 00:00:00", actual.datetime.to_string());
         // assert_eq!(actual.price.quantity, 1.20.into());
-        assert_eq!(PricePoint::new(date, Amount::new(Decimal::from("1.20"), None)), actual);
+        assert_eq!(
+            PricePoint::new(date, Amount::new(Decimal::from("1.20"), None)),
+            actual
+        );
     }
 
     #[test]
@@ -361,10 +401,13 @@ mod tests {
         let actual = journal
             .commodity_pool
             .commodity_history
-            .find_price(eur_index, usd_index, date, oldest);
+            .find_price(eur_index, usd_index, date, oldest)
+            .unwrap();
 
         // assert
-        // assert_eq!(eur_index, price.commodity_index.unwrap());
+        // TODO: assert_eq!(actual.when, date);
         // 1 EUR = 2 AUD = 6 USD
+        assert_eq!(actual.price.quantity, 6.into());
+        assert_eq!(actual.price.commodity_index, Some(usd_index));
     }
 }
