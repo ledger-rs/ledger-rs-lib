@@ -14,7 +14,6 @@ struct Account {
     // posts: Vec<&'a Post<'a>>,
     pub parent: Option<Rc<RefCell<Account>>>,
     pub children: Vec<Rc<RefCell<Account>>>,
-
     // posts: Vec<Rc<
 }
 
@@ -26,6 +25,10 @@ impl Account {
             parent: None,
             children: vec![],
         }
+    }
+
+    pub fn get_children(&self) -> &Vec<Rc<RefCell<Account>>> {
+        &self.children
     }
 }
 
@@ -69,5 +72,35 @@ fn test_ref_w_rc() {
     assert_eq!("master", master.borrow().name);
     assert_eq!(1, master.borrow().children.len());
 
-    //let child = master.borrow().children.get(0).unwrap().borrow();
+    let master = accounts_map.get("master").unwrap();
+    let binding = master.borrow();
+    let binding = binding.get_children().get(0).unwrap().borrow();
+    let binding = binding.get_children().get(0).unwrap().borrow();
+    let grandchild_name = binding.name.as_str();
+    assert_eq!("bank", grandchild_name);
+
+    // but if we copy the end value, then we don't need to break it down.
+    let name = master
+        .borrow()
+        .children
+        .get(0)
+        .unwrap()
+        .borrow()
+        .name
+        .to_owned();
+    assert_eq!("assets", name);
+
+    let name = master
+        .borrow()
+        .children
+        .get(0)
+        .unwrap()
+        .borrow()
+        .children
+        .get(0)
+        .unwrap()
+        .borrow()
+        .name
+        .to_owned();
+    assert_eq!("bank", name);
 }
