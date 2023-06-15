@@ -165,7 +165,11 @@ impl CommodityHistory {
         }
 
         // TODO: What is the final date when multiple hops involved?
+        // 
         let when = Local::now().naive_local();
+
+        // TODO: add to the price map.
+        // self.add_price(commodity_index, datetime, price)
         
         Some(PricePoint::new(when, result))
     }

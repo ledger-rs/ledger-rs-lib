@@ -219,4 +219,12 @@ mod tests {
         assert_eq!("Account Assets:Cash EUR has balance -25 EUR", actual[2]);
         assert_eq!("Account Assets:Cash USD has balance 30 USD", actual[3]);
     }
+
+    // TODO: #[test]
+    fn test_bal_market_prices() {
+        // add a price,
+        // then run the balance report
+        // in one currency (-X EUR)
+        
+    }
 }
