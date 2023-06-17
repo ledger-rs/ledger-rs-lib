@@ -4,7 +4,7 @@
  * Provides methods for fetching and iterating over the contained elements
  * (transactions, posts, accounts...).
  */
-use std::io::Read;
+use std::{io::Read, rc::Rc, cell::RefCell};
 
 use crate::{
     account::Account,
@@ -95,6 +95,10 @@ impl Journal {
 
     // pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
     //     indices.iter().map(|i| &self.posts[*i]).collect()
+    // }
+
+    // pub fn get_posts(&self) -> Vec<Rc<RefCell<Post>>> {
+    //     self.xacts.iter().map(|xact| xact.posts).collect()
     // }
 
     pub fn get_post_account(&self, post: &Post) -> &Account {

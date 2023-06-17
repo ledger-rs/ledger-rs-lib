@@ -133,13 +133,13 @@ impl CommodityHistory {
         let Some((cost, path)) = shortest_path
             else { panic!("Check this case") };
 
-        // if *distance == 1 {
-        //     // direct link
-        //     self.get_direct_price(source, target)
-        // } else {
-        //     // calculate the rate
-        //     todo!()
-        // }
+        if cost == 1 {
+            // direct link
+            return self.get_direct_price(source, target);
+        } else {
+            // calculate the rate
+            // todo!()
+        }
 
         let mut result = Amount::new(Decimal::ONE, Some(target));
         let mut temp_source = source;

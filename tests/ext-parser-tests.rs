@@ -30,7 +30,8 @@ fn test_parsing_two_xact() {
     ledger_rs_lib::parse_file(file_path, &mut journal);
 
     assert_eq!(2, journal.xacts.len());
-    assert_eq!(4, journal.xacts[0].posts.len());
+    assert_eq!(2, journal.xacts[0].posts.len());
+    assert_eq!(2, journal.xacts[1].posts.len());
 }
 
 #[test]
@@ -128,7 +129,9 @@ fn test_parsing_lots_per_unit() {
     assert_eq!(2, journal.xacts.len());
 
     // posts
-    assert_eq!(4, journal.xacts[0].posts.len());
+    // assert_eq!(4, journal.xacts[0].posts.len());
+    assert_eq!(2, journal.xacts[0].posts.len());
+    assert_eq!(2, journal.xacts[1].posts.len());
     // buy xact
     let buy_xact = &journal.xacts[0];
     // let post = journal.get_post(buy_xact.posts[0]);
@@ -138,7 +141,7 @@ fn test_parsing_lots_per_unit() {
     // sell
     let cur_index: CommodityIndex = 1.into();
     let expected_cost = Amount::new((-250).into(), Some(cur_index));
-    assert_eq!(expected_cost, journal.xacts[0].posts[2].borrow().cost.unwrap());
+    assert_eq!(expected_cost, journal.xacts[1].posts[0].borrow().cost.unwrap());
     let cur = journal.get_commodity(cur_index);
     assert_eq!("EUR", cur.symbol);
 }
@@ -160,7 +163,7 @@ fn test_parsing_lots_full_price() {
     assert_eq!(2, journal.xacts[0].posts.len());
     assert_eq!(2, journal.xacts[1].posts.len());
     let expected_cost = Amount::new(25.into(), Some(1.into()));
-    assert_eq!(expected_cost, journal.xacts[0].posts[2].borrow().cost.unwrap());
+    assert_eq!(expected_cost, journal.xacts[1].posts[0].borrow().cost.unwrap());
 }
 
 // TODO: #[test]
