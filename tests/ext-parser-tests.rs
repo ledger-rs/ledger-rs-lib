@@ -18,7 +18,7 @@ fn smoke_test_parsing() {
     ledger_rs_lib::parse_file(file_path, &mut journal);
 
     assert_eq!(1, journal.xacts.len());
-    assert_eq!(2, journal.posts.len());
+    assert_eq!(2, journal.xacts[0].posts.len());
 }
 
 /// Testing reading the blank lines. Seems to be an issue on Windows?
@@ -30,7 +30,7 @@ fn test_parsing_two_xact() {
     ledger_rs_lib::parse_file(file_path, &mut journal);
 
     assert_eq!(2, journal.xacts.len());
-    assert_eq!(4, journal.posts.len());
+    assert_eq!(4, journal.xacts[0].posts.len());
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn detailed_basic_test() {
     );
     assert_eq!("Supermarket", xact.payee);
     // Posts
-    assert_eq!(2, journal.posts.len());
+    assert_eq!(2, xact.posts.len());
     // let post1 = journal.posts.get(xact.posts[0]).unwrap();
     let post1 = &xact.posts[0];
     assert_eq!("Food", journal.get_account(post1.borrow().account_index).name);
@@ -98,7 +98,7 @@ fn test_parsing_multiple_currencies() {
 
     // Assert
     assert!(!journal.xacts.is_empty());
-    assert!(!journal.posts.is_empty());
+    assert!(!journal.xacts[0].posts.is_empty());
 }
 
 #[test]
@@ -128,7 +128,7 @@ fn test_parsing_lots_per_unit() {
     assert_eq!(2, journal.xacts.len());
 
     // posts
-    assert_eq!(4, journal.posts.len());
+    assert_eq!(4, journal.xacts[0].posts.len());
     // buy xact
     let buy_xact = &journal.xacts[0];
     // let post = journal.get_post(buy_xact.posts[0]);
@@ -138,7 +138,7 @@ fn test_parsing_lots_per_unit() {
     // sell
     let cur_index: CommodityIndex = 1.into();
     let expected_cost = Amount::new((-250).into(), Some(cur_index));
-    assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
+    assert_eq!(expected_cost, journal.xacts[0].posts[2].borrow().cost.unwrap());
     let cur = journal.get_commodity(cur_index);
     assert_eq!("EUR", cur.symbol);
 }
@@ -156,9 +156,11 @@ fn test_parsing_lots_full_price() {
     assert_eq!(2, journal.xacts.len());
 
     // posts
-    assert_eq!(4, journal.posts.len());
+    // assert_eq!(4, journal.posts.len());
+    assert_eq!(2, journal.xacts[0].posts.len());
+    assert_eq!(2, journal.xacts[1].posts.len());
     let expected_cost = Amount::new(25.into(), Some(1.into()));
-    assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
+    assert_eq!(expected_cost, journal.xacts[0].posts[2].borrow().cost.unwrap());
 }
 
 // TODO: #[test]
@@ -175,22 +177,22 @@ fn test_lot_sale() {
 
     // assert
     assert_eq!(1, journal.xacts.len());
-    assert_eq!(2, journal.posts.len());
+    assert_eq!(2, journal.xacts[0].posts.len());
     assert_eq!(2, journal.commodity_pool.len());
 
     let veur = journal.commodity_pool.find_index("VEUR").cloned();
     let eur = journal.commodity_pool.find_index("EUR").cloned();
 
-    let sale_post = &journal.posts[1];
-    assert_eq!(sale_post.amount.unwrap().quantity, (-10).into());
-    assert_eq!(sale_post.amount.unwrap().commodity_index, veur);
+    let sale_post = &journal.xacts[0].posts[1];
+    assert_eq!(sale_post.borrow().amount.unwrap().quantity, (-10).into());
+    assert_eq!(sale_post.borrow().amount.unwrap().commodity_index, veur);
     
     // annotations
     // todo!("annotations")
 
     // cost
-    assert_eq!(sale_post.cost.unwrap().quantity, (250).into());
-    assert_eq!(sale_post.cost.unwrap().commodity_index, eur);
+    assert_eq!(sale_post.borrow().cost.unwrap().quantity, (250).into());
+    assert_eq!(sale_post.borrow().cost.unwrap().commodity_index, eur);
 }
 
 // #[test]

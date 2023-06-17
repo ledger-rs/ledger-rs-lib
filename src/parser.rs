@@ -696,7 +696,8 @@ mod parser_tests {
 
         // Assert
         assert_eq!(1, journal.xacts.len());
-        assert_eq!(4, journal.posts.len());
+        // assert_eq!(4, journal.posts.len());
+        assert_eq!(4, journal.xacts[0].posts.len());
         assert_eq!(7, journal.accounts.len());
         assert_eq!(2, journal.commodity_pool.commodities.len());
     }
@@ -790,11 +791,12 @@ mod posting_parsing_tests {
         parser.parse();
 
         // Assert
-        assert!(journal.posts[0].note.is_some());
-        assert!(journal.posts[1].note.is_none());
+        let xact = &journal.xacts[0];
+        assert!(xact.posts[0].borrow().note.is_some());
+        assert!(xact.posts[1].borrow().note.is_none());
         assert_eq!(
             Some("this is post comment".to_string()),
-            journal.posts[0].note
+            xact.posts[0].borrow().note
         );
     }
 }
@@ -809,6 +811,7 @@ mod amount_parsing_tests {
     fn setup() -> Journal {
         let mut journal = Journal::new();
         let xact = Xact::create("2023-05-02", "", "Supermarket", "");
+        // let post;
         journal.add_xact(xact);
 
         journal
@@ -847,8 +850,8 @@ mod amount_parsing_tests {
         // Act
 
         parse_post("  Assets  20 EUR", 0, &mut journal);
-        let post = journal.posts.first().unwrap();
-        let Some(amount) = &post.amount else { todo!() }; // else None;
+        let post = journal.xacts[0].posts.first().unwrap();
+        let Some(amount) = &post.borrow().amount else { todo!() }; // else None;
 
         // assert!(actual.is_some());
         assert_eq!(expected, *amount);
@@ -873,8 +876,8 @@ mod amount_parsing_tests {
         parse_post("  Assets  -20 EUR", 0, &mut journal);
 
         // Assert
-        let post = journal.posts.first().unwrap();
-        let Some(a) = &post.amount else { panic!() };
+        let post = journal.xacts[0].posts.first().unwrap();
+        let Some(a) = &post.borrow().amount else { panic!() };
         assert_eq!(&expected, a);
 
         let commodity = journal
@@ -891,8 +894,8 @@ mod amount_parsing_tests {
 
         // Act
         parse_post("  Assets  -20000.00 EUR", 0, &mut journal);
-        let post = journal.posts.first().unwrap();
-        let Some(ref amount) = post.amount else { panic!()};
+        let post = journal.xacts[0].posts.first().unwrap();
+        let Some(ref amount) = post.borrow().amount else { panic!()};
 
         // Assert
         assert_eq!("-20000.00", amount.quantity.to_string());
@@ -913,8 +916,9 @@ mod amount_parsing_tests {
 
         // Act
         parse_post("  Assets  A$-20000.00", 0, &mut journal);
-        let post = journal.posts.first().unwrap();
-        let Some(ref amount) = post.amount else { panic!()};
+        // let post = journal.posts.first().unwrap();
+        let post = &journal.xacts[0].posts[0];
+        let Some(ref amount) = post.borrow().amount else { panic!()};
 
         // Assert
         assert_eq!("-20000.00", amount.quantity.to_string());

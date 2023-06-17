@@ -186,11 +186,12 @@ Account Expenses has balance 20"#;
         assert_eq!("Supermarket", journal.xacts[1].payee);
 
         // posts
-        assert_eq!(4, journal.posts.len());
-        assert_eq!(Some(Amount::new(20.into(), None)), journal.posts[0].amount);
+        // assert_eq!(4, journal.posts.len());
+        assert_eq!(2, journal.xacts[0].posts.len());
+        assert_eq!(Some(Amount::new(20.into(), None)), journal.xacts[0].posts[0].borrow().amount);
         assert_eq!(
             Some(Amount::new(20.into(), Some(CommodityIndex::new(0)))),
-            journal.posts[2].amount
+            journal.xacts[0].posts[2].borrow().amount
         );
 
         // accounts

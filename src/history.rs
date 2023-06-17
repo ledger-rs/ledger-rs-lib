@@ -13,7 +13,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use chrono::{NaiveDateTime, Local};
+use chrono::{NaiveDateTime, Local, NaiveTime};
 use petgraph::{
     algo::{astar, dijkstra},
     stable_graph::NodeIndex,
@@ -166,7 +166,7 @@ impl CommodityHistory {
 
         // TODO: What is the final date when multiple hops involved?
         // 
-        let when = Local::now().naive_local();
+        let when = Local::now().date_naive().and_time(NaiveTime::MIN);
 
         // TODO: add to the price map.
         // self.add_price(commodity_index, datetime, price)

@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub type AccountIndex = usize;
-pub type PostIndex = usize;
+// pub type PostIndex = usize;
 pub type XactIndex = usize;
 
 pub struct Journal {
@@ -24,7 +24,7 @@ pub struct Journal {
 
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
-    pub posts: Vec<Post>,
+    // pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
 }
 
@@ -35,7 +35,7 @@ impl Journal {
 
             commodity_pool: CommodityPool::new(),
             xacts: vec![],
-            posts: vec![],
+            // posts: vec![],
             accounts: vec![],
             // sources: Vec<fileinfo?>
         };
@@ -58,11 +58,11 @@ impl Journal {
         self.xacts.len() - 1
     }
 
-    pub fn add_post(&mut self, post: Post) -> PostIndex {
-        let i = self.posts.len();
-        self.posts.push(post);
-        i
-    }
+    // pub fn add_post(&mut self, post: Post) -> PostIndex {
+    //     let i = self.posts.len();
+    //     self.posts.push(post);
+    //     i
+    // }
 
     pub fn get_account(&self, index: AccountIndex) -> &Account {
         &self.accounts[index]
@@ -85,17 +85,17 @@ impl Journal {
         Some(self.get_commodity(index))
     }
 
-    pub fn get_post(&self, index: PostIndex) -> &Post {
-        &self.posts[index]
-    }
+    // pub fn get_post(&self, index: PostIndex) -> &Post {
+    //     &self.posts[index]
+    // }
 
-    pub fn get_post_mut(&mut self, index: PostIndex) -> &mut Post {
-        self.posts.get_mut(index).unwrap()
-    }
+    // pub fn get_post_mut(&mut self, index: PostIndex) -> &mut Post {
+    //     self.posts.get_mut(index).unwrap()
+    // }
 
-    pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
-        indices.iter().map(|i| &self.posts[*i]).collect()
-    }
+    // pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
+    //     indices.iter().map(|i| &self.posts[*i]).collect()
+    // }
 
     pub fn get_post_account(&self, post: &Post) -> &Account {
         self.get_account(post.account_index)
@@ -284,20 +284,20 @@ mod tests {
         assert!(actual.is_some());
     }
 
-    #[test]
-    fn test_getting_multiple_posts() {
-        let mut journal = Journal::new();
-        let p1 = Post::new(10, 11, None, None, None);
-        let i1 = journal.add_post(p1);
-        let p2 = Post::new(20, 11, None, None, None);
-        let i2 = journal.add_post(p2);
+    // #[test]
+    // fn test_getting_multiple_posts() {
+    //     let mut journal = Journal::new();
+    //     let p1 = Post::new(10, 11, None, None, None);
+    //     let i1 = journal.add_post(p1);
+    //     let p2 = Post::new(20, 11, None, None, None);
+    //     let i2 = journal.add_post(p2);
 
-        let actual = journal.get_posts(&vec![i1, i2]);
+    //     let actual = journal.get_posts(&vec![i1, i2]);
 
-        assert_eq!(2, actual.len());
-        assert_eq!(10, actual[0].account_index);
-        assert_eq!(20, actual[1].account_index);
-    }
+    //     assert_eq!(2, actual.len());
+    //     assert_eq!(10, actual[0].account_index);
+    //     assert_eq!(20, actual[1].account_index);
+    // }
 
     #[test]
     fn test_register_account() {

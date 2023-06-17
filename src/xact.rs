@@ -11,7 +11,7 @@ use chrono::NaiveDate;
 
 use crate::{
     balance::Balance,
-    journal::{Journal, PostIndex, XactIndex},
+    journal::{Journal, XactIndex},
     parser,
     post::Post,
 };
