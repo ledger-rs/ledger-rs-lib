@@ -109,12 +109,6 @@ impl Journal {
         self.accounts.get_mut(0).expect("master account")
     }
 
-    /// Retrieves posts for the transaction with the given index.
-    pub fn get_xact_posts(&self, index: XactIndex) -> Vec<&Post> {
-        let xact = &self.xacts[index];
-        self.get_posts(&xact.posts)
-    }
-
     pub fn register_account(&mut self, name: &str) -> Option<AccountIndex> {
         if name.is_empty() {
             panic!("Invalid account name {:?}", name);

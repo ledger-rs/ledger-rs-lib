@@ -2,11 +2,11 @@
  * Account definition and operations
  */
 
-use std::{collections::HashMap, vec};
+use std::{collections::HashMap, vec, rc::Rc, cell::RefCell};
 
 use crate::{
     balance::Balance,
-    journal::{AccountIndex, Journal, PostIndex},
+    journal::{AccountIndex, Journal, PostIndex}, post::Post,
 };
 
 #[derive(Debug, PartialEq)]
@@ -18,8 +18,9 @@ pub struct Account {
     // depth
     pub accounts: HashMap<String, AccountIndex>,
     // pub posts: Vec<Post>,
-    /// indices of Posts in the Journal.Posts array.
-    pub post_indices: Vec<PostIndex>,
+    pub posts: Vec<Rc<RefCell<Post>>>,
+    // indices of Posts in the Journal.Posts array.
+    // pub post_indices: Vec<PostIndex>,
     // deferred posts
     // value_expr
 }
@@ -30,7 +31,8 @@ impl Account {
             parent_index: None,
             name: name.to_owned(),
             accounts: HashMap::new(),
-            post_indices: vec![],
+            // post_indices: vec![],
+            posts: vec![],
         }
     }
 
@@ -57,9 +59,13 @@ impl Account {
     pub fn amount(&self, journal: &Journal) -> Balance {
         let mut bal = Balance::new();
 
-        for index in &self.post_indices {
-            let post = journal.get_post(*index);
-            bal.add(&post.amount.unwrap());
+        // for index in &self.post_indices {
+        //     let post = journal.get_post(*index);
+        //     bal.add(&post.amount.unwrap());
+        // }
+        for post in &self.posts {
+            let amount = post.borrow().amount.unwrap();
+            bal.add(&amount);
         }
 
         bal

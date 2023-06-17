@@ -5,6 +5,8 @@
  * It contains contains Postings.
  */
 
+use std::{rc::Rc, cell::RefCell};
+
 use chrono::NaiveDate;
 
 use crate::{
@@ -18,7 +20,7 @@ pub struct Xact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
-    pub posts: Vec<PostIndex>,
+    pub posts: Vec<Rc<RefCell<Post>>>,
     pub note: Option<String>,
     // pub balance: Amount,
 }
@@ -86,14 +88,15 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
     // let mut balance: Option<Amount> = None;
     let mut balance = Balance::new();
     // The pointer to the post that has no amount.
-    let mut null_post: Option<PostIndex> = None;
+    let mut null_post: Option<Rc<RefCell<Post>>> = None;
     let xact = journal.xacts.get(xact_index).expect("xact");
 
     // Balance
     for post_index in &xact.posts {
         // must balance?
 
-        let post = journal.posts.get(*post_index).expect("post");
+        // let post = journal.posts.get(*post_index).expect("post");
+        let post = post_index.borrow();
 
         log::debug!("finalizing {:?}", post);
 
@@ -112,7 +115,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         } else if null_post.is_some() {
             todo!()
         } else {
-            null_post = Some(*post_index);
+            // null_post = Some(*post_index);
+            null_post = Some(post_index.clone());
         }
     }
 
@@ -128,10 +132,11 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         // total value of one commodity by the total value of the other.  This
         // establishes the per-unit cost for this post for both commodities.
 
-        let mut top_post: Option<&Post> = None;
+        let mut top_post: Option<Rc<RefCell<Post>>> = None;
         for i in &xact.posts {
-            let post = journal.get_post(*i);
-            if post.amount.is_some() && top_post.is_none() {
+            // let post = journal.get_post(*i);
+            let post = i.clone();
+            if post.borrow().amount.is_some() && top_post.is_none() {
                 top_post = Some(post);
             }
         }
@@ -145,7 +150,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
             // if x && y
             if !x.is_zero() && !y.is_zero() {
-                if x.commodity_index != top_post.unwrap().amount.unwrap().commodity_index {
+                let Some(p) = top_post.clone() else {panic!("oops")};
+                if x.commodity_index != p.borrow().amount.unwrap().commodity_index {
                     (x, y) = (y, x);
                 }
 
@@ -153,13 +159,14 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 let per_unit_cost = (*y / *x).abs();
 
                 for i in &xact.posts {
-                    let post = journal.posts.get_mut(*i).unwrap();
-                    let amt = post.amount.unwrap();
+                    // let post = journal.posts.get_mut(*i).unwrap();
+                    let post = i;
+                    let amt = post.borrow().amount.unwrap();
 
                     if amt.commodity_index == comm {
                         balance -= amt;
-                        post.cost = Some(per_unit_cost * amt);
-                        balance += post.cost.unwrap();
+                        post.borrow_mut().cost = Some(per_unit_cost * amt);
+                        balance += post.borrow().cost.unwrap();
                     }
                 }
             }
@@ -169,13 +176,14 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
     // if (has_date())
     {
         for post_index in &xact.posts {
-            let p = journal.posts.get_mut(*post_index).unwrap();
-            if p.cost.is_none() {
+            // let p = journal.posts.get_mut(*post_index).unwrap();
+            let p = post_index.clone();
+            if p.borrow().cost.is_none() {
                 continue;
             }
 
-            let Some(amt) = &p.amount else {panic!("No amount found on the posting")};
-            let Some(cost) = &p.cost else {panic!("No cost found on the posting")};
+            let Some(amt) = &p.borrow().amount else {panic!("No amount found on the posting")};
+            let Some(cost) = &p.borrow().cost else {panic!("No cost found on the posting")};
             if amt.commodity_index == cost.commodity_index {
                 panic!("A posting's cost must be of a different commodity than its amount");
             }
@@ -201,7 +209,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 //         .add_price(amt.commodity_index.unwrap(), moment, *cost);
                 // }
 
-                p.amount = Some(breakdown.amount);
+                p.borrow_mut().amount = Some(breakdown.amount);
             }
         }
     }
@@ -214,9 +222,11 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
         log::debug!("There was a null posting");
 
-        let Some(null_post_index) = null_post
-            else {panic!("should not happen")};
-        let Some(post) = journal.posts.get_mut(null_post_index)
+        // let Some(null_post_index) = null_post
+        //     else {panic!("should not happen")};
+        // let Some(post) = journal.posts.get_mut(null_post_index)
+        //     else {panic!("should not happen")};
+        let Some(post) = null_post
             else {panic!("should not happen")};
 
         // use inverse amount
@@ -233,7 +243,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
             todo!("check this option")
         };
 
-        post.amount = Some(amt);
+        post.borrow_mut().amount = Some(amt);
         null_post = None;
     }
 

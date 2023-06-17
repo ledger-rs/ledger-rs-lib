@@ -241,7 +241,7 @@ pub struct Price {
 
 #[cfg(test)]
 mod tests {
-    use chrono::Local;
+    use chrono::{Local, NaiveTime};
     use petgraph::stable_graph::NodeIndex;
 
     use super::{get_latest_price, CommodityHistory, PriceMap};
@@ -367,7 +367,7 @@ mod tests {
         // add price
         let date = parse_datetime("2023-05-01").unwrap();
         let price = parse_amount("1.20 USD", &mut journal).unwrap();
-        let oldest = Local::now().naive_local();
+        let oldest = Local::now().date_naive().and_time(NaiveTime::MIN);
         journal.commodity_pool.add_price(eur_index, date, price);
 
         // act
