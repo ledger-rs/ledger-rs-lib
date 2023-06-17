@@ -191,7 +191,7 @@ Account Expenses has balance 20"#;
         assert_eq!(Some(Amount::new(20.into(), None)), journal.xacts[0].posts[0].borrow().amount);
         assert_eq!(
             Some(Amount::new(20.into(), Some(CommodityIndex::new(0)))),
-            journal.xacts[0].posts[2].borrow().amount
+            journal.xacts[1].posts[0].borrow().amount
         );
 
         // accounts

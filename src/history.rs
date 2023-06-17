@@ -353,7 +353,7 @@ mod tests {
         // assert_eq!("2023-05-01 00:00:00", actual.datetime.to_string());
         // assert_eq!(actual.price.quantity, 1.20.into());
         assert_eq!(
-            PricePoint::new(date, Amount::new(Decimal::from("1.20"), None)),
+            PricePoint::new(date, Amount::new(Decimal::from("1.20"), Some(usd_index))),
             actual
         );
     }

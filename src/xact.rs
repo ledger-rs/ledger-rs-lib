@@ -1,11 +1,11 @@
 /*!
  * Transaction module
- * 
+ *
  * Transaction, or Xact abbreviated, is the main element of the Journal.
  * It contains contains Postings.
  */
 
-use std::{rc::Rc, cell::RefCell};
+use std::{cell::RefCell, rc::Rc};
 
 use chrono::NaiveDate;
 
@@ -182,8 +182,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 continue;
             }
 
-            let Some(amt) = &p.borrow().amount else {panic!("No amount found on the posting")};
-            let Some(cost) = &p.borrow().cost else {panic!("No cost found on the posting")};
+            let Some(amt) = p.borrow().amount else {panic!("No amount found on the posting")};
+            let Some(cost) = p.borrow().cost else {panic!("No cost found on the posting")};
             if amt.commodity_index == cost.commodity_index {
                 panic!("A posting's cost must be of a different commodity than its amount");
             }
@@ -192,14 +192,17 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 // Cost breakdown
                 // todo: virtual cost does not create a price
 
-                let moment = xact.date.unwrap().and_hms_opt(0, 0, 0).unwrap();
-                let (breakdown, new_price_opt) = journal
-                    .commodity_pool
-                    .exchange(amt, cost, false, moment);
-                // add price(s)
-                if let Some(new_price) = new_price_opt {
-                    journal.commodity_pool.add_price_struct(new_price);
-                }
+                let breakdown = {
+                    let moment = xact.date.unwrap().and_hms_opt(0, 0, 0).unwrap();
+                    let (breakdown, new_price_opt) =
+                        journal.commodity_pool.exchange(&amt, &cost, false, moment);
+                    // add price(s)
+                    if let Some(new_price) = new_price_opt {
+                        journal.commodity_pool.add_price_struct(new_price);
+                    }
+
+                    breakdown
+                };
                 // TODO: this is probably redundant now?
                 // if amt.commodity_index != cost.commodity_index {
                 //     log::debug!("adding price amt: {:?} date: {:?}, cost: {:?}", amt.commodity_index, moment, cost);

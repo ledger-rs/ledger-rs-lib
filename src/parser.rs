@@ -633,11 +633,10 @@ mod parser_tests {
     Assets:Investment  20 VEUR @ 10 EUR
     Assets
 "#;
-        let cursor = Cursor::new(input);
         let mut journal = Journal::new();
 
         // Act
-        read_into_journal(cursor, &mut journal);
+        read_into_journal(Cursor::new(input), &mut journal);
 
         // Assert
 
@@ -648,7 +647,7 @@ mod parser_tests {
         assert_eq!(2, posts.len());
 
         // post 1
-        let p1 = &posts[0];
+        let p1 = posts[0].clone();
         // let account = journal.get_post_account(p1);
         let account = journal.get_account(p1.borrow().account_index);
         assert_eq!("Investment", account.name);
@@ -665,7 +664,7 @@ mod parser_tests {
         assert_eq!("EUR", journal.get_amount_commodity(*cost1).unwrap().symbol);
 
         // post 2
-        let p2 = &posts[1];
+        let p2 = posts[1].clone();
         assert_eq!("Assets", journal.get_account(p2.borrow().account_index).name);
         // amount
         let Some(a2) = &p2.borrow().amount else {panic!()};
