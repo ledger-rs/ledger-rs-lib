@@ -50,6 +50,7 @@ pub mod pool;
 pub mod post;
 pub mod report;
 pub mod scanner;
+pub mod simplemodel;
 pub mod utilities;
 mod value;
 pub mod xact;
