@@ -32,6 +32,7 @@ report on account balances
 */
 use std::{fs::File, io::Cursor};
 
+use iterator::ParserIter;
 use journal::Journal;
 use option::InputOptions;
 
@@ -41,6 +42,7 @@ pub mod amount;
 mod balance;
 pub mod commodity;
 pub mod history;
+mod iterator;
 pub mod journal;
 mod option;
 pub mod parser;
@@ -146,6 +148,11 @@ pub fn parse_file(file_path: &str, journal: &mut Journal) {
 pub fn parse_text(text: &str, journal: &mut Journal) {
     let source = Cursor::new(text);
     parser::read_into_journal(source, journal);
+}
+
+/// Parses text into an iteration of directives.
+pub fn parse_text_iter() -> ParserIter {
+    todo!("Incomplete")
 }
 
 #[cfg(test)]

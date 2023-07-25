@@ -72,7 +72,7 @@ pub fn parse_amount_parts(quantity: &str, commodity: &str, journal: &mut Journal
     Amount::parse(quantity, commodity_index)
 }
 
-struct Parser<'j, T: Read> {
+pub(crate) struct Parser<'j, T: Read> {
     pub journal: &'j mut Journal,
 
     reader: BufReader<T>,
