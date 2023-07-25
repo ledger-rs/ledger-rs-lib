@@ -32,7 +32,6 @@ report on account balances
 */
 use std::{fs::File, io::Cursor};
 
-use iterator::ParserIter;
 use journal::Journal;
 use option::InputOptions;
 
@@ -151,10 +150,6 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
     parser::read_into_journal(source, journal);
 }
 
-/// Parses text into an iteration of directives.
-pub fn parse_text_iter() -> ParserIter {
-    todo!("Incomplete")
-}
 
 #[cfg(test)]
 mod lib_tests {

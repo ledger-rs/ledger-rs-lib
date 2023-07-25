@@ -8,6 +8,7 @@ use chrono::NaiveDate;
 
 use crate::amount::Quantity;
 
+#[derive(Debug)]
 pub struct SimpleXact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
@@ -16,6 +17,13 @@ pub struct SimpleXact {
     pub note: Option<String>,
 }
 
+impl SimpleXact {
+    pub fn new() -> Self {
+        SimpleXact { date: None, aux_date: None, payee: "".into(), posts: vec![], note: None }
+    }
+}
+
+#[derive(Debug)]
 pub struct SimplePost {
     pub account: String,
     pub amount: Option<SimpleAmount>,
@@ -23,6 +31,7 @@ pub struct SimplePost {
     pub note: Option<String>,
 }
 
+#[derive(Debug)]
 pub struct SimpleAmount {
     pub quantity: Quantity,
     pub commodity: Option<String>,

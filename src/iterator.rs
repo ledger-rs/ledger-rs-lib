@@ -2,53 +2,55 @@
  * Implemetation of the parser that returns an iterator over the results
  */
 
+use crate::simplemodel::SimpleXact;
+
 
 /// Types of directives
 #[derive(Debug)]
  pub enum DirectiveType {
     Price,
-    Xact
+    Xact(SimpleXact)
 }
 
 #[derive(Debug)]
 /// A custom iterator type
-pub struct ParserIter {
+pub struct SimpleParserIter {
     // reader
     counter: u8,
 }
 
-impl ParserIter {
+impl SimpleParserIter {
     pub fn new() -> Self {
-        ParserIter { counter: 0 }
+        SimpleParserIter { counter: 0 }
     }
 }
 
-impl Iterator for ParserIter {
+impl Iterator for SimpleParserIter {
     type Item = DirectiveType;
 
-    fn next(self: &mut ParserIter) -> Option<Self::Item> {
+    fn next(self: &mut SimpleParserIter) -> Option<Self::Item> {
+        // read the content and
         // parse the next directive
-        //todo!("incomplete")
-        //Some(self.0)
+
         self.counter += 1;
         if self.counter > 100 {
             return None;
         }
-        
-        Some(DirectiveType::Xact)
+
+        Some(DirectiveType::Xact(SimpleXact::new()))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::ParserIter;
+    use super::SimpleParserIter;
 
     #[test]
     /// create a custom iterator of directives
     fn test_creating_custom_iterator() {
         // let vector: Vec<String> = vec![];
         // let a = vector.iter();
-        let item = ParserIter::new();
+        let item = SimpleParserIter::new();
 
         for x in item {
             println!("item: {:?}", x);
