@@ -34,6 +34,8 @@ use std::{fs::File, io::Cursor};
 
 use journal::Journal;
 use option::InputOptions;
+
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 pub mod account;
@@ -151,6 +153,7 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
     parser::read_into_journal(source, journal);
 }
 
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn wasm_test() -> String {
     "hello wasm".to_owned()
