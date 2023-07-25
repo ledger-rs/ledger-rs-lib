@@ -48,8 +48,6 @@ mod tests {
     #[test]
     /// create a custom iterator of directives
     fn test_creating_custom_iterator() {
-        // let vector: Vec<String> = vec![];
-        // let a = vector.iter();
         let item = SimpleParserIter::new();
 
         for x in item {

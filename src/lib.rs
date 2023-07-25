@@ -34,6 +34,7 @@ use std::{fs::File, io::Cursor};
 
 use journal::Journal;
 use option::InputOptions;
+use wasm_bindgen::prelude::*;
 
 pub mod account;
 mod annotate;
@@ -150,6 +151,10 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
     parser::read_into_journal(source, journal);
 }
 
+#[wasm_bindgen]
+pub fn wasm_test() -> String {
+    "hello wasm".to_owned()
+}
 
 #[cfg(test)]
 mod lib_tests {

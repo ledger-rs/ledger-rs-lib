@@ -85,10 +85,25 @@ You need to have the prerequisites install - the compilation target (wasm32-wasi
 
 ## WASM 
 
-The wasm version has not been tried yet but the proof-of-concept shows that it is relatively easy to complete. There are only minor differences to publishing the wasm version as opposed to the wasi version.
+The library can be compiled into WASM for use in web apps.
 
-- [ ] add wasm-bindgen crate
-- [ ] add attributes
+```shell
+cargo install wasm-pack
+
+wasm-pack build --target web
+```
+
+### Demo
+
+The folder `wwwroot` contains the code that uses the wasm.
+Serve with a web server. I.e. using Deno's file server:
+```
+deno install --allow-net --allow-read https://deno.land/std/http/file_server.ts
+
+file_server wwwroot
+```
+Add the deno plugin location to path.
+
 
 # Documentation
 
