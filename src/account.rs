@@ -93,7 +93,7 @@ impl Account {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{amount::Decimal, journal::Journal, parse_file, parser};
+    use crate::{amount::Quantity, journal::Journal, parse_file, parser};
 
     #[test]
     fn test_fullname() {
@@ -125,7 +125,7 @@ mod tests {
         let actual = account.amount(&journal);
 
         assert!(!actual.amounts.is_empty());
-        assert_eq!(Decimal::from(-20), actual.amounts[0].quantity);
+        assert_eq!(Quantity::from(-20), actual.amounts[0].quantity);
         let commodity = journal.get_amount_commodity(actual.amounts[0]).unwrap();
         assert_eq!("EUR", commodity.symbol);
     }

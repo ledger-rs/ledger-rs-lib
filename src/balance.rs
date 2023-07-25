@@ -6,9 +6,7 @@
  * Intended to help with storing amounts in multiple commodities.
  */
 
-use std::{
-    ops::{AddAssign, SubAssign},
-};
+use std::ops::{AddAssign, SubAssign};
 
 use crate::amount::Amount;
 
@@ -106,7 +104,7 @@ impl AddAssign<Balance> for Balance {
 mod tests {
     use super::Balance;
     use crate::{
-        amount::{Amount, Decimal},
+        amount::{Amount, Quantity},
         pool::CommodityIndex,
     };
 
@@ -121,7 +119,7 @@ mod tests {
         assert!(!balance.amounts.is_empty());
         assert_eq!(1, balance.amounts.len());
         assert_eq!(
-            Decimal::from(25),
+            Quantity::from(25),
             balance.amounts.iter().next().unwrap().quantity
         );
         assert_eq!(None, balance.amounts.iter().next().unwrap().commodity_index);
@@ -142,7 +140,7 @@ mod tests {
         assert!(!balance.amounts.is_empty());
         assert_eq!(1, balance.amounts.len());
         assert_eq!(
-            Decimal::from(30),
+            Quantity::from(30),
             balance.amounts.iter().next().unwrap().quantity
         );
         assert_eq!(None, balance.amounts.iter().next().unwrap().commodity_index);
@@ -163,7 +161,7 @@ mod tests {
         assert!(!balance.amounts.is_empty());
         assert_eq!(2, balance.amounts.len());
         assert_eq!(
-            Decimal::from(25),
+            Quantity::from(25),
             balance.amounts.iter().nth(0).unwrap().quantity
         );
         assert_eq!(
@@ -172,7 +170,7 @@ mod tests {
         );
 
         assert_eq!(
-            Decimal::from(5),
+            Quantity::from(5),
             balance.amounts.iter().nth(1).unwrap().quantity
         );
         assert_eq!(None, balance.amounts.iter().nth(1).unwrap().commodity_index);
@@ -194,7 +192,7 @@ mod tests {
         assert_eq!(2, balance.amounts.len());
 
         assert_eq!(
-            Decimal::from(25),
+            Quantity::from(25),
             balance.amounts.iter().nth(0).unwrap().quantity
         );
         assert_eq!(
@@ -203,7 +201,7 @@ mod tests {
         );
 
         assert_eq!(
-            Decimal::from(5),
+            Quantity::from(5),
             balance.amounts.iter().nth(1).unwrap().quantity
         );
         assert_eq!(
@@ -228,7 +226,7 @@ mod tests {
         assert_eq!(1, balance.amounts.len());
 
         assert_eq!(
-            Decimal::from(30),
+            Quantity::from(30),
             balance.amounts.iter().nth(0).unwrap().quantity
         );
         assert_eq!(

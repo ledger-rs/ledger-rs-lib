@@ -4,7 +4,7 @@
 
 use chrono::NaiveDate;
 use ledger_rs_lib::{
-    amount::{Amount, Decimal},
+    amount::{Amount, Quantity},
     journal::Journal,
     parse_file,
     pool::CommodityIndex, parse_text,
@@ -54,7 +54,7 @@ fn detailed_basic_test() {
     let post1 = journal.posts.get(xact.posts[0]).unwrap();
     assert_eq!("Food", journal.get_account(post1.account_index).name);
     let amount1 = &post1.amount.as_ref().unwrap();
-    assert_eq!(Decimal::from(20), amount1.quantity);
+    assert_eq!(Quantity::from(20), amount1.quantity);
     let symbol = &journal
         .commodity_pool
         .get_commodity(*amount1.commodity_index.as_ref().unwrap())
@@ -64,7 +64,7 @@ fn detailed_basic_test() {
     let post2 = journal.posts.get(xact.posts[1]).unwrap();
     assert_eq!("Cash", journal.get_account(post2.account_index).name);
     let amount2 = &post2.amount.as_ref().unwrap();
-    assert_eq!(Decimal::from(-20), amount2.quantity);
+    assert_eq!(Quantity::from(-20), amount2.quantity);
     let symbol = &journal
         .commodity_pool
         .get_commodity(*amount2.commodity_index.as_ref().unwrap())
@@ -202,5 +202,5 @@ fn test_parsing_trade_lot() {
     let posts = journal.get_posts(&sale_xact.posts);
     let sale_post = posts[0];
     assert_eq!(sale_post.amount.unwrap().quantity, (-10).into());
-    assert_eq!(Decimal::from(-250), sale_post.cost.unwrap().quantity);
+    assert_eq!(Quantity::from(-250), sale_post.cost.unwrap().quantity);
 }

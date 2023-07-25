@@ -548,7 +548,7 @@ mod parser_tests {
     use std::{assert_eq, io::Cursor};
 
     use crate::{
-        amount::Decimal,
+        amount::Quantity,
         journal::Journal,
         parser::{self, read_into_journal},
     };
@@ -699,7 +699,7 @@ mod posting_parsing_tests {
     use std::io::Cursor;
 
     use super::Parser;
-    use crate::{amount::Decimal, journal::Journal, parse_file, parser::parse_datetime};
+    use crate::{amount::Quantity, journal::Journal, parse_file, parser::parse_datetime};
 
     #[test]
     fn test_parsing_buy_lot() {
@@ -727,7 +727,7 @@ mod posting_parsing_tests {
         // let existing_key = price.keys().nth(0).unwrap();
         assert!(price.contains_key(&expected_date));
         let value = price.get(&expected_date).unwrap();
-        assert_eq!(Decimal::from(12.75), *value);
+        assert_eq!(Quantity::from(12.75), *value);
     }
 
     #[test]
@@ -794,7 +794,7 @@ mod posting_parsing_tests {
 mod amount_parsing_tests {
     use super::Amount;
     use crate::{
-        amount::Decimal, journal::Journal, parser::parse_post, pool::CommodityIndex, xact::Xact,
+        amount::Quantity, journal::Journal, parser::parse_post, pool::CommodityIndex, xact::Xact,
     };
 
     fn setup() -> Journal {
@@ -922,7 +922,7 @@ mod amount_parsing_tests {
     #[test]
     fn test_quantity_separators() {
         let input = "-1000000.00";
-        let expected = Decimal::from(-1_000_000);
+        let expected = Quantity::from(-1_000_000);
 
         let amount = Amount::parse(input, None);
         assert!(amount.is_some());
@@ -941,7 +941,7 @@ mod amount_parsing_tests {
 
         let actual = left + right;
 
-        assert_eq!(Decimal::from(25), actual.quantity);
+        assert_eq!(Quantity::from(25), actual.quantity);
         // assert!(actual.commodity.is_some());
         // assert_eq!("EUR", actual.commodity.unwrap().symbol);
     }
@@ -956,7 +956,7 @@ mod amount_parsing_tests {
         // actual += addition;
         actual.add(&other);
 
-        assert_eq!(Decimal::from(34), actual.quantity);
+        assert_eq!(Quantity::from(34), actual.quantity);
     }
 
     #[test]
@@ -972,7 +972,7 @@ mod amount_parsing_tests {
         let other = Amount::new(10.into(), None);
         let actual = Amount::copy_from(&other);
 
-        assert_eq!(Decimal::from(10), actual.quantity);
+        assert_eq!(Quantity::from(10), actual.quantity);
         // assert_eq!(None, actual.commodity);
     }
 }

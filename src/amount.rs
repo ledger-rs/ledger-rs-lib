@@ -13,12 +13,12 @@ use crate::pool::CommodityIndex;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Amount {
-    pub quantity: Decimal,
+    pub quantity: Quantity,
     pub commodity_index: Option<CommodityIndex>,
 }
 
 impl Amount {
-    pub fn new(quantity: Decimal, commodity_index: Option<CommodityIndex>) -> Self {
+    pub fn new(quantity: Quantity, commodity_index: Option<CommodityIndex>) -> Self {
         Self {
             quantity,
             commodity_index,
@@ -39,7 +39,7 @@ impl Amount {
             return None;
         }
 
-        let quantity_result = Decimal::from_str(quantity);
+        let quantity_result = Quantity::from_str(quantity);
         if quantity_result.is_err() {
             return None;
         }
@@ -186,7 +186,7 @@ impl Mul<Amount> for Amount {
 
 impl From<i32> for Amount {
     fn from(value: i32) -> Self {
-        Amount::new(Decimal::from(value), None)
+        Amount::new(Quantity::from(value), None)
     }
 }
 
@@ -213,14 +213,14 @@ impl MulAssign<Amount> for Amount {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Decimal(rust_decimal::Decimal);
+pub struct Quantity(rust_decimal::Decimal);
 
 // const ZERO: Decimal = Decimal(rust_decimal::Decimal::ZERO);
 // const ONE: Decimal = Decimal(rust_decimal::Decimal::ONE);
 
-impl Decimal {
-    pub const ZERO: Decimal = Decimal(rust_decimal::Decimal::ZERO);
-    pub const ONE: Decimal = Decimal(rust_decimal::Decimal::ONE);
+impl Quantity {
+    pub const ZERO: Quantity = Quantity(rust_decimal::Decimal::ZERO);
+    pub const ONE: Quantity = Quantity(rust_decimal::Decimal::ONE);
 
     pub fn from_str(str: &str) -> Result<Self, anyhow::Error> {
         Ok(Self(rust_decimal::Decimal::from_str_exact(str)?))
@@ -243,75 +243,75 @@ impl Decimal {
     }
 }
 
-impl From<i32> for Decimal {
+impl From<i32> for Quantity {
     fn from(value: i32) -> Self {
-        Decimal(rust_decimal::Decimal::from(value))
+        Quantity(rust_decimal::Decimal::from(value))
     }
 }
 
-impl From<f32> for Decimal {
+impl From<f32> for Quantity {
     fn from(value: f32) -> Self {
-        Decimal(rust_decimal::Decimal::from_f32(value).unwrap())
+        Quantity(rust_decimal::Decimal::from_f32(value).unwrap())
     }
 }
 
 /// Creates a Decimal value from a string. Panics if invalid.
-impl From<&str> for Decimal {
+impl From<&str> for Quantity {
     fn from(value: &str) -> Self {
         Self(rust_decimal::Decimal::from_str_exact(value).unwrap())
         // Decimal::from_str(value).unwrap()
     }
 }
 
-impl Into<i32> for Decimal {
+impl Into<i32> for Quantity {
     fn into(self) -> i32 {
         self.0.to_i32().unwrap()
     }
 }
 
-impl Add<Decimal> for Decimal {
-    type Output = Decimal;
+impl Add<Quantity> for Quantity {
+    type Output = Quantity;
 
-    fn add(self, other: Decimal) -> Decimal {
-        Decimal(self.0 + other.0)
+    fn add(self, other: Quantity) -> Quantity {
+        Quantity(self.0 + other.0)
     }
 }
 
-impl AddAssign<Decimal> for Decimal {
-    fn add_assign(&mut self, other: Decimal) {
+impl AddAssign<Quantity> for Quantity {
+    fn add_assign(&mut self, other: Quantity) {
         self.0 += other.0;
     }
 }
 
-impl Div<Decimal> for Decimal {
-    type Output = Decimal;
+impl Div<Quantity> for Quantity {
+    type Output = Quantity;
 
-    fn div(self, other: Decimal) -> Decimal {
+    fn div(self, other: Quantity) -> Quantity {
         Self(self.0.div(other.0))
     }
 }
 
-impl Mul<Decimal> for Decimal {
-    type Output = Decimal;
+impl Mul<Quantity> for Quantity {
+    type Output = Quantity;
 
-    fn mul(self, other: Decimal) -> Decimal {
+    fn mul(self, other: Quantity) -> Quantity {
         Self(self.0 * other.0)
     }
 }
 
-impl MulAssign<Decimal> for Decimal {
-    fn mul_assign(&mut self, rhs: Decimal) {
+impl MulAssign<Quantity> for Quantity {
+    fn mul_assign(&mut self, rhs: Quantity) {
         self.0 *= rhs.0;
     }
 }
 
-impl SubAssign<Decimal> for Decimal {
-    fn sub_assign(&mut self, other: Decimal) {
+impl SubAssign<Quantity> for Quantity {
+    fn sub_assign(&mut self, other: Quantity) {
         self.0 -= other.0;
     }
 }
 
-impl fmt::Display for Decimal {
+impl fmt::Display for Quantity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -321,11 +321,11 @@ impl fmt::Display for Decimal {
 mod tests {
     use rust_decimal::prelude::ToPrimitive;
 
-    use super::{Amount, Decimal};
+    use super::{Amount, Quantity};
 
     #[test]
     fn test_decimal() {
-        let x = Decimal::from(5);
+        let x = Quantity::from(5);
 
         assert_eq!(Some(5), x.0.to_i32());
     }

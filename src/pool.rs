@@ -10,7 +10,7 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use petgraph::stable_graph::NodeIndex;
 
 use crate::{
-    amount::{Amount, Decimal},
+    amount::{Amount, Quantity},
     annotate::Annotation,
     commodity::Commodity,
     history::{CommodityHistory, Price},
@@ -235,7 +235,7 @@ impl CommodityPool {
             else {panic!("could not add commodity")};
 
         // quantity
-        let quantity = Decimal::from_str(tokens[3]).expect("quantity parsed");
+        let quantity = Quantity::from_str(tokens[3]).expect("quantity parsed");
 
         // cost commodity
         let cost_commodity_index = self.find_or_create(tokens[4], None);
@@ -278,7 +278,7 @@ impl CostBreakdown {
 mod tests {
     use super::CommodityPool;
     use crate::{
-        amount::Decimal,
+        amount::Quantity,
         annotate::Annotation,
         journal::Journal,
         parse_file, parse_text,
@@ -341,7 +341,7 @@ mod tests {
         // date/time
         assert_eq!("2022-03-03 13:00:00", datetime_string);
         // rate
-        assert_eq!(&Decimal::from(1.12), rates.values().nth(0).unwrap());
+        assert_eq!(&Quantity::from(1.12), rates.values().nth(0).unwrap());
     }
 
     /// Annotation must exist for the given symbol after creation.

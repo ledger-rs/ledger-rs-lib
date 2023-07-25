@@ -2,7 +2,7 @@
  * Tests for the library functionality useful for 3rd-party software.
  */
 
- use ledger_rs_lib::{journal::Journal, amount::Decimal};
+ use ledger_rs_lib::{journal::Journal, amount::Quantity};
 
 /// Verify the validity of a new transaction.
 #[test]
@@ -18,5 +18,5 @@ fn test_xact_verification() {
 
     // Assert
     assert_eq!(1, journal.xacts.len());
-    assert_eq!(Decimal::from(-20), journal.get_xact_posts(0)[1].amount.as_ref().unwrap().quantity);
+    assert_eq!(Quantity::from(-20), journal.get_xact_posts(0)[1].amount.as_ref().unwrap().quantity);
 }

@@ -21,13 +21,13 @@ use petgraph::{
 };
 
 use crate::{
-    amount::{Amount, Decimal},
+    amount::{Amount, Quantity},
     commodity::{Commodity, PricePoint},
     pool::CommodityIndex,
 };
 
 // type PriceMap = HashMap<NaiveDateTime, Amount>;
-type PriceMap = BTreeMap<NaiveDateTime, Decimal>;
+type PriceMap = BTreeMap<NaiveDateTime, Quantity>;
 // type PriceMap = Rc<RefCell<BTreeMap<NaiveDateTime, Decimal>>>;
 
 // #[derive(Clone, Copy)]
@@ -141,7 +141,7 @@ impl CommodityHistory {
         //     todo!()
         // }
 
-        let mut result = Amount::new(Decimal::ONE, Some(target));
+        let mut result = Amount::new(Quantity::ONE, Some(target));
         let mut temp_source = source;
         for temp_target in path {
             // skip self
@@ -205,7 +205,7 @@ impl CommodityHistory {
 /// Returns the latest (newest) price from the prices map.
 ///
 /// BTree is doing all the work here, sorting the keys (dates).
-fn get_latest_price(prices: &BTreeMap<NaiveDateTime, Decimal>) -> Option<PricePoint> {
+fn get_latest_price(prices: &BTreeMap<NaiveDateTime, Quantity>) -> Option<PricePoint> {
     if prices.is_empty() {
         return None;
     }
@@ -246,7 +246,7 @@ mod tests {
 
     use super::{get_latest_price, CommodityHistory, PriceMap};
     use crate::{
-        amount::{Amount, Decimal},
+        amount::{Amount, Quantity},
         commodity::{Commodity, PricePoint},
         journal::Journal,
         parse_file,
@@ -295,7 +295,7 @@ mod tests {
         assert_eq!(1, hist.graph.edge_count());
 
         let edge = hist.graph.edge_weights().nth(0).unwrap();
-        assert_eq!(&Decimal::from(25), edge.values().nth(0).unwrap());
+        assert_eq!(&Quantity::from(25), edge.values().nth(0).unwrap());
     }
 
     #[test]
@@ -312,18 +312,18 @@ mod tests {
     #[test]
     fn test_get_latest_price() {
         let mut prices = PriceMap::new();
-        prices.insert(parse_datetime("2023-05-05").unwrap(), Decimal::from(10));
-        prices.insert(parse_datetime("2023-05-01").unwrap(), Decimal::from(20));
+        prices.insert(parse_datetime("2023-05-05").unwrap(), Quantity::from(10));
+        prices.insert(parse_datetime("2023-05-01").unwrap(), Quantity::from(20));
         let newest_date = parse_datetime("2023-05-10").unwrap();
-        prices.insert(newest_date, Decimal::from(30));
-        prices.insert(parse_datetime("2023-05-02").unwrap(), Decimal::from(40));
+        prices.insert(newest_date, Quantity::from(30));
+        prices.insert(parse_datetime("2023-05-02").unwrap(), Quantity::from(40));
 
         // act
         let actual = get_latest_price(&prices);
 
         assert!(actual.is_some());
         assert_eq!(
-            PricePoint::new(newest_date, Amount::new(Decimal::from(30), None)),
+            PricePoint::new(newest_date, Amount::new(Quantity::from(30), None)),
             actual.unwrap()
         );
     }
@@ -353,7 +353,7 @@ mod tests {
         // assert_eq!("2023-05-01 00:00:00", actual.datetime.to_string());
         // assert_eq!(actual.price.quantity, 1.20.into());
         assert_eq!(
-            PricePoint::new(date, Amount::new(Decimal::from("1.20"), None)),
+            PricePoint::new(date, Amount::new(Quantity::from("1.20"), None)),
             actual
         );
     }
