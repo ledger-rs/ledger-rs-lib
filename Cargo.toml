@@ -12,9 +12,10 @@ keywords = ["library", "finance", "wasm"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 # For WASM:
-# [lib]
-[target.'cfg(target_arch = "wasm32")'.lib]
-crate-type = ["cdylib"]
+# [target.'cfg(target_arch = "wasm32")'.lib]
+# crate-type = ["cdylib"]
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0.71"
