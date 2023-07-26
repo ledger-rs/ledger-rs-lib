@@ -153,10 +153,11 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
     parser::read_into_journal(source, journal);
 }
 
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
+// #[cfg(target_arch = "wasm32")]
+// #[wasm_bindgen]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub fn wasm_test() -> String {
-    "hello wasm".to_owned()
+    "hello from wasm".to_owned()
 }
 
 #[cfg(test)]
