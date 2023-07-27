@@ -46,8 +46,10 @@ pub mod commodity;
 pub mod history;
 mod iterator;
 pub mod journal;
+mod journalreader;
 mod option;
 pub mod parser;
+mod parser_experiment;
 pub mod pool;
 pub mod post;
 pub mod report;
@@ -153,8 +155,6 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
     parser::read_into_journal(source, journal);
 }
 
-// #[cfg(target_arch = "wasm32")]
-// #[wasm_bindgen]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub fn wasm_test() -> String {
     "hello from wasm".to_owned()

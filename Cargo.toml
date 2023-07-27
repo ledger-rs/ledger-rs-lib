@@ -14,8 +14,7 @@ keywords = ["library", "finance", "wasm"]
 # For WASM:
 # [target.'cfg(target_arch = "wasm32")'.lib]
 [lib]
-crate-type = ["cdylib"]
-# , "rlib"
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0.71"
