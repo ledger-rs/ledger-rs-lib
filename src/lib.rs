@@ -43,6 +43,7 @@ mod annotate;
 pub mod amount;
 mod balance;
 pub mod commodity;
+mod directives;
 pub mod history;
 mod iterator;
 pub mod journal;
@@ -54,9 +55,9 @@ pub mod pool;
 pub mod post;
 pub mod report;
 pub mod scanner;
-pub mod simplemodel;
 pub mod utilities;
 mod value;
+pub mod viewmodel;
 pub mod xact;
 
 /// An entry point for the CLIs.

@@ -2,15 +2,8 @@
  * Implemetation of the parser that returns an iterator over the results
  */
 
-use crate::simplemodel::SimpleXact;
+use crate::{viewmodel::Xact, directives::DirectiveType};
 
-
-/// Types of directives
-#[derive(Debug)]
- pub enum DirectiveType {
-    Price,
-    Xact(SimpleXact)
-}
 
 #[derive(Debug)]
 /// A custom iterator type
@@ -37,7 +30,7 @@ impl Iterator for SimpleParserIter {
             return None;
         }
 
-        Some(DirectiveType::Xact(SimpleXact::new()))
+        Some(DirectiveType::Xact(Xact::new()))
     }
 }
 

@@ -4,7 +4,7 @@
  */
 
  /// Reads the input text line by line and keeps track of the line number.
-struct JournalReader {}
+pub(crate) struct JournalReader {}
 
 impl JournalReader {
     pub fn new() -> Self {

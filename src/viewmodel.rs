@@ -9,22 +9,22 @@ use chrono::NaiveDate;
 use crate::amount::Quantity;
 
 #[derive(Debug)]
-pub struct SimpleXact {
+pub struct Xact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
-    pub posts: Vec<SimplePost>,
+    pub posts: Vec<Posting>,
     pub note: Option<String>,
 }
 
-impl SimpleXact {
+impl Xact {
     pub fn new() -> Self {
-        SimpleXact { date: None, aux_date: None, payee: "".into(), posts: vec![], note: None }
+        Xact { date: None, aux_date: None, payee: "".into(), posts: vec![], note: None }
     }
 }
 
 #[derive(Debug)]
-pub struct SimplePost {
+pub struct Posting {
     pub account: String,
     pub amount: Option<SimpleAmount>,
     pub cost: Option<SimpleAmount>,
@@ -41,11 +41,11 @@ pub struct SimpleAmount {
 mod tests {
     use crate::amount::Quantity;
 
-    use super::{SimpleXact, SimplePost, SimpleAmount};
+    use super::{Xact, Posting, SimpleAmount};
 
     #[test]
     fn test_create_simple_xact() {
-        let mut xact = SimpleXact {
+        let mut xact = Xact {
             date: None,
             aux_date: None,
             payee: "Payee".into(),
@@ -53,7 +53,7 @@ mod tests {
             note: None,
         };
 
-        xact.posts.push(SimplePost {
+        xact.posts.push(Posting {
             account: "Income".into(),
             amount: Some(SimpleAmount {
                 quantity: Quantity::from_str("12.45").unwrap(),
