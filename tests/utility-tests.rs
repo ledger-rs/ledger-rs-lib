@@ -18,5 +18,6 @@ fn test_xact_verification() {
 
     // Assert
     assert_eq!(1, journal.xacts.len());
-    assert_eq!(Quantity::from(-20), journal.get_xact_posts(0)[1].amount.as_ref().unwrap().quantity);
+    let xact = &journal.xacts[0];
+    assert_eq!(Quantity::from(-20), xact.posts[1].amount.as_ref().unwrap().quantity);
 }

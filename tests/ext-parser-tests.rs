@@ -51,7 +51,7 @@ fn detailed_basic_test() {
     assert_eq!("Supermarket", xact.payee);
     // Posts
     assert_eq!(2, journal.posts.len());
-    let post1 = journal.posts.get(xact.post_indices[0]).unwrap();
+    let post1 = &xact.posts[0];
     assert_eq!("Food", journal.get_account(post1.account_index).name);
     let amount1 = &post1.amount.as_ref().unwrap();
     assert_eq!(Quantity::from(20), amount1.quantity);
@@ -61,7 +61,7 @@ fn detailed_basic_test() {
         .symbol;
     assert_eq!("EUR", symbol);
 
-    let post2 = journal.posts.get(xact.post_indices[1]).unwrap();
+    let post2 = &xact.posts[1];
     assert_eq!("Cash", journal.get_account(post2.account_index).name);
     let amount2 = &post2.amount.as_ref().unwrap();
     assert_eq!(Quantity::from(-20), amount2.quantity);
@@ -129,7 +129,7 @@ fn test_parsing_lots_per_unit() {
     assert_eq!(4, journal.posts.len());
     // buy xact
     let buy_xact = &journal.xacts[0];
-    let post = journal.get_post(buy_xact.post_indices[0]);
+    let post = &buy_xact.posts[0];
     let Some(cost) = post.cost else { panic!("no cost!")};
     assert_eq!(cost.quantity, 200.into());
     // sell
@@ -199,8 +199,8 @@ fn test_parsing_trade_lot() {
     // Assert
     assert_eq!(2, journal.xacts.len());
     let sale_xact = &journal.xacts[1];
-    let posts = journal.get_posts(&sale_xact.post_indices);
-    let sale_post = posts[0];
+    let posts = &sale_xact.posts;
+    let sale_post = &posts[0];
     assert_eq!(sale_post.amount.unwrap().quantity, (-10).into());
     assert_eq!(Quantity::from(-250), sale_post.cost.unwrap().quantity);
 }

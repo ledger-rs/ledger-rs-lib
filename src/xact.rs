@@ -20,7 +20,7 @@ pub struct Xact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
-    pub post_indices: Vec<PostIndex>,
+    // pub post_indices: Vec<PostIndex>,
     pub posts: Vec<Post>,
     pub note: Option<String>,
     // pub balance: Amount,
@@ -33,7 +33,6 @@ impl Xact {
         Self {
             payee: payee.to_owned(),
             note,
-            post_indices: vec![],
             date,
             aux_date: None,
             journal: std::ptr::null(),
@@ -71,7 +70,6 @@ impl Xact {
         Self {
             date: _date,
             payee: _payee,
-            post_indices: vec![],
             note: _note,
             aux_date: _aux_date,
             journal: std::ptr::null(),
@@ -96,7 +94,6 @@ impl Default for Xact {
             date: Default::default(),
             aux_date: Default::default(),
             payee: Default::default(),
-            post_indices: Default::default(),
             posts: Default::default(),
             note: Default::default(),
         }
@@ -112,14 +109,15 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
     // let mut balance: Option<Amount> = None;
     let mut balance = Balance::new();
     // The pointer to the post that has no amount.
-    let mut null_post: Option<PostIndex> = None;
-    let xact = journal.xacts.get(xact_index).expect("xact");
+    // let mut null_post: Option<PostIndex> = None;
+    let mut null_post: *mut Post = std::ptr::null_mut();
+    let xact = journal.xacts.get_mut(xact_index).expect("xact");
 
     // Balance
-    for post_index in &xact.post_indices {
+    for post in &mut xact.posts {
         // must balance?
 
-        let post = journal.posts.get(*post_index).expect("post");
+        // let post = journal.posts.get(*post_index).expect("post");
 
         log::debug!("finalizing {:?}", post);
 
@@ -135,28 +133,28 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 else {panic!("should not happen")};
 
             balance.add(amt);
-        } else if null_post.is_some() {
+        } else if !null_post.is_null() {
             todo!()
         } else {
-            null_post = Some(*post_index);
+            null_post = post as *mut Post;
         }
     }
 
     // If there is only one post, balance against the default account if one has
     // been set.
-    if xact.post_indices.len() == 1 {
+    if xact.posts.len() == 1 {
         todo!("handle")
     }
 
-    if null_post.is_none() && balance.amounts.len() == 2 {
+    if null_post.is_null() && balance.amounts.len() == 2 {
         // When an xact involves two different commodities (regardless of how
         // many posts there are) determine the conversion ratio by dividing the
         // total value of one commodity by the total value of the other.  This
         // establishes the per-unit cost for this post for both commodities.
 
         let mut top_post: Option<&Post> = None;
-        for i in &xact.post_indices {
-            let post = journal.get_post(*i);
+        for post in &xact.posts {
+            // let post = journal.get_post(*i);
             if post.amount.is_some() && top_post.is_none() {
                 top_post = Some(post);
             }
@@ -178,8 +176,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 let comm = x.commodity_index;
                 let per_unit_cost = (*y / *x).abs();
 
-                for i in &xact.post_indices {
-                    let post = journal.posts.get_mut(*i).unwrap();
+                for post in &mut xact.posts {
+                    // let post = journal.posts.get_mut(*i).unwrap();
                     let amt = post.amount.unwrap();
 
                     if amt.commodity_index == comm {
@@ -194,8 +192,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
     // if (has_date())
     {
-        for post_index in &xact.post_indices {
-            let p = journal.posts.get_mut(*post_index).unwrap();
+        for p in &mut xact.posts {
+            // let p = journal.posts.get_mut(*post_index).unwrap();
             if p.cost.is_none() {
                 continue;
             }
@@ -232,17 +230,21 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
     }
 
     // Handle null-amount post.
-    if null_post.is_some() {
+    if !null_post.is_null() {
         // If one post has no value at all, its value will become the inverse of
         // the rest.  If multiple commodities are involved, multiple posts are
         // generated to balance them all.
 
         log::debug!("There was a null posting");
 
-        let Some(null_post_index) = null_post
-            else {panic!("should not happen")};
-        let Some(post) = journal.posts.get_mut(null_post_index)
-            else {panic!("should not happen")};
+        // let Some(null_post_index) = null_post
+        //     else {panic!("should not happen")};
+        // let Some(post) = journal.posts.get_mut(null_post_index)
+        //     else {panic!("should not happen")};
+        let mut post: Post;
+        unsafe {
+            post = null_post.read();
+        }
 
         // use inverse amount
         let amt = if balance.amounts.len() == 1 {
@@ -259,7 +261,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         };
 
         post.amount = Some(amt);
-        null_post = None;
+        // null_post = None;
+        null_post = std::ptr::null_mut();
     }
 
     // TODO: Process Commodities?
