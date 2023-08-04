@@ -1,6 +1,6 @@
 /*!
  * Transaction module
- * 
+ *
  * Transaction, or Xact abbreviated, is the main element of the Journal.
  * It contains contains Postings.
  */
@@ -14,11 +14,14 @@ use crate::{
     post::Post,
 };
 
+#[derive(Debug)]
 pub struct Xact {
+    pub journal: *const Journal,
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
     pub post_indices: Vec<PostIndex>,
+    pub posts: Vec<Post>,
     pub note: Option<String>,
     // pub balance: Amount,
 }
@@ -33,6 +36,8 @@ impl Xact {
             post_indices: vec![],
             date,
             aux_date: None,
+            journal: std::ptr::null(),
+            posts: vec![],
             // balance: Amount::null(),
         }
     }
@@ -69,11 +74,32 @@ impl Xact {
             post_indices: vec![],
             note: _note,
             aux_date: _aux_date,
+            journal: std::ptr::null(),
+            posts: vec![],
         }
     }
 
     pub fn add_note(&mut self, note: &str) {
         self.note = Some(note.into());
+    }
+
+    pub fn add_post(&mut self, mut post: Post) {
+        post.xact = self as *const Xact;
+        self.posts.push(post);
+    }
+}
+
+impl Default for Xact {
+    fn default() -> Self {
+        Self {
+            journal: std::ptr::null(),
+            date: Default::default(),
+            aux_date: Default::default(),
+            payee: Default::default(),
+            post_indices: Default::default(),
+            posts: Default::default(),
+            note: Default::default(),
+        }
     }
 }
 
@@ -185,9 +211,8 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 // todo: virtual cost does not create a price
 
                 let moment = xact.date.unwrap().and_hms_opt(0, 0, 0).unwrap();
-                let (breakdown, new_price_opt) = journal
-                    .commodity_pool
-                    .exchange(amt, cost, false, moment);
+                let (breakdown, new_price_opt) =
+                    journal.commodity_pool.exchange(amt, cost, false, moment);
                 // add price(s)
                 if let Some(new_price) = new_price_opt {
                     journal.commodity_pool.add_price_struct(new_price);
@@ -239,4 +264,24 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
     // TODO: Process Commodities?
     // TODO: Process Account records from Posts.
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::post::Post;
+
+    use super::Xact;
+
+    #[test]
+    fn test_add_post() {
+        let mut post = Post::new(0, 0, None, None, None);
+        let mut xact = Xact::default();
+
+        // act
+        xact.add_post(post);
+
+        // assert
+        assert_eq!(1, xact.posts.len());
+        assert!(!xact.posts[0].xact.is_null());
+    }
 }

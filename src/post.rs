@@ -5,16 +5,17 @@
 use crate::{
     account::Account,
     amount::Amount,
-    journal::{AccountIndex, XactIndex},
+    journal::{AccountIndex, XactIndex}, xact::Xact,
 };
 
 #[derive(Debug, PartialEq)]
 pub struct Post {
     /// Pointer to the Account.
-    account: *const Account,
+    pub account: *const Account,
     pub account_index: AccountIndex,
     /// Pointer to the Xact.
-    pub xact: XactIndex,
+    pub xact: *const Xact,
+    pub xact_index: XactIndex,
 
     pub amount: Option<Amount>,
     pub cost: Option<Amount>,
@@ -37,7 +38,8 @@ impl Post {
         Self {
             account: std::ptr::null(),
             account_index,
-            xact: xact_index,
+            xact_index,
+            xact: std::ptr::null(),
             amount,
             cost,
             note: match note {
@@ -57,10 +59,11 @@ impl Default for Post {
         Self {
             account: std::ptr::null(),
             account_index: Default::default(),
-            xact: Default::default(),
+            xact_index: Default::default(),
             amount: Default::default(),
             cost: Default::default(),
             note: Default::default(),
+            xact: std::ptr::null(),
         }
     }
 }
