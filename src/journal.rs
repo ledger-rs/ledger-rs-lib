@@ -58,21 +58,9 @@ impl Journal {
         self.xacts.len() - 1
     }
 
-    pub fn add_post(&mut self, post: Post) -> PostIndex {
-        let i = self.posts.len();
-        self.posts.push(post);
-        i
-    }
-
     pub fn get_account(&self, index: AccountIndex) -> &Account {
         &self.accounts[index]
     }
-
-    /// A convenience method that returns a vector of Account references
-    /// for a given vector of indices, ie from Posts.
-    // pub fn get_accounts(&self, account_indices: &Vec<AccountIndex>) -> Vec<&Account> {
-
-    // }
 
     pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
         self.commodity_pool.get_commodity(index)
@@ -87,14 +75,6 @@ impl Journal {
 
     pub fn get_post(&self, index: PostIndex) -> &Post {
         &self.posts[index]
-    }
-
-    pub fn get_post_mut(&mut self, index: PostIndex) -> &mut Post {
-        self.posts.get_mut(index).unwrap()
-    }
-
-    pub fn get_posts(&self, indices: &Vec<PostIndex>) -> Vec<&Post> {
-        indices.iter().map(|i| &self.posts[*i]).collect()
     }
 
     pub fn get_post_account(&self, post: &Post) -> &Account {
@@ -282,21 +262,6 @@ mod tests {
         let actual = journal.find_account("Assets:Cash");
 
         assert!(actual.is_some());
-    }
-
-    #[test]
-    fn test_getting_multiple_posts() {
-        let mut journal = Journal::new();
-        let p1 = Post::new(10, 11, None, None, None);
-        let i1 = journal.add_post(p1);
-        let p2 = Post::new(20, 11, None, None, None);
-        let i2 = journal.add_post(p2);
-
-        let actual = journal.get_posts(&vec![i1, i2]);
-
-        assert_eq!(2, actual.len());
-        assert_eq!(10, actual[0].account_index);
-        assert_eq!(20, actual[1].account_index);
     }
 
     #[test]
