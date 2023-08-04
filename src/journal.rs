@@ -112,7 +112,7 @@ impl Journal {
     /// Retrieves posts for the transaction with the given index.
     pub fn get_xact_posts(&self, index: XactIndex) -> Vec<&Post> {
         let xact = &self.xacts[index];
-        self.get_posts(&xact.posts)
+        self.get_posts(&xact.post_indices)
     }
 
     pub fn register_account(&mut self, name: &str) -> Option<AccountIndex> {

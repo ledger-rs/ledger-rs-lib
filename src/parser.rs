@@ -355,13 +355,13 @@ impl<'j, T: Read> Parser<'j, T> {
         }
 
         let xact = self.journal.xacts.get(xact_index).unwrap();
-        if xact.posts.is_empty() {
+        if xact.post_indices.is_empty() {
             // The first comment. Add to the xact.
             let xact_mut = self.journal.xacts.get_mut(xact_index).unwrap();
             xact_mut.add_note(note);
         } else {
             // Post comment. Add to the previous posting.
-            let last_post_index = xact.posts.last().unwrap();
+            let last_post_index = xact.post_indices.last().unwrap();
             let post = self.journal.get_post_mut(*last_post_index);
             post.add_note(note);
         }
@@ -418,7 +418,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
     {
         // add Post to Xact.
         let xact = journal.xacts.get_mut(xact_index).unwrap();
-        xact.posts.push(post_index);
+        xact.post_indices.push(post_index);
     }
 }
 
@@ -514,14 +514,14 @@ mod full_tests {
 
         let xact = journal.xacts.first().unwrap();
         assert_eq!("Supermarket", xact.payee);
-        assert_eq!(2, xact.posts.len());
+        assert_eq!(2, xact.post_indices.len());
 
-        let post1 = &journal.posts[xact.posts[0]];
+        let post1 = &journal.posts[xact.post_indices[0]];
         assert_eq!("Expenses", journal.get_account(post1.account_index).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
 
-        let post2 = &journal.posts[xact.posts[1]];
+        let post2 = &journal.posts[xact.post_indices[1]];
         assert_eq!("Assets", journal.get_account(post2.account_index).name);
     }
 
@@ -572,16 +572,16 @@ mod parser_tests {
 
         let xact = journal.xacts.first().unwrap();
         assert_eq!("Supermarket", xact.payee);
-        assert_eq!(2, xact.posts.len());
+        assert_eq!(2, xact.post_indices.len());
 
         // let exp_account = journal.get
-        let post1 = &journal.posts[xact.posts[0]];
+        let post1 = &journal.posts[xact.post_indices[0]];
         assert_eq!("Expenses", journal.get_account(post1.account_index).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
-        let post2 = &journal.posts[xact.posts[1]];
+        let post2 = &journal.posts[xact.post_indices[1]];
         assert_eq!("Assets", journal.get_account(post2.account_index).name);
     }
 
@@ -607,7 +607,7 @@ mod parser_tests {
             assert_eq!("Supermarket", xact.payee);
 
             // Posts
-            let posts = journal.get_posts(&xact.posts);
+            let posts = journal.get_posts(&xact.post_indices);
             assert_eq!(2, posts.len());
 
             let acc1 = journal.get_account(posts[0].account_index);
@@ -637,7 +637,7 @@ mod parser_tests {
 
         let xact = journal.xacts.first().unwrap();
         assert_eq!("Supermarket", xact.payee);
-        let posts = journal.get_posts(&xact.posts);
+        let posts = journal.get_posts(&xact.post_indices);
         assert_eq!(2, posts.len());
 
         // post 1
@@ -740,7 +740,7 @@ mod posting_parsing_tests {
 
         // Assert the price of "10 VEUR @ 12.75 EUR" must to be 127.50 EUR
         let xact = j.xacts.get(0).unwrap();
-        let post = j.get_post(xact.posts[0]);
+        let post = j.get_post(xact.post_indices[0]);
         let cost = post.cost.unwrap();
         assert_eq!(cost.quantity, 127.5.into());
 

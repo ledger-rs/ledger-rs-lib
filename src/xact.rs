@@ -18,7 +18,7 @@ pub struct Xact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
-    pub posts: Vec<PostIndex>,
+    pub post_indices: Vec<PostIndex>,
     pub note: Option<String>,
     // pub balance: Amount,
 }
@@ -30,7 +30,7 @@ impl Xact {
         Self {
             payee: payee.to_owned(),
             note,
-            posts: vec![],
+            post_indices: vec![],
             date,
             aux_date: None,
             // balance: Amount::null(),
@@ -66,7 +66,7 @@ impl Xact {
         Self {
             date: _date,
             payee: _payee,
-            posts: vec![],
+            post_indices: vec![],
             note: _note,
             aux_date: _aux_date,
         }
@@ -90,7 +90,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
     let xact = journal.xacts.get(xact_index).expect("xact");
 
     // Balance
-    for post_index in &xact.posts {
+    for post_index in &xact.post_indices {
         // must balance?
 
         let post = journal.posts.get(*post_index).expect("post");
@@ -118,7 +118,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
     // If there is only one post, balance against the default account if one has
     // been set.
-    if xact.posts.len() == 1 {
+    if xact.post_indices.len() == 1 {
         todo!("handle")
     }
 
@@ -129,7 +129,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
         // establishes the per-unit cost for this post for both commodities.
 
         let mut top_post: Option<&Post> = None;
-        for i in &xact.posts {
+        for i in &xact.post_indices {
             let post = journal.get_post(*i);
             if post.amount.is_some() && top_post.is_none() {
                 top_post = Some(post);
@@ -152,7 +152,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
                 let comm = x.commodity_index;
                 let per_unit_cost = (*y / *x).abs();
 
-                for i in &xact.posts {
+                for i in &xact.post_indices {
                     let post = journal.posts.get_mut(*i).unwrap();
                     let amt = post.amount.unwrap();
 
@@ -168,7 +168,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
     // if (has_date())
     {
-        for post_index in &xact.posts {
+        for post_index in &xact.post_indices {
             let p = journal.posts.get_mut(*post_index).unwrap();
             if p.cost.is_none() {
                 continue;
