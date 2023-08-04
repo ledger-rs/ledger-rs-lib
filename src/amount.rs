@@ -9,12 +9,13 @@ use std::{
 
 use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
-use crate::pool::CommodityIndex;
+use crate::{pool::CommodityIndex, commodity::Commodity};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Amount {
     pub quantity: Quantity,
     pub commodity_index: Option<CommodityIndex>,
+    pub commodity: *const Commodity,
 }
 
 impl Amount {
@@ -22,6 +23,7 @@ impl Amount {
         Self {
             quantity,
             commodity_index,
+            commodity: std::ptr::null(),
         }
     }
 
@@ -47,6 +49,7 @@ impl Amount {
         let amount = Self {
             quantity: quantity_result.unwrap(),
             commodity_index,
+            commodity: std::ptr::null(),
         };
 
         Some(amount)
@@ -66,6 +69,7 @@ impl Amount {
         Self {
             quantity: other.quantity,
             commodity_index: other.commodity_index,
+            commodity: std::ptr::null(),
         }
     }
 
@@ -73,6 +77,7 @@ impl Amount {
         Self {
             quantity: 0.into(),
             commodity_index: None,
+            commodity: std::ptr::null(),
         }
     }
 

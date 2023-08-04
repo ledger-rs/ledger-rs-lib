@@ -814,6 +814,7 @@ mod amount_parsing_tests {
         let expected = Amount {
             quantity: 20.into(),
             commodity_index: None,
+            commodity: std::ptr::null(),
         };
         let actual = Amount::parse("20", None).unwrap();
 
@@ -826,6 +827,7 @@ mod amount_parsing_tests {
         let expected = Amount {
             quantity: (-20).into(),
             commodity_index: None,
+            commodity: std::ptr::null(),
         };
 
         assert_eq!(expected, actual);
@@ -836,6 +838,7 @@ mod amount_parsing_tests {
         let expected = Amount {
             quantity: 20.into(),
             commodity_index: Some(CommodityIndex::new(0)),
+            commodity: std::ptr::null(),
         };
         let mut journal = setup();
 
@@ -861,6 +864,7 @@ mod amount_parsing_tests {
         let expected = Amount {
             quantity: (-20).into(),
             commodity_index: Some(CommodityIndex::new(0)),
+            commodity: std::ptr::null(),
         };
         let mut journal = setup();
 
