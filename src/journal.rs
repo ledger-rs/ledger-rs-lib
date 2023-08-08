@@ -52,9 +52,10 @@ impl Journal {
         self.accounts.len() - 1
     }
 
-    pub fn add_xact(&mut self, xact: Xact) -> XactIndex {
+    pub fn add_xact(&mut self, xact: Xact) -> &Xact {
         self.xacts.push(xact);
-        self.xacts.len() - 1
+        //self.xacts.len() - 1
+        self.xacts.last().unwrap()
     }
 
     pub fn all_posts(&self) -> Vec<&Post> {

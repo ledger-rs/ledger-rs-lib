@@ -156,7 +156,7 @@ impl<'j, T: Read> Parser<'j, T> {
 
             '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
                 // Starts with date/number.
-                self.xact_directive();
+                let _ = self.xact_directive();
             }
 
             ' ' | '\t' => {
@@ -248,11 +248,10 @@ impl<'j, T: Read> Parser<'j, T> {
         let tokens = scanner::tokenize_xact_header(&self.buffer);
         let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
 
-        let ptr = &xact as *const Xact;
         // Add xact to the journal
-        self.journal.add_xact(xact);
+        let new_ref = self.journal.add_xact(xact);
 
-        ptr
+        new_ref
     }
 
     fn xact_directive(&mut self) -> Result<(), Error> {
