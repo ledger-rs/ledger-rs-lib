@@ -14,7 +14,6 @@ use crate::commodity::Commodity;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Amount {
     pub quantity: Quantity,
-    // pub commodity_index: Option<CommodityIndex>,
     pub(crate) commodity: *const Commodity,
 }
 
@@ -36,30 +35,6 @@ impl Amount {
         result.quantity.set_sign_positive();
         result
     }
-
-    /// Creates a new Amount instance.
-    /// Parses the quantity only and uses the given commodity index.
-    // pub fn parse(quantity: &str, commodity: Option<*const Commodity>) -> Option<Self> {
-    //     if quantity.is_empty() {
-    //         return None;
-    //     }
-
-    //     let quantity_result = Quantity::from_str(quantity);
-    //     if quantity_result.is_err() {
-    //         return None;
-    //     }
-
-    //     let amount = Self {
-    //         quantity: quantity_result.unwrap(),
-    //         commodity: if commodity.is_some() {
-    //             commodity.unwrap()
-    //         } else {
-    //             std::ptr::null()
-    //         },
-    //     };
-
-    //     Some(amount)
-    // }
 
     pub fn copy_from(other: &Amount) -> Self {
         Self {
@@ -139,7 +114,7 @@ impl Amount {
     }
 }
 
-impl std::ops::Add<Amount> for Amount {
+impl Add<Amount> for Amount {
     type Output = Amount;
 
     fn add(self, rhs: Amount) -> Self::Output {
@@ -227,9 +202,6 @@ impl MulAssign<Amount> for Amount {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Quantity(rust_decimal::Decimal);
-
-// const ZERO: Decimal = Decimal(rust_decimal::Decimal::ZERO);
-// const ONE: Decimal = Decimal(rust_decimal::Decimal::ONE);
 
 impl Quantity {
     pub const ZERO: Quantity = Quantity(rust_decimal::Decimal::ZERO);

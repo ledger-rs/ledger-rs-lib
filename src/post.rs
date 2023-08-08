@@ -14,8 +14,8 @@ pub struct Post {
     pub account: *const Account,
     pub account_index: AccountIndex,
     /// Pointer to the Xact.
-    pub xact: *const Xact,
-    pub xact_index: XactIndex,
+    pub xact_ptr: *const Xact,
+    // pub xact_index: XactIndex,
 
     pub amount: Option<Amount>,
     pub cost: Option<Amount>,
@@ -30,7 +30,7 @@ impl Post {
     /// Creates a Post from post tokens.
     pub fn new(
         account_index: AccountIndex,
-        xact_index: XactIndex,
+        xact_ptr: *const Xact,
         amount: Option<Amount>,
         cost: Option<Amount>,
         note: Option<&str>,
@@ -38,8 +38,7 @@ impl Post {
         Self {
             account: std::ptr::null(),
             account_index,
-            xact_index,
-            xact: std::ptr::null(),
+            xact_ptr,
             amount,
             cost,
             note: match note {
@@ -59,11 +58,10 @@ impl Default for Post {
         Self {
             account: std::ptr::null(),
             account_index: Default::default(),
-            xact_index: Default::default(),
+            xact_ptr: std::ptr::null(),
             amount: Default::default(),
             cost: Default::default(),
             note: Default::default(),
-            xact: std::ptr::null(),
         }
     }
 }

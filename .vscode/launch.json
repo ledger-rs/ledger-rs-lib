@@ -7,16 +7,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library",
+            "name": "Debug unit tests in library 'ledger-rs-lib'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=ledger-rs-prototype"
+                    "--package=ledger-rs-lib"
                 ],
                 "filter": {
-                    "name": "ledger-rs-prototype",
+                    "name": "ledger-rs-lib",
                     "kind": "lib"
                 }
             },
@@ -26,15 +26,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable",
+            "name": "Debug executable 'ledger-rs-lib'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=ledger-rs-prototype",
-                    "--package=ledger-rs-prototype"
+                    "--bin=ledger-rs-lib",
+                    "--package=ledger-rs-lib"
                 ],
                 "filter": {
-                    "name": "ledger-rs-prototype",
+                    "name": "ledger-rs-lib",
                     "kind": "bin"
                 }
             },
@@ -44,17 +44,150 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable",
+            "name": "Debug unit tests in executable 'ledger-rs-lib'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=ledger-rs-prototype",
-                    "--package=ledger-rs-prototype"
+                    "--bin=ledger-rs-lib",
+                    "--package=ledger-rs-lib"
                 ],
                 "filter": {
-                    "name": "ledger-rs-prototype",
+                    "name": "ledger-rs-lib",
                     "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'accounts-tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=accounts-tests",
+                    "--package=ledger-rs-lib"
+                ],
+                "filter": {
+                    "name": "accounts-tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'ext-parser-tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=ext-parser-tests",
+                    "--package=ledger-rs-lib"
+                ],
+                "filter": {
+                    "name": "ext-parser-tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'ext-report-tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=ext-report-tests",
+                    "--package=ledger-rs-lib"
+                ],
+                "filter": {
+                    "name": "ext-report-tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'functional-tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=functional-tests",
+                    "--package=ledger-rs-lib"
+                ],
+                "filter": {
+                    "name": "functional-tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'poc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=poc",
+                    "--package=ledger-rs-lib"
+                ],
+                "filter": {
+                    "name": "poc",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'tests-for-wasm'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=tests-for-wasm",
+                    "--package=ledger-rs-lib"
+                ],
+                "filter": {
+                    "name": "tests-for-wasm",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'utility-tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=utility-tests",
+                    "--package=ledger-rs-lib"
+                ],
+                "filter": {
+                    "name": "utility-tests",
+                    "kind": "test"
                 }
             },
             "args": [],

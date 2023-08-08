@@ -81,7 +81,7 @@ impl Xact {
     }
 
     pub fn add_post(&mut self, mut post: Post) {
-        post.xact = self as *const Xact;
+        post.xact_ptr = self as *const Xact;
         self.posts.push(post);
     }
 }
@@ -104,13 +104,17 @@ impl Default for Xact {
 ///
 /// `bool xact_base_t::finalize()`
 ///
-pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
+pub fn finalize(xact_ptr: *const Xact, journal: &mut Journal) {
     // let mut balance: Option<Amount> = None;
     let mut balance = Balance::new();
     // The pointer to the post that has no amount.
     // let mut null_post: Option<PostIndex> = None;
     let mut null_post: *mut Post = std::ptr::null_mut();
-    let xact = journal.xacts.get_mut(xact_index).expect("xact");
+    // let xact = journal.xacts.get_mut(xact_index).expect("xact");
+    let xact: &mut Xact;
+    unsafe {
+        xact = &mut *(xact_ptr.cast_mut());
+    }
 
     // Balance
     for post in &mut xact.posts {
@@ -276,7 +280,7 @@ mod tests {
 
     #[test]
     fn test_add_post() {
-        let mut post = Post::new(0, 0, None, None, None);
+        let post = Post::new(0, std::ptr::null(), None, None, None);
         let mut xact = Xact::default();
 
         // act
@@ -284,6 +288,6 @@ mod tests {
 
         // assert
         assert_eq!(1, xact.posts.len());
-        assert!(!xact.posts[0].xact.is_null());
+        assert!(!xact.posts[0].xact_ptr.is_null());
     }
 }

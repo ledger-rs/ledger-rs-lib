@@ -331,9 +331,9 @@ mod tests {
         // Arrange
         let mut hist = CommodityHistory::new();
         let eur = Commodity::new("EUR");
-        let eur_index = hist.add_commodity(&eur);
+        let _eur_index = hist.add_commodity(&eur);
         let usd = Commodity::new("USD");
-        let usd_index = hist.add_commodity(&usd);
+        let _usd_index = hist.add_commodity(&usd);
         let local = Local::now();
         let today = local.naive_local();
         let price = Amount::new(25.into(), Some(&usd));

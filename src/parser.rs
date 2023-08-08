@@ -243,15 +243,19 @@ impl<'j, T: Read> Parser<'j, T> {
             .parse_price_directive(&self.buffer);
     }
 
-    fn create_xact(&mut self) -> XactIndex {
+    fn create_xact(&mut self) -> *const Xact {
         let tokens = scanner::tokenize_xact_header(&self.buffer);
         let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
+        
+        let ptr = &xact as *const Xact;
         // Add xact to the journal
-        self.journal.add_xact(xact)
+        self.journal.add_xact(xact);
+
+        ptr
     }
 
-    fn xact_directive(&mut self) {
-        let xact_index = self.create_xact();
+    fn xact_directive(&mut self) -> Result<(), Error> {
+        let xact_ptr = self.create_xact() as *mut Xact;
 
         // Read the Xact contents (Posts, Comments, etc.)
         // Read until separator (empty line).
@@ -287,10 +291,10 @@ impl<'j, T: Read> Parser<'j, T> {
                             // Process the Xact content line. Could be a Comment or a Post.
                             match input.chars().peekable().peek() {
                                 Some(';') => {
-                                    self.parse_trailing_note(xact_index);
+                                    self.parse_trailing_note(xact_ptr);
                                 }
                                 _ => {
-                                    parse_post(input, xact_index, &mut self.journal);
+                                    parse_post(input, xact_ptr, &mut self.journal)?;
                                 }
                             }
                         }
@@ -310,7 +314,9 @@ impl<'j, T: Read> Parser<'j, T> {
         }
 
         // "finalize" transaction
-        crate::xact::finalize(xact_index, &mut self.journal);
+        crate::xact::finalize(xact_ptr, &mut self.journal);
+
+        Ok(())
     }
 
     fn include_directive(&self, argument: &str) {
@@ -351,7 +357,7 @@ impl<'j, T: Read> Parser<'j, T> {
     /// xact_index = The index of the current transaction, being parsed.
     /// The note is added either to the transaction or the last post, based on it's position.
     ///
-    fn parse_trailing_note(&mut self, xact_index: XactIndex) {
+    fn parse_trailing_note(&mut self, xact_ptr: *mut Xact) {
         // This is a trailing note, and possibly a metadata info tag
         // It is added to the previous element (xact/post).
 
@@ -362,11 +368,15 @@ impl<'j, T: Read> Parser<'j, T> {
             return;
         }
 
-        let xact = self.journal.xacts.get_mut(xact_index).unwrap();
+        // let xact = self.journal.xacts.get_mut(xact_index).unwrap();
+        let xact: &mut Xact;
+        unsafe {
+            xact = &mut *xact_ptr;
+        }
         if xact.posts.is_empty() {
             // The first comment. Add to the xact.
-            let xact_mut = self.journal.xacts.get_mut(xact_index).unwrap();
-            xact_mut.add_note(note);
+            // let xact_mut = self.journal.xacts.get_mut(xact_index).unwrap();
+            xact.add_note(note);
         } else {
             // Post comment. Add to the previous posting.
             // let last_post_index = xact.posts.last().unwrap();
@@ -379,7 +389,7 @@ impl<'j, T: Read> Parser<'j, T> {
 
 /// Parses Post from the buffer, adds it to the Journal and links
 /// to Xact, Account, etc.
-fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) -> Result<(), Error> {
+fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Result<(), Error> {
     let tokens = scanner::scan_post(input);
 
     // Create Account, add to collection
@@ -417,8 +427,9 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) -> Resu
     let post: Post;
     {
         // Create Post, link Xact, Account, Commodity
-        post = Post::new(account_index, xact_index, Some(amount), Some(cost), note);
+        post = Post::new(account_index, xact_ptr, Some(amount), Some(cost), note);
         // post_index = journal.add_post(post);
+        
     }
 
     // add Post to Account.posts
@@ -430,7 +441,11 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) -> Resu
 
     {
         // add Post to Xact.
-        let xact = journal.xacts.get_mut(xact_index).unwrap();
+        // let xact = journal.xacts.get_mut(xact_ptr).unwrap();
+        let xact: &mut Xact;
+        unsafe {
+            xact = &mut *(xact_ptr.cast_mut());
+        }
         // xact.post_indices.push(post_index);
         xact.add_post(post);
     }
@@ -839,7 +854,7 @@ mod amount_parsing_tests {
 
         // Act
 
-        parse_post("  Assets  20 EUR", 0, &mut journal);
+        parse_post("  Assets  20 EUR", std::ptr::null(), &mut journal);
         let post = journal.posts.first().unwrap();
         let Some(amount) = &post.amount else { todo!() }; // else None;
 
@@ -856,9 +871,10 @@ mod amount_parsing_tests {
         let eur = Commodity::new("EUR");
         let expected = Amount::new((-20).into(), Some(&eur));
         let mut journal = setup();
+        let xact = journal.xacts.get(0).unwrap();
 
         // Act
-        parse_post("  Assets  -20 EUR", 0, &mut journal);
+        parse_post("  Assets  -20 EUR", xact, &mut journal);
 
         // Assert
         let post = journal.posts.first().unwrap();
@@ -873,9 +889,10 @@ mod amount_parsing_tests {
     fn test_full_w_commodity_separated() {
         // Arrange
         let mut journal = setup();
+        let xact = journal.xacts.get(0).unwrap();
 
         // Act
-        parse_post("  Assets  -20000.00 EUR", 0, &mut journal);
+        parse_post("  Assets  -20000.00 EUR", xact, &mut journal);
         let post = journal.posts.first().unwrap();
         let Some(ref amount) = post.amount else { panic!()};
 
@@ -888,9 +905,10 @@ mod amount_parsing_tests {
     fn test_full_commodity_first() {
         // Arrange
         let mut journal = setup();
+        let xact = journal.xacts.get(0).unwrap();
 
         // Act
-        parse_post("  Assets  A$-20000.00", 0, &mut journal);
+        let _ = parse_post("  Assets  A$-20000.00", xact, &mut journal);
         let post = journal.posts.first().unwrap();
         let Some(ref amount) = post.amount else { panic!()};
 
