@@ -74,10 +74,11 @@ pub fn parse_amount_parts(
     journal: &mut Journal,
 ) -> Result<Amount, Error> {
     // Create Commodity, add to collection
-    let commodity_opt = journal.commodity_pool.find_or_create(commodity, None);
-    let quantity = Quantity::from_str(quantity)?;
+    let commodity_ptr = journal.commodity_pool.find_or_create(commodity, None);
+    
+    let quantity = Quantity::from_str(quantity).unwrap();
 
-    Ok(Amount::new(quantity, Some(commodity_opt)))
+    Ok(Amount::new(quantity, Some(commodity_ptr)))
 }
 
 pub(crate) struct Parser<'j, T: Read> {

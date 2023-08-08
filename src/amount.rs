@@ -207,8 +207,13 @@ impl Quantity {
     pub const ZERO: Quantity = Quantity(rust_decimal::Decimal::ZERO);
     pub const ONE: Quantity = Quantity(rust_decimal::Decimal::ONE);
 
-    pub fn from_str(str: &str) -> Result<Self, anyhow::Error> {
-        Ok(Self(rust_decimal::Decimal::from_str_exact(str)?))
+    pub fn from_str(str: &str) -> Option<Self> {
+        let parsed = rust_decimal::Decimal::from_str_exact(str);
+        if parsed.is_err() {
+            return None;
+        }
+
+        Some(Self(parsed.unwrap()))
     }
 
     pub fn is_sign_positive(&self) -> bool {

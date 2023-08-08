@@ -32,12 +32,16 @@ impl Annotation {
 
     pub fn parse(date: &str, quantity: &str, commodity_symbol: &str, journal: &mut Journal) -> Result<Self, Error> {
         // parse amount
-        let quantity = Quantity::from_str(quantity)?;
         let commodity = journal.commodity_pool.find_or_create(commodity_symbol, None);
 
-        let amount = Amount::new(quantity, Some(commodity));
+        let price = if let Some(quantity) = Quantity::from_str(quantity) {
+            Some(Amount::new(quantity, Some(commodity)))
+        } else {
+            None
+        };
+        
         let result = Self {
-            price: Some(amount),
+            price: price,
             date: match date.is_empty() {
                 true => None,
                 false => {

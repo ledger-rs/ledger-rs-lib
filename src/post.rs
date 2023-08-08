@@ -5,7 +5,7 @@
 use crate::{
     account::Account,
     amount::Amount,
-    journal::{AccountIndex, XactIndex}, xact::Xact,
+    journal::AccountIndex, xact::Xact,
 };
 
 #[derive(Debug, PartialEq)]

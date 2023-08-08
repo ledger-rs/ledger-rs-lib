@@ -5,7 +5,7 @@
 
 use std::io::Cursor;
 
-use ledger_rs_lib::journal::{Journal, self};
+use ledger_rs_lib::journal::Journal;
 
 /// TODO: complete the functionality and the test
 //#[test]
