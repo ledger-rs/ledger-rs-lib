@@ -4,7 +4,7 @@
  * The Commodities collection contains all the commodities.
  *
  */
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc, borrow::BorrowMut};
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use petgraph::stable_graph::NodeIndex;
@@ -23,13 +23,14 @@ pub type CommodityIndex = NodeIndex;
 
 pub struct CommodityPool {
     /// Map (symbol, commodity)
-    pub(crate) commodities: HashMap<String, NodeIndex>,
+    // pub(crate) commodities: HashMap<String, NodeIndex>,
+    pub(crate) commodities: HashMap<String, Commodity>,
+    // pub(crate) commodities: HashMap<String, Rc<Commodity>>,
     /// Commodity annotations. symbol, annotation
     pub(crate) annotated_commodities: HashMap<String, Annotation>,
     pub(crate) commodity_history: CommodityHistory,
-    // null_commodity: Commodity
-    // default_commodity: Commodity
-
+    null_commodity: *const Commodity,
+    default_commodity: *const Commodity,
     // pricedb
 }
 
@@ -39,12 +40,14 @@ impl CommodityPool {
             commodities: HashMap::new(),
             annotated_commodities: HashMap::new(),
             commodity_history: CommodityHistory::new(),
+            null_commodity: std::ptr::null(),
+            default_commodity: std::ptr::null(),
         }
     }
 
     pub fn add_price_struct(&mut self, price: Price) {
         self.commodity_history
-            .add_price(price.commodity_index, price.datetime, price.price);
+            .add_price(price.get_commodity(), price.datetime, price.price);
     }
 
     /// Adds a new price point.
@@ -52,22 +55,17 @@ impl CommodityPool {
     /// commodity_index = index of the commodity, i.e. `EUR`
     /// date = date of pricing
     /// price: Amount = the price of the commodity, i.e. `1.12 USD`
-    pub fn add_price(
-        &mut self,
-        commodity_index: CommodityIndex,
-        datetime: NaiveDateTime,
-        price: Amount,
-    ) {
-        self.commodity_history
-            .add_price(commodity_index, datetime, price)
+    pub fn add_price(&mut self, commodity: *const Commodity, datetime: NaiveDateTime, price: Amount) {
+        self.commodity_history.add_price(commodity, datetime, price)
     }
 
     /// Creates a new Commodity for the given Symbol.
-    pub fn create(&mut self, symbol: &str, annotation: Option<Annotation>) -> CommodityIndex {
+    pub fn create(&mut self, symbol: &str, annotation: Option<Annotation>) -> *const Commodity {
         // todo: handle double quotes
 
+        
         let mut c = Commodity::new(symbol);
-
+        
         // Annotation
         if let Some(ann) = annotation {
             // Create an annotated commodity.
@@ -79,35 +77,44 @@ impl CommodityPool {
             self.annotated_commodities.insert(symbol.to_owned(), ann);
         }
 
-        // add to price history graph.
-        let i = self.commodity_history.add_commodity(c);
+        // add to map
+        // self.commodities.insert(symbol.to_string(), Rc::new(c));
+        // let x = &mut c as *mut Commodity;
+        // self.commodities.insert(symbol.to_string(), c);
+        let mut_cdty = self.commodities.entry(symbol.to_owned())
+            .or_insert(c);
 
+        // let mut_cdty = self.commodities.get_mut(symbol).unwrap();
+        // add to price history graph.
+        let i = self.commodity_history.add_commodity(mut_cdty as *mut Commodity);
+
+        mut_cdty.graph_index = Some(i);
         // Add index to map.
-        self.commodities.insert(symbol.to_owned(), i);
+        // self.commodities.insert(symbol.to_owned(), i);
 
         log::debug!("Commodity {:?} created. index: {:?}", symbol, i);
 
-        i
+        // let x = self.commodities.get(symbol).unwrap();
+        // x
+        mut_cdty as *const Commodity
     }
 
-    pub fn find_index(&self, symbol: &str) -> Option<&CommodityIndex> {
-        self.commodities.get(symbol)
+    pub fn find_index(&self, symbol: &str) -> Option<CommodityIndex> {
+        let x = self.commodities.get(symbol);
+        x.unwrap().graph_index
     }
 
     pub fn find_commodity(&self, symbol: &str) -> Option<&Commodity> {
-        match self.commodities.get(symbol) {
-            Some(i) => Some(self.commodity_history.get_commodity(*i)),
-            None => None,
-        }
+        self.commodities.get(symbol)
     }
 
     /// Finds a commodity with the given symbol, or creates one.
-    /// 
+    ///
     pub fn find_or_create(
         &mut self,
         symbol: &str,
         annotation: Option<Annotation>,
-    ) -> Option<CommodityIndex> {
+    ) -> Option<*const Commodity> {
         if symbol.is_empty() {
             return None;
         }
@@ -115,7 +122,7 @@ impl CommodityPool {
         // Try using entry.
         // self.commodities.entry(symbol).
 
-        if let Some(i) = self.commodities.get(symbol) {
+        if let Some(c) = self.commodities.get(symbol) {
             // check if annotation exists and add if not.
             if annotation.is_some() && !self.annotated_commodities.contains_key(symbol) {
                 // append annotation
@@ -123,25 +130,26 @@ impl CommodityPool {
                     .insert(symbol.to_owned(), annotation.unwrap());
             }
 
-            Some(*i)
+            Some(c)
         } else {
-            Some(self.create(symbol, annotation))
+            todo!("complete")
+            // Some(self.create(symbol, annotation))
         }
     }
 
-    pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
+    pub fn get_by_index(&self, index: CommodityIndex) -> &Commodity {
         self.commodity_history.get_commodity(index)
     }
 
     /// This is the exchange() method but, due to mutability of references, it **does not**
     /// create new prices. This needs to be explicitly done by the caller before/aftert the exchange.
-    /// 
+    ///
     /// Instead of passing the `add_price` parameter, invoke `add_price` on journal's commodity_pool.
     /// `journal.commodity_pool.add_price_struct(new_price);`
     ///
     /// Returns (CostBreakdown, New Price)
     /// The New Price is the price that needs to be added to the Commodity Pool.
-    /// 
+    ///
     /// "Exchange one commodity for another, while recording the factored price."
     ///
     pub fn exchange(
@@ -155,8 +163,8 @@ impl CommodityPool {
 
         // annotations
         let annotation_opt: Option<&Annotation> =
-            if let Some(commodity_index) = amount.commodity_index {
-                let commodity = self.get_commodity(commodity_index);
+            if let Some(commodity_index) = amount.get_commodity().unwrap().graph_index {
+                let commodity = self.get_by_index(commodity_index);
                 self.annotated_commodities.get(&commodity.symbol)
             } else {
                 None
@@ -168,8 +176,8 @@ impl CommodityPool {
             (*cost / *amount).abs()
         };
 
-        if cost.commodity_index.is_none() {
-            per_unit_cost.commodity_index = None;
+        if cost.get_commodity().is_none() {
+            per_unit_cost.remove_commodity();
         }
 
         // DEBUG("commodity.prices.add",
@@ -179,14 +187,14 @@ impl CommodityPool {
         // base commodity.
         let new_price: Option<Price>;
         // if add_price
-        if !per_unit_cost.is_zero() && amount.commodity_index != per_unit_cost.commodity_index {
+        if !per_unit_cost.is_zero() && amount.get_commodity() != per_unit_cost.get_commodity() {
             // self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
             // Instead, return the new price and have the caller store it.
-            new_price = Some(Price {
-                commodity_index: amount.commodity_index.unwrap(),
-                datetime: moment,
-                price: per_unit_cost,
-            });
+            new_price = Some(Price::new(
+                amount.get_commodity().unwrap(),
+                moment,
+                per_unit_cost,
+            ));
         } else {
             new_price = None;
         }
@@ -238,14 +246,15 @@ impl CommodityPool {
         let quantity = Quantity::from_str(tokens[3]).expect("quantity parsed");
 
         // cost commodity
-        let cost_commodity_index = self.find_or_create(tokens[4], None);
+        let cost_commodity = self.find_or_create(tokens[4], None);
 
         // cost
-        let cost = Amount::new(quantity, cost_commodity_index);
+        let cost = Amount::new(quantity, cost_commodity);
 
         // Add price for commodity
-        self.commodity_history
-            .add_price(commodity_index, datetime, cost);
+        todo!("fix")
+        // self.commodity_history
+        //     .add_price(commodity_index, datetime, cost);
     }
 }
 
@@ -277,12 +286,23 @@ impl CostBreakdown {
 #[cfg(test)]
 mod tests {
     use super::CommodityPool;
-    use crate::{
-        amount::Quantity,
-        annotate::Annotation,
-        journal::Journal,
-        parse_file, parse_text,
-    };
+    use crate::{amount::Quantity, annotate::Annotation, journal::Journal, parse_file, parse_text, commodity::Commodity};
+
+    #[test]
+    fn test_create() {
+        const SYMBOL: &str = "DHI";
+        let mut pool = CommodityPool::new();
+
+        let cdty_ptr = pool.create(SYMBOL, None);
+        let cdty: &Commodity;
+        unsafe {
+            cdty = &*cdty_ptr;
+        }
+
+        assert_eq!(SYMBOL, cdty.symbol);
+
+        assert_eq!(SYMBOL, pool.find_commodity(SYMBOL).unwrap().symbol);
+    }
 
     #[test]
     fn test_adding_commodity() {
@@ -307,8 +327,8 @@ mod tests {
 
         // Assert
         assert_eq!(2, pool.commodities.len());
-        assert_eq!(2, pool.commodity_history.graph.node_count());
-        assert_eq!(1, pool.commodity_history.graph.edge_count());
+        assert_eq!(2, pool.commodity_history.node_count());
+        assert_eq!(1, pool.commodity_history.edge_count());
 
         // Currencies in the map.
         assert!(pool.commodities.contains_key("EUR"));
@@ -317,25 +337,17 @@ mod tests {
         // Currencies as nodes in the graph.
         assert_eq!(
             "EUR",
-            pool.commodity_history
-                .graph
-                .node_weights()
-                .nth(0)
-                .unwrap()
-                .symbol
+            // pool.commodity_history.node_weights().nth(0).unwrap().symbol
+            pool.commodities.get("EUR").unwrap().symbol
         );
         assert_eq!(
             "USD",
-            pool.commodity_history
-                .graph
-                .node_weights()
-                .nth(1)
-                .unwrap()
-                .symbol
+            // pool.commodity_history.node_weights().nth(1).unwrap().symbol
+            pool.commodities.get("USD").unwrap().symbol
         );
 
         // Rate, edge
-        let rates = pool.commodity_history.graph.edge_weights().nth(0).unwrap();
+        let rates = pool.commodity_history.edge_weights().nth(0).unwrap();
         assert_eq!(1, rates.len());
         let datetime_string = rates.keys().nth(0).unwrap().to_string();
         // date/time
@@ -377,7 +389,7 @@ mod tests {
         // assert
         // The prices (edges) are directional, so we need to get the edges for VEUR.
         let veur = journal.commodity_pool.find_index("VEUR").unwrap();
-        let mut veur_edges = journal.commodity_pool.commodity_history.graph.edges(*veur);
+        let mut veur_edges = journal.commodity_pool.commodity_history.edges(veur);
         let edge = veur_edges.next().unwrap();
         let price_history = edge.weight();
         assert_eq!(1, price_history.len());

@@ -48,10 +48,8 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
     let total = account.total(journal);
     for amount in total.amounts {
         balance_line += amount.quantity.to_string().as_str();
-        if amount.commodity_index.is_some() {
-            if let Some(i) = amount.commodity_index {
-                let c = journal.get_commodity(i);
-                
+        if amount.get_commodity().is_some() {
+            if let Some(c) = amount.get_commodity() {
                 balance_line += " ";
                 balance_line += c.symbol.as_str();
             }
@@ -110,8 +108,8 @@ fn format_balance_report(mut balances: Vec<(String, Balance)>, journal: &Journal
         let mut bal_text: String = String::new();
         for amount in &balance.amounts {
             //
-            let symbol = match amount.commodity_index {
-                Some(i) => journal.commodity_pool.commodity_history.get_commodity(i).symbol.as_str(),
+            let symbol = match amount.get_commodity() {
+                Some(c) => c.symbol.as_str(),
                 None => "",
             };
 

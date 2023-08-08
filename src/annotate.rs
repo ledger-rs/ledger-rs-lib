@@ -8,7 +8,7 @@
 
 use chrono::NaiveDate;
 
-use crate::{amount::Amount, parser::ISO_DATE_FORMAT, journal::Journal};
+use crate::{amount::Amount, parser::ISO_DATE_FORMAT, journal::Journal, commodity::Commodity};
 
 pub struct Annotation {
     /// Price per unit. The {} value in the Lot syntax.
@@ -30,9 +30,13 @@ impl Annotation {
     }
 
     pub fn parse(date: &str, quantity: &str, commodity_symbol: &str, journal: &mut Journal) -> Self {
+        todo!("adjust the find method");
+
         // parse amount
-        let commodity_index = journal.commodity_pool.find_or_create(commodity_symbol, None);
-        let amount = Amount::parse(quantity, commodity_index);
+        // let commodity_index = journal.commodity_pool.find_or_create(commodity_symbol, None);
+        let commodity = &Commodity::new("Test");
+
+        let amount = Amount::parse(quantity, Some(commodity));
         Self {
             price: amount,
             date: match date.is_empty() {
@@ -49,21 +53,21 @@ impl Annotation {
 
 #[cfg(test)]
 mod tests {
-    use crate::{journal::Journal, pool::CommodityIndex};
+    use crate::journal::Journal;
 
     use super::Annotation;
 
     #[test]
     fn test_parsing() {
         let mut journal = Journal::new();
+        let expected_symbol = "EUR";
 
-        let actual = Annotation::parse("2023-01-10", "20", "EUR", &mut journal);
+        let actual = Annotation::parse("2023-01-10", "20", expected_symbol, &mut journal);
 
         assert_eq!("2023-01-10", actual.date.unwrap().to_string());
         assert_eq!(actual.price.unwrap().quantity, 20.into());
-        let commodity_index: CommodityIndex = 0.into();
-        assert_eq!(actual.price.unwrap().commodity_index, Some(commodity_index));
 
-        assert_eq!("EUR", journal.get_commodity(commodity_index).symbol);
+        let symbol = actual.price.unwrap().get_commodity().unwrap().symbol.to_owned();
+        assert_eq!(expected_symbol, symbol);
     }
 }

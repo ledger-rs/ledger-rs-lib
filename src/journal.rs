@@ -12,11 +12,10 @@ use crate::{
     parser,
     pool::{CommodityIndex, CommodityPool},
     post::Post,
-    xact::Xact, amount::Amount,
+    xact::Xact,
 };
 
 pub type AccountIndex = usize;
-pub type PostIndex = usize;
 pub type XactIndex = usize;
 
 pub struct Journal {
@@ -63,18 +62,7 @@ impl Journal {
     }
 
     pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {
-        self.commodity_pool.get_commodity(index)
-    }
-
-    pub fn get_amount_commodity(&self, amount: Amount) -> Option<&Commodity> {
-        let Some(index) = amount.commodity_index
-        else { return None; };
-        
-        Some(self.get_commodity(index))
-    }
-
-    pub fn get_post(&self, index: PostIndex) -> &Post {
-        &self.posts[index]
+        self.commodity_pool.get_by_index(index)
     }
 
     pub fn get_post_account(&self, post: &Post) -> &Account {
@@ -230,7 +218,7 @@ mod tests {
     use std::io::Cursor;
 
     use super::Journal;
-    use crate::{account::Account, parse_file, post::Post};
+    use crate::{account::Account, parse_file};
 
     #[test]
     fn test_add_account_index() {

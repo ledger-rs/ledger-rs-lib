@@ -50,14 +50,12 @@ pub mod journal;
 mod journalreader;
 mod option;
 pub mod parser;
-mod parser_experiment;
 pub mod pool;
 pub mod post;
 pub mod report;
 pub mod scanner;
 pub mod utilities;
 mod value;
-pub mod viewmodel;
 pub mod xact;
 
 /// An entry point for the CLIs.
@@ -156,6 +154,18 @@ pub fn parse_text(text: &str, journal: &mut Journal) {
     parser::read_into_journal(source, journal);
 }
 
+pub fn parser_experiment() {
+    // read line from the Journal
+    // determine the type
+    // DirectiveType
+    // scan the line
+    // parse into a model instance
+    // read additional lines, as needed. Ie for Xact/Posts.
+    // return the directive with the entity, if created
+
+    todo!("try the new approach")
+}
+
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub fn wasm_test() -> String {
     "hello from wasm".to_owned()
@@ -165,7 +175,7 @@ pub fn wasm_test() -> String {
 mod lib_tests {
     use std::assert_eq;
 
-    use crate::{amount::Amount, option, pool::CommodityIndex, run};
+    use crate::{amount::Amount, option, run, commodity::Commodity};
 
     #[test]
     fn test_minimal() {
@@ -185,10 +195,13 @@ Account Expenses has balance 20"#;
 
     #[test]
     fn test_multiple_files() {
+        // arrange
         let args =
             shell_words::split("accounts -f tests/minimal.ledger -f tests/basic.ledger").unwrap();
         let (_commands, input_options) = option::process_arguments(args);
+        let cdty = Commodity::new("EUR");
 
+        // Act
         let journal = super::session_read_journal_files(&input_options);
 
         // Assert
@@ -202,7 +215,7 @@ Account Expenses has balance 20"#;
         assert_eq!(4, journal.posts.len());
         assert_eq!(Some(Amount::new(20.into(), None)), journal.posts[0].amount);
         assert_eq!(
-            Some(Amount::new(20.into(), Some(CommodityIndex::new(0)))),
+            Some(Amount::new(20.into(), Some(&cdty))),
             journal.posts[2].amount
         );
 

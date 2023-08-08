@@ -6,7 +6,7 @@ use std::{collections::HashMap, vec};
 
 use crate::{
     balance::Balance,
-    journal::{AccountIndex, Journal, PostIndex},
+    journal::{AccountIndex, Journal}, post::Post,
 };
 
 #[derive(Debug, PartialEq)]
@@ -19,7 +19,8 @@ pub struct Account {
     pub accounts: HashMap<String, AccountIndex>,
     // pub posts: Vec<Post>,
     /// indices of Posts in the Journal.Posts array.
-    pub post_indices: Vec<PostIndex>,
+    // pub post_indices: Vec<PostIndex>,
+    posts: Vec<*const Post>,
     // deferred posts
     // value_expr
 }
@@ -30,7 +31,8 @@ impl Account {
             parent_index: None,
             name: name.to_owned(),
             accounts: HashMap::new(),
-            post_indices: vec![],
+            posts: vec![],
+            // post_indices: vec![],
         }
     }
 
@@ -54,11 +56,14 @@ impl Account {
     }
 
     /// Returns the amount of this account only.
-    pub fn amount(&self, journal: &Journal) -> Balance {
+    pub fn amount(&self) -> Balance {
         let mut bal = Balance::new();
 
-        for index in &self.post_indices {
-            let post = journal.get_post(*index);
+        for post_ptr in &self.posts {
+            let post: Post;
+            unsafe {
+                post = post_ptr.read();                
+            }
             bal.add(&post.amount.unwrap());
         }
 
@@ -83,7 +88,7 @@ impl Account {
         }
 
         // Add the balance of this account
-        total += self.amount(journal);
+        total += self.amount();
 
         total
     }
@@ -122,11 +127,11 @@ mod tests {
         let index = journal.find_account_index("Assets:Cash").unwrap();
         let account = journal.get_account(index);
 
-        let actual = account.amount(&journal);
+        let actual = account.amount();
 
         assert!(!actual.amounts.is_empty());
         assert_eq!(Quantity::from(-20), actual.amounts[0].quantity);
-        let commodity = journal.get_amount_commodity(actual.amounts[0]).unwrap();
+        let commodity = actual.amounts[0].get_commodity().unwrap();
         assert_eq!("EUR", commodity.symbol);
     }
 
@@ -145,12 +150,10 @@ mod tests {
         log::debug!(
             "Amount 1: {:?}, {:?}",
             actual.amounts[0],
-            journal
-                .commodity_pool
-                .get_commodity(actual.amounts[0].commodity_index.unwrap())
+            actual.amounts[0].get_commodity()
         );
 
         assert_eq!(actual.amounts[0].quantity, (-30).into());
-        assert_eq!(actual.amounts[0].commodity_index, Some(0.into()));
+        assert_eq!(actual.amounts[0].get_commodity().unwrap().symbol, "EUR");
     }
 }

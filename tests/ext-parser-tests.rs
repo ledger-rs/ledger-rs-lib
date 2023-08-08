@@ -7,7 +7,7 @@ use ledger_rs_lib::{
     amount::{Amount, Quantity},
     journal::Journal,
     parse_file,
-    pool::CommodityIndex, parse_text,
+    pool::CommodityIndex, parse_text, commodity::Commodity,
 };
 
 #[test]
@@ -55,20 +55,14 @@ fn detailed_basic_test() {
     assert_eq!("Food", journal.get_account(post1.account_index).name);
     let amount1 = &post1.amount.as_ref().unwrap();
     assert_eq!(Quantity::from(20), amount1.quantity);
-    let symbol = &journal
-        .commodity_pool
-        .get_commodity(*amount1.commodity_index.as_ref().unwrap())
-        .symbol;
+    let symbol = &amount1.get_commodity().unwrap().symbol;
     assert_eq!("EUR", symbol);
 
     let post2 = &xact.posts[1];
     assert_eq!("Cash", journal.get_account(post2.account_index).name);
     let amount2 = &post2.amount.as_ref().unwrap();
     assert_eq!(Quantity::from(-20), amount2.quantity);
-    let symbol = &journal
-        .commodity_pool
-        .get_commodity(*amount2.commodity_index.as_ref().unwrap())
-        .symbol;
+    let symbol = &amount2.get_commodity().unwrap().symbol;
     assert_eq!("EUR", symbol);
 }
 
@@ -133,11 +127,13 @@ fn test_parsing_lots_per_unit() {
     let Some(cost) = post.cost else { panic!("no cost!")};
     assert_eq!(cost.quantity, 200.into());
     // sell
-    let cur_index: CommodityIndex = 1.into();
-    let expected_cost = Amount::new((-250).into(), Some(cur_index));
+    // let cur_index: CommodityIndex = 1.into();
+    let cdty = journal.commodity_pool.find_commodity("EUR").unwrap();
+    let expected_cost = Amount::new((-250).into(), Some(cdty));
     assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
-    let cur = journal.get_commodity(cur_index);
-    assert_eq!("EUR", cur.symbol);
+
+    // let cur = journal.get_commodity(cur_index);
+    assert_eq!("EUR", cdty.symbol);
 }
 
 #[test]
@@ -154,7 +150,7 @@ fn test_parsing_lots_full_price() {
 
     // posts
     assert_eq!(4, journal.posts.len());
-    let expected_cost = Amount::new(25.into(), Some(1.into()));
+    let expected_cost = Amount::new(25.into(), Some(&Commodity::new("EUR")));
     assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
 }
 
@@ -175,19 +171,19 @@ fn test_lot_sale() {
     assert_eq!(2, journal.posts.len());
     assert_eq!(2, journal.commodity_pool.len());
 
-    let veur = journal.commodity_pool.find_index("VEUR").cloned();
-    let eur = journal.commodity_pool.find_index("EUR").cloned();
+    let veur = journal.commodity_pool.find_index("VEUR");
+    let eur = journal.commodity_pool.find_index("EUR");
 
     let sale_post = &journal.posts[1];
     assert_eq!(sale_post.amount.unwrap().quantity, (-10).into());
-    assert_eq!(sale_post.amount.unwrap().commodity_index, veur);
+    assert_eq!(sale_post.amount.unwrap().get_commodity().unwrap().graph_index, veur);
     
     // annotations
     // todo!("annotations")
 
     // cost
     assert_eq!(sale_post.cost.unwrap().quantity, (250).into());
-    assert_eq!(sale_post.cost.unwrap().commodity_index, eur);
+    assert_eq!(sale_post.cost.unwrap().get_commodity().unwrap().graph_index, eur);
 }
 
 // #[test]

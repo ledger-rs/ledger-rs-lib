@@ -8,6 +8,8 @@
 use core::panic;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+use ledger_rs_lib::commodity::Commodity;
+
 #[derive(Debug, PartialEq)]
 struct Account {
     pub name: String,
@@ -103,4 +105,32 @@ fn test_ref_w_rc() {
         .name
         .to_owned();
     assert_eq!("bank", name);
+}
+
+/// Pointer gymnastics. Pass pointers around and convert to references
+/// when needed.
+/// In a structure where the data is only populated and never deleted,
+/// this should be safe.
+#[test]
+fn test_pointer_passing() {
+    // alchemy?
+    // arrange
+    const CURRENCY: &str = "EUR";
+    let mut container = HashMap::new();
+    let eur = Commodity::new(CURRENCY);
+    let eur_ptr = &eur as *const Commodity;
+    let eur_mut_ptr = eur_ptr as *mut Commodity;
+    
+    // act
+    container.insert(eur.symbol.to_owned(), eur);
+
+    // assert
+    let expected_ref: &Commodity;
+    let expected_mut_ref: &mut Commodity;
+    unsafe {
+        expected_ref = &*eur_ptr;
+        expected_mut_ref = &mut*eur_mut_ptr;
+    }
+    assert_eq!(CURRENCY, expected_ref.symbol);
+    assert_eq!(CURRENCY, expected_mut_ref.symbol);
 }

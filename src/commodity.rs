@@ -1,46 +1,53 @@
 /*!
  * Commodity definition
- * 
+ *
  * commodity.cc
  */
 
 use chrono::NaiveDateTime;
 
-use crate::amount::Amount;
+use crate::{amount::Amount, pool::CommodityIndex};
+// use crate::pool::CommodityIndex;
 
 #[derive(Debug, PartialEq)]
 pub struct Commodity {
     pub symbol: String,
-    // graph_index: Option
+    /// Index in the commodity graph.
+    pub graph_index: Option<CommodityIndex>,
     // precision
-    // name: Option<String>
-    // note: Option<String>
-    // smaller: Option
-    // larger: Option
-    // value_expr: Option
+    pub name: Option<String>,
+    pub note: Option<String>,
+    // smaller: Option<Amount>
+    // larger: Option<Amount>
+    // value_expr: Option<>
 
     // commodity_pool
     // annotated_commodity
-    // parent
-    // qualified_symbol: Option<String>
-    pub annotated: bool
+    // parent: *const CommodityPool,
+    // qualified_symbol: Option<String>,
+    pub annotated: bool,
 }
 
 impl Commodity {
     pub fn new(symbol: &str) -> Self {
-        Self { symbol: symbol.to_owned(), annotated: false }
+        Self {
+            symbol: symbol.to_owned(),
+            graph_index: None,
+            name: None,
+            note: None,
+            annotated: false,
+        }
     }
 
-    // pub fn parse(symbol: &str) -> Option<Self> {
-    //     if symbol.is_empty() {
-    //         return None;
+    // pub fn from_ptr(ptr: *const Commodity) -> Commodity {
+    //     unsafe {
+    //         *ptr
     //     }
-    //     Some(Commodity::new(symbol))
     // }
 }
 
 /// commodity.cc
-/// 
+///
 pub(crate) fn find_price(commodity: &Commodity, moment: NaiveDateTime, oldest: NaiveDateTime) {
     // if commodity
     let target = commodity;
@@ -56,7 +63,7 @@ pub(crate) fn find_price(commodity: &Commodity, moment: NaiveDateTime, oldest: N
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct PricePoint {
     pub when: NaiveDateTime,
-    pub price: Amount
+    pub price: Amount,
 }
 
 impl PricePoint {
@@ -67,7 +74,7 @@ impl PricePoint {
 
 #[cfg(test)]
 mod tests {
-    use super::{Commodity, find_price};
+    use super::Commodity;
 
     #[test]
     fn test_comparison() {

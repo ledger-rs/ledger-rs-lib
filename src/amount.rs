@@ -9,21 +9,24 @@ use std::{
 
 use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
-use crate::{pool::CommodityIndex, commodity::Commodity};
+use crate::commodity::Commodity;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Amount {
     pub quantity: Quantity,
-    pub commodity_index: Option<CommodityIndex>,
-    pub commodity: *const Commodity,
+    // pub commodity_index: Option<CommodityIndex>,
+    pub(crate) commodity: *const Commodity,
 }
 
 impl Amount {
-    pub fn new(quantity: Quantity, commodity_index: Option<CommodityIndex>) -> Self {
+    pub fn new(quantity: Quantity, commodity: Option<*const Commodity>) -> Self {
         Self {
             quantity,
-            commodity_index,
-            commodity: std::ptr::null(),
+            commodity: if commodity.is_some() {
+                commodity.unwrap() as *const Commodity
+            } else {
+                std::ptr::null()
+            },
         }
     }
 
@@ -36,7 +39,7 @@ impl Amount {
 
     /// Creates a new Amount instance.
     /// Parses the quantity only and uses the given commodity index.
-    pub fn parse(quantity: &str, commodity_index: Option<CommodityIndex>) -> Option<Self> {
+    pub fn parse(quantity: &str, commodity: Option<*const Commodity>) -> Option<Self> {
         if quantity.is_empty() {
             return None;
         }
@@ -48,41 +51,32 @@ impl Amount {
 
         let amount = Self {
             quantity: quantity_result.unwrap(),
-            commodity_index,
-            commodity: std::ptr::null(),
+            commodity: if commodity.is_some() {
+                commodity.unwrap()
+            } else {
+                std::ptr::null()
+            },
         };
 
         Some(amount)
     }
 
     pub fn copy_from(other: &Amount) -> Self {
-        // let com = match &other.commodity {
-        //     Some(other_commodity) => {
-        //         //let symbol = &other.commodity.as_ref().unwrap().symbol;
-        //         let s = &other_commodity.symbol;
-        //         let c = Commodity::new(s);
-        //         Some(c)
-        //     }
-        //     None => None,
-        // };
-
         Self {
             quantity: other.quantity,
-            commodity_index: other.commodity_index,
-            commodity: std::ptr::null(),
+            commodity: other.commodity,
         }
     }
 
     pub fn null() -> Self {
         Self {
             quantity: 0.into(),
-            commodity_index: None,
             commodity: std::ptr::null(),
         }
     }
 
     pub fn add(&mut self, other: &Amount) {
-        if self.commodity_index != other.commodity_index {
+        if self.commodity != other.commodity {
             log::error!("different commodities");
             panic!("don't know yet how to handle this")
         }
@@ -92,6 +86,16 @@ impl Amount {
         }
 
         self.quantity += other.quantity;
+    }
+
+    pub fn get_commodity(&self) -> Option<&Commodity> {
+        if self.commodity.is_null() {
+            None
+        } else {
+            unsafe { 
+                Some(&*self.commodity)
+            }
+        }
     }
 
     /// Creates an amount with the opposite sign on the quantity.
@@ -104,7 +108,7 @@ impl Amount {
             self.quantity
         };
 
-        Amount::new(new_quantity, self.commodity_index)
+        unsafe { Amount::new(new_quantity, Some(&*self.commodity)) }
     }
 
     /// Inverts the sign on the amount.
@@ -120,7 +124,7 @@ impl Amount {
     /// This is a 0 quantity and no Commodity.
     pub fn is_null(&self) -> bool {
         if self.quantity.is_zero() {
-            return self.commodity_index.is_none();
+            return self.commodity.is_null();
         } else {
             false
         }
@@ -129,25 +133,29 @@ impl Amount {
     pub fn is_zero(&self) -> bool {
         self.quantity.is_zero()
     }
+
+    pub fn remove_commodity(&mut self) {
+        self.commodity = std::ptr::null();
+    }
 }
 
 impl std::ops::Add<Amount> for Amount {
     type Output = Amount;
 
     fn add(self, rhs: Amount) -> Self::Output {
-        if self.commodity_index != rhs.commodity_index {
+        if self.commodity != rhs.commodity {
             panic!("don't know yet how to handle this")
         }
 
         let sum = self.quantity + rhs.quantity;
 
-        Amount::new(sum, self.commodity_index)
+        unsafe { Amount::new(sum, Some(&*self.commodity)) }
     }
 }
 
 impl AddAssign<Amount> for Amount {
     fn add_assign(&mut self, other: Amount) {
-        if self.commodity_index != other.commodity_index {
+        if self.commodity != other.commodity {
             panic!("don't know yet how to handle this")
         }
 
@@ -161,10 +169,10 @@ impl Div for Amount {
     fn div(self, rhs: Self) -> Self::Output {
         let mut result = Amount::new(0.into(), None);
 
-        if self.commodity_index.is_none() {
-            result.commodity_index = rhs.commodity_index;
+        if self.commodity.is_null() {
+            result.commodity = rhs.commodity;
         } else {
-            result.commodity_index = self.commodity_index
+            result.commodity = self.commodity
         }
 
         result.quantity = self.quantity / rhs.quantity;
@@ -179,13 +187,13 @@ impl Mul<Amount> for Amount {
     fn mul(self, other: Amount) -> Amount {
         let quantity = self.quantity * other.quantity;
 
-        let commodity_index = if self.commodity_index.is_none() {
-            other.commodity_index
+        let commodity = if self.commodity.is_null() {
+            other.commodity
         } else {
-            self.commodity_index
+            self.commodity
         };
 
-        Amount::new(quantity, commodity_index)
+        unsafe { Amount::new(quantity, Some(&*commodity)) }
     }
 }
 
@@ -197,7 +205,7 @@ impl From<i32> for Amount {
 
 impl SubAssign<Amount> for Amount {
     fn sub_assign(&mut self, other: Amount) {
-        if self.commodity_index != other.commodity_index {
+        if self.commodity != other.commodity {
             panic!("The commodities do not match");
         }
 
@@ -211,8 +219,8 @@ impl MulAssign<Amount> for Amount {
         self.quantity *= rhs.quantity;
 
         // get the other commodity, if we don't have one.
-        if self.commodity_index.is_none() && rhs.commodity_index.is_some() {
-            self.commodity_index = rhs.commodity_index;
+        if self.commodity.is_null() && !rhs.commodity.is_null() {
+            self.commodity = rhs.commodity;
         }
     }
 }
@@ -326,6 +334,8 @@ impl fmt::Display for Quantity {
 mod tests {
     use rust_decimal::prelude::ToPrimitive;
 
+    use crate::commodity::Commodity;
+
     use super::{Amount, Quantity};
 
     #[test]
@@ -337,9 +347,10 @@ mod tests {
 
     #[test]
     fn test_division() {
-        let a = Amount::new(10.into(), Some(3.into()));
-        let b = Amount::new(5.into(), Some(3.into()));
-        let expected = Amount::new(2.into(), Some(3.into()));
+        let currency = Commodity::new("EUR");
+        let a = Amount::new(10.into(), Some(&currency));
+        let b = Amount::new(5.into(), Some(&currency));
+        let expected = Amount::new(2.into(), Some(&currency));
 
         let c = a / b;
 
@@ -352,5 +363,7 @@ mod tests {
         let b = Amount::from(5);
 
         let actual = a * b;
+
+        assert_eq!(Amount::new(Quantity::from_str("50").unwrap(), None), actual);
     }
 }

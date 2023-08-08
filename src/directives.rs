@@ -2,7 +2,8 @@
  * Types of directives
  */
 
-use crate::viewmodel::Xact;
+use crate::xact::Xact;
+
 
 /// Types of directives
 #[derive(Debug)]

@@ -41,7 +41,7 @@ impl Balance {
         match self
             .amounts
             .iter_mut()
-            .find(|amt| amt.commodity_index == amount.commodity_index)
+            .find(|amt| amt.get_commodity() == amount.get_commodity())
         {
             Some(existing_amount) => {
                 // append to the amount
@@ -62,7 +62,7 @@ impl SubAssign<Amount> for Balance {
         match self
             .amounts
             .iter_mut()
-            .find(|amt| amt.commodity_index == amount.commodity_index)
+            .find(|amt| amt.get_commodity() == amount.get_commodity())
         {
             Some(existing_amount) => {
                 // append to the amount
@@ -105,8 +105,9 @@ mod tests {
     use super::Balance;
     use crate::{
         amount::{Amount, Quantity},
-        pool::CommodityIndex,
+        commodity::Commodity,
     };
+    // use crate::pool::CommodityIndex;
 
     #[test]
     fn test_adding_first_amount_no_commodity() {
@@ -122,7 +123,7 @@ mod tests {
             Quantity::from(25),
             balance.amounts.iter().next().unwrap().quantity
         );
-        assert_eq!(None, balance.amounts.iter().next().unwrap().commodity_index);
+        assert_eq!(None, balance.amounts.iter().next().unwrap().get_commodity());
     }
 
     #[test]
@@ -143,15 +144,16 @@ mod tests {
             Quantity::from(30),
             balance.amounts.iter().next().unwrap().quantity
         );
-        assert_eq!(None, balance.amounts.iter().next().unwrap().commodity_index);
+        assert_eq!(None, balance.amounts.iter().next().unwrap().get_commodity());
     }
 
     #[test]
     fn test_adding_two_amounts_with_commodities() {
+        let cdty = Commodity::new("ABC");
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(25.into(), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(25.into(), Some(&cdty));
         balance.add(&amount);
 
         let amount = Amount::new(5.into(), None);
@@ -165,26 +167,28 @@ mod tests {
             balance.amounts.iter().nth(0).unwrap().quantity
         );
         assert_eq!(
-            Some(CommodityIndex::new(0)),
-            balance.amounts.iter().nth(0).unwrap().commodity_index
+            Some(&cdty),
+            balance.amounts.iter().nth(0).unwrap().get_commodity()
         );
 
         assert_eq!(
             Quantity::from(5),
             balance.amounts.iter().nth(1).unwrap().quantity
         );
-        assert_eq!(None, balance.amounts.iter().nth(1).unwrap().commodity_index);
+        assert_eq!(None, balance.amounts.iter().nth(1).unwrap().get_commodity());
     }
 
     #[test]
     fn test_adding_two_amounts_with_some_commodities() {
+        let cdty1 = Commodity::new("CD1");
+        let cdty2 = Commodity::new("CD2");
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(25.into(), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(25.into(), Some(&cdty1));
         balance.add(&amount);
 
-        let amount = Amount::new(5.into(), Some(CommodityIndex::new(1)));
+        let amount = Amount::new(5.into(), Some(&cdty2));
         balance.add(&amount);
 
         // Assert
@@ -196,8 +200,8 @@ mod tests {
             balance.amounts.iter().nth(0).unwrap().quantity
         );
         assert_eq!(
-            Some(CommodityIndex::new(0)),
-            balance.amounts.iter().nth(0).unwrap().commodity_index
+            Some(&cdty1),
+            balance.amounts.iter().nth(0).unwrap().get_commodity()
         );
 
         assert_eq!(
@@ -205,20 +209,21 @@ mod tests {
             balance.amounts.iter().nth(1).unwrap().quantity
         );
         assert_eq!(
-            Some(CommodityIndex::new(1)),
-            balance.amounts.iter().nth(1).unwrap().commodity_index
+            Some(&cdty2),
+            balance.amounts.iter().nth(1).unwrap().get_commodity()
         );
     }
 
     #[test]
     fn test_adding_two_amounts_with_same_commodity() {
+        let cdty = Commodity::new("BAM");
         let mut balance = Balance::new();
 
         // Act
-        let amount = Amount::new(25.into(), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(25.into(), Some(&cdty));
         balance.add(&amount);
 
-        let amount = Amount::new(5.into(), Some(CommodityIndex::new(0)));
+        let amount = Amount::new(5.into(), Some(&cdty));
         balance.add(&amount);
 
         // Assert
@@ -230,15 +235,15 @@ mod tests {
             balance.amounts.iter().nth(0).unwrap().quantity
         );
         assert_eq!(
-            Some(CommodityIndex::new(0)),
-            balance.amounts.iter().nth(0).unwrap().commodity_index
+            Some(&cdty),
+            balance.amounts.iter().nth(0).unwrap().get_commodity()
         );
     }
 
     #[test]
     fn test_sub_assign() {
         let mut bal = Balance::new();
-        let amount = Amount::new(10.into(), Some(0.into()));
+        let amount = Amount::new(10.into(), Some(&Commodity::new("ABC")));
         let expected = amount.inverse();
 
         bal -= amount;
@@ -249,15 +254,16 @@ mod tests {
 
     #[test]
     fn test_addition() {
+        let cdty = Commodity::new("ABC");
         let mut bal1 = Balance::new();
-        bal1.add(&Amount::new(10.into(), Some(0.into())));
+        bal1.add(&Amount::new(10.into(), Some(&cdty)));
         let mut bal2 = Balance::new();
-        bal2.add(&Amount::new(15.into(), Some(0.into())));
+        bal2.add(&Amount::new(15.into(), Some(&cdty)));
 
         bal2 += bal1;
 
         assert_eq!(1, bal2.amounts.len());
         assert_eq!(bal2.amounts[0].quantity, 25.into());
-        assert_eq!(bal2.amounts[0].commodity_index, Some(0.into()));
+        assert_eq!(bal2.amounts[0].get_commodity(), Some(&cdty));
     }
 }

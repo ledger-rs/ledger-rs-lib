@@ -11,14 +11,13 @@
  * reference time before performing the search.
  */
 
-use std::collections::{BTreeMap, HashMap};
-
-use chrono::{NaiveDateTime, Local};
-use petgraph::{
-    algo::{astar, dijkstra},
-    stable_graph::NodeIndex,
-    Graph,
+use std::{
+    collections::BTreeMap,
+    ops::{Deref, DerefMut},
 };
+
+use chrono::{Local, NaiveDateTime};
+use petgraph::{algo::astar, stable_graph::NodeIndex, Graph};
 
 use crate::{
     amount::{Amount, Quantity},
@@ -26,29 +25,24 @@ use crate::{
     pool::CommodityIndex,
 };
 
-// type PriceMap = HashMap<NaiveDateTime, Amount>;
 type PriceMap = BTreeMap<NaiveDateTime, Quantity>;
-// type PriceMap = Rc<RefCell<BTreeMap<NaiveDateTime, Decimal>>>;
 
-// #[derive(Clone, Copy)]
-// pub(crate) struct PriceMap(BTreeMap<NaiveDateTime, Decimal>);
-
-pub(crate) struct CommodityHistory {
-    pub(crate) graph: Graph<Commodity, PriceMap>,
-}
+/// commodity_history_t or commodity_history_impl_t?
+// pub(crate) struct CommodityHistory {
+//     pub(crate) graph: Graph<*const Commodity, PriceMap>,
+// }
 
 // pub(crate) type CommodityHistory = Graph<Commodity, PriceMap>;
+pub(crate) struct CommodityHistory(Graph<*const Commodity, PriceMap>);
 
 impl CommodityHistory {
     pub fn new() -> Self {
-        Self {
-            graph: Graph::new(),
-        }
+        Self(Graph::new())
     }
 
     /// Adds the commodity to the commodity graph.
-    pub fn add_commodity(&mut self, commodity: Commodity) -> CommodityIndex {
-        self.graph.add_node(commodity)
+    pub fn add_commodity(&mut self, commodity: *const Commodity) -> CommodityIndex {
+        self.add_node(commodity)
     }
 
     /// Adds a new price point.
@@ -58,32 +52,35 @@ impl CommodityHistory {
     /// price: 1.12 USD
     pub fn add_price(
         &mut self,
-        commodity_index: CommodityIndex,
+        source_ptr: *const Commodity,
         datetime: NaiveDateTime,
         price: Amount,
     ) {
-        assert!(Some(commodity_index) != price.commodity_index);
+        let source: &Commodity;
+        unsafe {
+            source = &*source_ptr;
+        }
+        assert!(Some(source) != price.get_commodity());
 
         log::debug!(
             "adding price for {:?}, date: {:?}, price: {:?}",
-            commodity_index,
+            source,
             datetime,
             price
         );
 
-        // edge = HashMap<NaiveDateTime, Decimal>
-        let index = match self
-            .graph
-            .find_edge(commodity_index, price.commodity_index.unwrap())
-        {
+        let index = match self.0.find_edge(
+            source.graph_index.unwrap(),
+            price.get_commodity().unwrap().graph_index.unwrap(),
+        ) {
             Some(index) => index,
             None => {
-                let dest = price.commodity_index.unwrap();
-                self.graph.add_edge(commodity_index, dest, PriceMap::new())
+                let dest = price.get_commodity().unwrap().graph_index.unwrap();
+                self.add_edge(source.graph_index.unwrap(), dest, PriceMap::new())
             }
         };
 
-        let prices = self.graph.edge_weight_mut(index).unwrap();
+        let prices = self.edge_weight_mut(index).unwrap();
 
         // Add the price to the price history.
         // prices.entry(key) ?
@@ -91,16 +88,14 @@ impl CommodityHistory {
     }
 
     pub fn get_commodity(&self, index: NodeIndex) -> &Commodity {
-        self.graph
-            .node_weight(index)
-            .expect("index should be valid")
+        let ptr = self.node_weight(index).expect("index should be valid");
+        unsafe { &**ptr }
     }
 
-    pub fn get_commodity_mut(&mut self, index: NodeIndex) -> &mut Commodity {
-        self.graph
-            .node_weight_mut(index)
-            .expect("index should be valid")
-    }
+    // pub fn get_commodity_mut(&mut self, index: NodeIndex) -> &mut Commodity {
+    //     let ptr = self.node_weight_mut(index).expect("index should be valid");
+    //     unsafe { &mut ptr.read() }
+    // }
 
     pub fn map_prices(&self) {
         todo!()
@@ -109,17 +104,30 @@ impl CommodityHistory {
     /// find_price(source, target, moment, oldest);
     pub fn find_price(
         &self,
-        source: CommodityIndex,
-        target: CommodityIndex,
+        source_ptr: *const Commodity,
+        target_ptr: *const Commodity,
         moment: NaiveDateTime,
         oldest: NaiveDateTime,
     ) -> Option<PricePoint> {
-        assert_ne!(source, target);
+        assert_ne!(source_ptr, target_ptr);
+
+        let source: CommodityIndex;
+        let target: CommodityIndex;
+        unsafe {
+            source = (*source_ptr).graph_index.unwrap();
+            target = (*target_ptr).graph_index.unwrap();
+        }
 
         // Dijkstra returns a map of destination NodeId, path cost.
         // let shortest_paths = dijkstra(&self.graph, source, Some(target), |_| 1);
         // TODO: use the actual latest price value.
-        let shortest_path = astar(&self.graph, source, |finish| finish == target, |e| 1, |_| 0);
+        let shortest_path = astar(
+            &self.0,
+            source,
+            |finish| finish == target,
+            |e| 1,
+            |_| 0,
+        );
         if shortest_path.is_none() {
             return None;
         }
@@ -141,7 +149,7 @@ impl CommodityHistory {
         //     todo!()
         // }
 
-        let mut result = Amount::new(Quantity::ONE, Some(target));
+        let mut result = Amount::new(Quantity::ONE, Some(target_ptr));
         let mut temp_source = source;
         for temp_target in path {
             // skip self
@@ -151,26 +159,32 @@ impl CommodityHistory {
 
             // get the price
             // TODO: include the datetime
-            let temp_price = self.get_direct_price(temp_source, temp_target)
-                .expect("price"); // , moment, oldest);
+            todo!("resolve this below");
+            // let temp_price = self
+            //     .get_direct_price(
+            //         temp_source as *const Commodity,
+            //         temp_target as *const Commodity,
+            //     )
+            //     .expect("price"); // , moment, oldest);
 
             // TODO: calculate the amount.
-            result *= temp_price.price;
+            // result *= temp_price.price;
             // temp_price.when
 
             // log::debug!("intermediate price from {:?} to {:?} = {:?}", temp_source, temp_target, temp_price);
 
             // source for the next leg
-            temp_source = temp_target;
+            todo!("fix below");
+            // temp_source = temp_target;
         }
 
         // TODO: What is the final date when multiple hops involved?
-        // 
+        //
         let when = Local::now().naive_local();
 
         // TODO: add to the price map.
         // self.add_price(commodity_index, datetime, price)
-        
+
         Some(PricePoint::new(when, result))
     }
 
@@ -180,15 +194,22 @@ impl CommodityHistory {
     /// target: USD
     pub fn get_direct_price(
         &self,
-        source: CommodityIndex,
-        target: CommodityIndex,
+        source_ptr: *const Commodity,
+        target_ptr: *const Commodity,
     ) -> Option<PricePoint> {
-        let direct = self.graph.find_edge(source, target);
+        let source: CommodityIndex;
+        let target: CommodityIndex;
+        unsafe {
+            source = (*source_ptr).graph_index.unwrap();
+            target = (*target_ptr).graph_index.unwrap();
+        }
+
+        let direct = self.find_edge(source, target);
         if let Some(edge_index) = direct {
-            let price_history = self.graph.edge_weight(edge_index).unwrap();
-            if let Some(mut price) = get_latest_price(price_history) {
-                price.price.commodity_index = Some(target);
-                Some(price)
+            let price_history = self.edge_weight(edge_index).unwrap();
+            if let Some(mut price_point) = get_latest_price(price_history) {
+                // price_point.price.get_commodity().unwrap().graph_index = Some(target);
+                Some(price_point)
             } else {
                 None
             }
@@ -199,6 +220,22 @@ impl CommodityHistory {
 
     fn print_map(&self) {
         todo!()
+    }
+}
+
+impl Deref for CommodityHistory {
+    // specify the target type as i32
+    type Target = Graph<*const Commodity, PriceMap>;
+
+    // define the deref method that returns a reference to the inner value
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for CommodityHistory {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -232,11 +269,24 @@ fn get_latest_price(prices: &BTreeMap<NaiveDateTime, Quantity>) -> Option<PriceP
 #[derive(Debug)]
 pub struct Price {
     /// The commodity being priced.
-    pub commodity_index: CommodityIndex,
+    pub commodity: *const Commodity,
     /// Point in time at which the price is valid.
     pub datetime: NaiveDateTime,
     /// Price of the commodity. i.e. 1.20 AUD
     pub price: Amount,
+}
+
+impl Price {
+    pub fn new(commodity: &Commodity, datetime: NaiveDateTime, cost: Amount) -> Self {
+        Self {
+            commodity: commodity as *const Commodity,
+            datetime,
+            price: cost,
+        }
+    }
+    pub fn get_commodity(&self) -> &Commodity {
+        unsafe { &*self.commodity }
+    }
 }
 
 #[cfg(test)]
@@ -249,8 +299,7 @@ mod tests {
         amount::{Amount, Quantity},
         commodity::{Commodity, PricePoint},
         journal::Journal,
-        parse_file,
-        parser::{parse_amount, parse_date, parse_datetime},
+        parser::{parse_amount, parse_datetime},
     };
 
     #[test]
@@ -259,18 +308,18 @@ mod tests {
         let c = Commodity::new("EUR");
 
         // Act
-        let cdty_index = hist.add_commodity(c);
+        let cdty_index = hist.add_commodity(&c);
 
         // Assert
-        assert_eq!(1, hist.graph.node_count());
-        assert_eq!("EUR", hist.graph.node_weight(cdty_index).unwrap().symbol);
+        assert_eq!(1, hist.node_count());
+        // TODO: assert_eq!("EUR", hist.node_weight(cdty_index).unwrap().symbol);
     }
 
     #[test]
     fn test_get_commodity() {
         let mut hist = CommodityHistory::new();
         let c = Commodity::new("EUR");
-        let id = hist.add_commodity(c);
+        let id = hist.add_commodity(&c);
 
         let actual = hist.get_commodity(id);
 
@@ -281,27 +330,30 @@ mod tests {
     fn test_adding_price() {
         // Arrange
         let mut hist = CommodityHistory::new();
-        let eur = hist.add_commodity(Commodity::new("EUR"));
-        let usd = hist.add_commodity(Commodity::new("USD"));
+        let eur = Commodity::new("EUR");
+        let eur_index = hist.add_commodity(&eur);
+        let usd = Commodity::new("USD");
+        let usd_index = hist.add_commodity(&usd);
         let local = Local::now();
         let today = local.naive_local();
-        let price = Amount::new(25.into(), Some(usd));
+        let price = Amount::new(25.into(), Some(&usd));
 
         // Act
-        hist.add_price(eur, today, price);
+        hist.add_price(&eur, today, price);
 
         // Assert
-        assert_eq!(2, hist.graph.node_count());
-        assert_eq!(1, hist.graph.edge_count());
+        assert_eq!(2, hist.node_count());
+        assert_eq!(1, hist.edge_count());
 
-        let edge = hist.graph.edge_weights().nth(0).unwrap();
+        let edge = hist.edge_weights().nth(0).unwrap();
         assert_eq!(&Quantity::from(25), edge.values().nth(0).unwrap());
     }
 
     #[test]
     fn test_index() {
         let mut graph = CommodityHistory::new();
-        let x = graph.add_commodity(Commodity::new("EUR"));
+        let eur = Commodity::new("EUR");
+        let x = graph.add_commodity(&eur);
         let y = x.index();
         let z = NodeIndex::new(y);
 
@@ -331,21 +383,21 @@ mod tests {
     #[test]
     fn test_get_direct_price() {
         let journal = &mut Journal::new();
-        let eur_index = journal.commodity_pool.create("EUR", None);
-        let usd_index = journal.commodity_pool.create("USD", None);
+        let eur_ptr = journal.commodity_pool.create("EUR", None);
+        let usd_ptr = journal.commodity_pool.create("USD", None);
         // add price
         let date = parse_datetime("2023-05-01").unwrap();
         let price = parse_amount("1.20 USD", journal).unwrap();
         journal
             .commodity_pool
             .commodity_history
-            .add_price(eur_index, date, price);
+            .add_price(eur_ptr, date, price);
 
         // act
         let actual = journal
             .commodity_pool
             .commodity_history
-            .get_direct_price(eur_index, usd_index)
+            .get_direct_price(eur_ptr, usd_ptr)
             .unwrap();
 
         // assert
@@ -362,19 +414,20 @@ mod tests {
     fn test_find_price_1_hop() {
         let mut journal = Journal::new();
         // add commodities
-        let eur_index = journal.commodity_pool.create("EUR", None);
-        let usd_index = journal.commodity_pool.create("USD", None);
+        let eur = journal.commodity_pool.create("EUR", None);
+        // let usd_index = journal.commodity_pool.create("USD", None);
+        let usd = Commodity::new("USD");
         // add price
         let date = parse_datetime("2023-05-01").unwrap();
         let price = parse_amount("1.20 USD", &mut journal).unwrap();
         let oldest = Local::now().naive_local();
-        journal.commodity_pool.add_price(eur_index, date, price);
+        journal.commodity_pool.add_price(eur, date, price);
 
         // act
         let actual = journal
             .commodity_pool
             .commodity_history
-            .find_price(eur_index, usd_index, date, oldest)
+            .find_price(eur, &usd, date, oldest)
             .expect("price found");
 
         // assert
@@ -382,12 +435,13 @@ mod tests {
         // assert_eq!(eur_index, price.commodity_index.unwrap());
         assert_eq!(actual.when, date);
         assert_eq!(actual.price.quantity, "1.20".into());
-        assert_eq!(actual.price.commodity_index, Some(usd_index));
+        assert_eq!(actual.price.get_commodity(), Some(&usd));
     }
 
     #[test]
     fn test_find_price_2_hops() {
         let mut journal = Journal::new();
+        let usd = Commodity::new("USD");
         let eur_index = journal.commodity_pool.create("EUR", None);
         let aud_index = journal.commodity_pool.create("AUD", None);
         let usd_index = journal.commodity_pool.create("USD", None);
@@ -412,6 +466,6 @@ mod tests {
         // TODO: assert_eq!(actual.when, date);
         // 1 EUR = 2 AUD = 6 USD
         assert_eq!(actual.price.quantity, 6.into());
-        assert_eq!(actual.price.commodity_index, Some(usd_index));
+        assert_eq!(actual.price.get_commodity(), Some(&usd));
     }
 }

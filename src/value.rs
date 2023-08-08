@@ -1,24 +1,34 @@
 /*!
  * value.cc
- * 
+ *
  */
 
 use chrono::NaiveDateTime;
 
-use crate::{pool::{CommodityPool, CommodityIndex}, commodity::{Commodity, PricePoint}};
+use crate::{
+    commodity::{Commodity, PricePoint},
+    pool::{CommodityIndex, CommodityPool},
+};
 
 /// commodities = comma-separated list of symbols. Also can contain `=`.
 /// Returns value_t.
-pub(crate) fn exchange_commodities(commodities: &str, add_prices: bool, moment: &NaiveDateTime, pool: &mut CommodityPool) {
+pub(crate) fn exchange_commodities(
+    commodities: &str,
+    add_prices: bool,
+    moment: &NaiveDateTime,
+    pool: &mut CommodityPool,
+) {
     if !commodities.contains(',') && !commodities.contains('=') {
         // only one commodity.
-        return value(moment, pool.find_or_create(commodities, None), &pool);
+        let cdty = pool.find_or_create(commodities, None);
+        todo!("fix")
+        // return value(moment, cdty, &pool);
     }
 
     todo!("complete")
 }
 
-fn value(moment: &NaiveDateTime, in_terms_of: Option<CommodityIndex>, pool: &CommodityPool) {
+fn value(moment: &NaiveDateTime, in_terms_of: Option<&Commodity>, pool: &CommodityPool) {
     // &Commodity
 
     amount_value(moment, in_terms_of, pool)
@@ -30,8 +40,8 @@ fn value(moment: &NaiveDateTime, in_terms_of: Option<CommodityIndex>, pool: &Com
 /// optional<amount_t>
 /// amount_t::value(const datetime_t&   moment,
 ///     const commodity_t * in_terms_of) const
-fn amount_value(moment: &NaiveDateTime, in_terms_of: Option<CommodityIndex>, pool: &CommodityPool) {
-    // if quantity 
+fn amount_value(moment: &NaiveDateTime, in_terms_of: Option<&Commodity>, pool: &CommodityPool) {
+    // if quantity
     //   if has_commodity() && (in_terms_of || ! commodity().has_flags(COMMODITY_PRIMARY))
     let point: Option<PricePoint>;
     // let commodity
@@ -55,6 +65,5 @@ mod tests {
         todo!("run bal -X USD")
 
         // assert
-
     }
 }

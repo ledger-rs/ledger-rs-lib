@@ -30,7 +30,6 @@ use crate::{
     amount::Amount,
     annotate::Annotation,
     journal::{Journal, XactIndex},
-    pool::CommodityIndex,
     post::Post,
     scanner::{self, PostTokens},
     xact::Xact,
@@ -54,7 +53,10 @@ pub(crate) fn parse_date(date_str: &str) -> NaiveDate {
 
 /// Create DateTime from date string only.
 pub fn parse_datetime(iso_str: &str) -> Result<NaiveDateTime, anyhow::Error> {
-    Ok(NaiveDateTime::new(NaiveDate::parse_from_str(iso_str, ISO_DATE_FORMAT)?, NaiveTime::MIN))
+    Ok(NaiveDateTime::new(
+        NaiveDate::parse_from_str(iso_str, ISO_DATE_FORMAT)?,
+        NaiveTime::MIN,
+    ))
 }
 
 pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Option<Amount> {
@@ -65,11 +67,15 @@ pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Option<Amount> {
 /// Parse amount parts (quantity, commodity), i.e. "25", "AUD".
 /// Returns Amount.
 /// Panics if parsing fails.
-pub fn parse_amount_parts(quantity: &str, commodity: &str, journal: &mut Journal) -> Option<Amount> {
+pub fn parse_amount_parts(
+    quantity: &str,
+    commodity: &str,
+    journal: &mut Journal,
+) -> Option<Amount> {
     // Create Commodity, add to collection
-    let commodity_index = journal.commodity_pool.find_or_create(commodity, None);
+    let commodity_opt = journal.commodity_pool.find_or_create(commodity, None);
 
-    Amount::parse(quantity, commodity_index)
+    Amount::parse(quantity, commodity_opt)
 }
 
 pub(crate) struct Parser<'j, T: Read> {
@@ -393,7 +399,9 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
         // details.price /= amount
 
         // store annotation
-        journal.commodity_pool.find_or_create(tokens.symbol, Some(annotation));
+        journal
+            .commodity_pool
+            .find_or_create(tokens.symbol, Some(annotation));
     }
 
     // handle cost (2nd amount)
@@ -523,7 +531,7 @@ mod full_tests {
         let post1 = &xact.posts[0];
         assert_eq!("Expenses", journal.get_account(post1.account_index).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
-        assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
+        assert_eq!(None, post1.amount.as_ref().unwrap().get_commodity());
 
         let post2 = &xact.posts[1];
         assert_eq!("Assets", journal.get_account(post2.account_index).name);
@@ -552,7 +560,6 @@ mod parser_tests {
     use std::{assert_eq, io::Cursor};
 
     use crate::{
-        amount::Quantity,
         journal::Journal,
         parser::{self, read_into_journal},
     };
@@ -582,7 +589,7 @@ mod parser_tests {
         let post1 = &xact.posts[0];
         assert_eq!("Expenses", journal.get_account(post1.account_index).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
-        assert_eq!(None, post1.amount.as_ref().unwrap().commodity_index);
+        assert_eq!(None, post1.amount.as_ref().unwrap().get_commodity());
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &xact.posts[1];
@@ -653,22 +660,20 @@ mod parser_tests {
         // amount
         let Some(a1) = &p1.amount else {panic!()};
         assert_eq!("20", a1.quantity.to_string());
-        let comm1 = journal.get_commodity(a1.commodity_index.unwrap());
+        let comm1 = a1.get_commodity().unwrap();
         assert_eq!("VEUR", comm1.symbol);
         let Some(ref cost1) = p1.cost else { panic!()};
         // cost
         assert_eq!(200, cost1.quantity.into());
-        assert_eq!("EUR", journal.get_amount_commodity(*cost1).unwrap().symbol);
+        assert_eq!("EUR", cost1.get_commodity().unwrap().symbol);
 
         // post 2
         let p2 = &posts[1];
         assert_eq!("Assets", journal.get_post_account(&p2).name);
         // amount
         let Some(a2) = &p2.amount else {panic!()};
-        // assert_eq!("-20", a2.quantity.to_string());
         assert_eq!("-200", a2.quantity.to_string());
-        let comm2 = journal.get_commodity(a2.commodity_index.unwrap());
-        // assert_eq!("VEUR", comm2.symbol);
+        let comm2 = a2.get_commodity().unwrap();
         assert_eq!("EUR", comm2.symbol);
 
         assert!(p2.cost.is_none());
@@ -718,13 +723,12 @@ mod posting_parsing_tests {
         assert_eq!(4, j.accounts.len());
         assert_eq!(2, j.commodity_pool.commodities.len());
         // price
-        assert_eq!(2, j.commodity_pool.commodity_history.graph.node_count());
-        assert_eq!(1, j.commodity_pool.commodity_history.graph.edge_count());
+        assert_eq!(2, j.commodity_pool.commodity_history.node_count());
+        assert_eq!(1, j.commodity_pool.commodity_history.edge_count());
         // Check price: 10 VEUR @ 12.75 EUR
         let price = j
             .commodity_pool
             .commodity_history
-            .graph
             .edge_weight(0.into())
             .unwrap();
         let expected_date = parse_datetime("2023-05-01").unwrap();
@@ -748,8 +752,8 @@ mod posting_parsing_tests {
         let cost = post.cost.unwrap();
         assert_eq!(cost.quantity, 127.5.into());
 
-        let eur_index = j.commodity_pool.find_index("EUR").cloned();
-        assert_eq!(cost.commodity_index, eur_index);
+        let eur = j.commodity_pool.find_commodity("EUR").unwrap();
+        assert_eq!(cost.commodity, eur);
     }
 
     #[test]
@@ -798,7 +802,7 @@ mod posting_parsing_tests {
 mod amount_parsing_tests {
     use super::Amount;
     use crate::{
-        amount::Quantity, journal::Journal, parser::parse_post, pool::CommodityIndex, xact::Xact,
+        amount::Quantity, commodity::Commodity, journal::Journal, parser::parse_post, xact::Xact,
     };
 
     fn setup() -> Journal {
@@ -811,11 +815,7 @@ mod amount_parsing_tests {
 
     #[test]
     fn test_positive_no_commodity() {
-        let expected = Amount {
-            quantity: 20.into(),
-            commodity_index: None,
-            commodity: std::ptr::null(),
-        };
+        let expected = Amount::new(20.into(), None);
         let actual = Amount::parse("20", None).unwrap();
 
         assert_eq!(expected, actual);
@@ -824,22 +824,15 @@ mod amount_parsing_tests {
     #[test]
     fn test_negative_no_commodity() {
         let actual = Amount::parse("-20", None).unwrap();
-        let expected = Amount {
-            quantity: (-20).into(),
-            commodity_index: None,
-            commodity: std::ptr::null(),
-        };
+        let expected = Amount::new((-20).into(), None);
 
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_pos_w_commodity_separated() {
-        let expected = Amount {
-            quantity: 20.into(),
-            commodity_index: Some(CommodityIndex::new(0)),
-            commodity: std::ptr::null(),
-        };
+        let eur = Commodity::new("EUR");
+        let expected = Amount::new(20.into(), Some(&eur));
         let mut journal = setup();
 
         // Act
@@ -852,20 +845,14 @@ mod amount_parsing_tests {
         assert_eq!(expected, *amount);
 
         // commodity
-        let c = journal
-            .commodity_pool
-            .commodity_history
-            .get_commodity(amount.commodity_index.unwrap());
+        let c = amount.get_commodity().unwrap();
         assert_eq!("EUR", c.symbol);
     }
 
     #[test]
     fn test_neg_commodity_separated() {
-        let expected = Amount {
-            quantity: (-20).into(),
-            commodity_index: Some(CommodityIndex::new(0)),
-            commodity: std::ptr::null(),
-        };
+        let eur = Commodity::new("EUR");
+        let expected = Amount::new((-20).into(), Some(&eur));
         let mut journal = setup();
 
         // Act
@@ -876,10 +863,7 @@ mod amount_parsing_tests {
         let Some(a) = &post.amount else { panic!() };
         assert_eq!(&expected, a);
 
-        let commodity = journal
-            .commodity_pool
-            .commodity_history
-            .get_commodity(a.commodity_index.unwrap());
+        let commodity = a.get_commodity().unwrap();
         assert_eq!("EUR", commodity.symbol);
     }
 
@@ -895,14 +879,7 @@ mod amount_parsing_tests {
 
         // Assert
         assert_eq!("-20000.00", amount.quantity.to_string());
-        assert_eq!(
-            "EUR",
-            journal
-                .commodity_pool
-                .commodity_history
-                .get_commodity(amount.commodity_index.unwrap())
-                .symbol
-        );
+        assert_eq!("EUR", amount.get_commodity().unwrap().symbol);
     }
 
     #[test]
@@ -917,14 +894,7 @@ mod amount_parsing_tests {
 
         // Assert
         assert_eq!("-20000.00", amount.quantity.to_string());
-        assert_eq!(
-            "A$",
-            journal
-                .commodity_pool
-                .commodity_history
-                .get_commodity(amount.commodity_index.unwrap())
-                .symbol
-        );
+        assert_eq!("A$", amount.get_commodity().unwrap().symbol);
     }
 
     #[test]

@@ -2,7 +2,7 @@
  * Implemetation of the parser that returns an iterator over the results
  */
 
-use crate::{viewmodel::Xact, directives::DirectiveType};
+use crate::{directives::DirectiveType, xact::Xact};
 
 
 #[derive(Debug)]
@@ -30,7 +30,7 @@ impl Iterator for SimpleParserIter {
             return None;
         }
 
-        Some(DirectiveType::Xact(Xact::new()))
+        Some(DirectiveType::Xact(Xact::default()))
     }
 }
 

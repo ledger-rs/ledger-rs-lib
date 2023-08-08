@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 
 use crate::{
     balance::Balance,
-    journal::{Journal, PostIndex, XactIndex},
+    journal::{Journal, XactIndex},
     parser,
     post::Post,
 };
@@ -20,7 +20,6 @@ pub struct Xact {
     pub date: Option<NaiveDate>,
     pub aux_date: Option<NaiveDate>,
     pub payee: String,
-    // pub post_indices: Vec<PostIndex>,
     pub posts: Vec<Post>,
     pub note: Option<String>,
     // pub balance: Amount,
@@ -154,7 +153,6 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
         let mut top_post: Option<&Post> = None;
         for post in &xact.posts {
-            // let post = journal.get_post(*i);
             if post.amount.is_some() && top_post.is_none() {
                 top_post = Some(post);
             }
@@ -169,19 +167,20 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
             // if x && y
             if !x.is_zero() && !y.is_zero() {
-                if x.commodity_index != top_post.unwrap().amount.unwrap().commodity_index {
+                if x.get_commodity() != top_post.unwrap().amount.unwrap().get_commodity() {
                     (x, y) = (y, x);
                 }
 
-                let comm = x.commodity_index;
+                let comm = x.get_commodity();
                 let per_unit_cost = (*y / *x).abs();
 
                 for post in &mut xact.posts {
                     // let post = journal.posts.get_mut(*i).unwrap();
                     let amt = post.amount.unwrap();
 
-                    if amt.commodity_index == comm {
-                        balance -= amt;
+                    if amt.get_commodity() == comm {
+                        todo!("check below");
+                        // balance -= amt;
                         post.cost = Some(per_unit_cost * amt);
                         balance += post.cost.unwrap();
                     }
@@ -200,7 +199,7 @@ pub fn finalize(xact_index: XactIndex, journal: &mut Journal) {
 
             let Some(amt) = &p.amount else {panic!("No amount found on the posting")};
             let Some(cost) = &p.cost else {panic!("No cost found on the posting")};
-            if amt.commodity_index == cost.commodity_index {
+            if amt.get_commodity() == cost.get_commodity() {
                 panic!("A posting's cost must be of a different commodity than its amount");
             }
 
