@@ -60,7 +60,7 @@ pub fn parse_datetime(iso_str: &str) -> Result<NaiveDateTime, anyhow::Error> {
     ))
 }
 
-pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Option<Amount> {
+pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Result<Amount, Error> {
     let (tokens, _) = scanner::scan_amount(amount_str);
     parse_amount_parts(tokens.quantity, tokens.symbol, journal)
 }
@@ -72,11 +72,12 @@ pub fn parse_amount_parts(
     quantity: &str,
     commodity: &str,
     journal: &mut Journal,
-) -> Option<Amount> {
+) -> Result<Amount, Error> {
     // Create Commodity, add to collection
     let commodity_opt = journal.commodity_pool.find_or_create(commodity, None);
+    let quantity = Quantity::from_str(quantity)?;
 
-    Some(Amount::new(Quantity::from_str(quantity).unwrap(), Some(commodity_opt)))
+    Ok(Amount::new(quantity, Some(commodity_opt)))
 }
 
 pub(crate) struct Parser<'j, T: Read> {
@@ -385,7 +386,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) -> Resu
     let account_index = journal.register_account(tokens.account).unwrap();
 
     // create amount
-    let amount = parse_amount_parts(tokens.quantity, tokens.symbol, journal);
+    let amount = parse_amount_parts(tokens.quantity, tokens.symbol, journal)?;
 
     // parse and add annotations.
     {
@@ -406,7 +407,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) -> Resu
     }
 
     // handle cost (2nd amount)
-    let cost = parse_cost(&tokens, &amount, journal);
+    let cost = parse_cost(&tokens, &Some(amount), journal)?;
 
     // note
     // TODO: parse note
@@ -416,7 +417,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) -> Resu
     let post: Post;
     {
         // Create Post, link Xact, Account, Commodity
-        post = Post::new(account_index, xact_index, amount, cost, note);
+        post = Post::new(account_index, xact_index, Some(amount), Some(cost), note);
         // post_index = journal.add_post(post);
     }
 
@@ -441,26 +442,24 @@ fn parse_cost(
     tokens: &PostTokens,
     amount: &Option<Amount>,
     journal: &mut Journal,
-) -> Option<Amount> {
+) -> Result<Amount, Error> {
     if tokens.cost_quantity.is_empty() || amount.is_none() {
-        return None;
+        // TODO: return Err();
+        panic!("no quantity");
     }
 
     // parse cost (per-unit vs total)
-    let mut cost = parse_amount_parts(tokens.cost_quantity, tokens.cost_symbol, journal);
+    let mut cost = parse_amount_parts(tokens.cost_quantity, tokens.cost_symbol, journal)?;
 
     if tokens.is_per_unit {
         // per-unit cost
-        let Some(mut cost_val) = cost else {
-            panic!("Cost is None!");
-        };
-
+        let mut cost_val = cost;
         cost_val *= amount.unwrap();
-        cost = Some(cost_val);
+        cost = cost_val;
     }
     // Total cost is already the end-value.
 
-    cost
+    Ok(cost)
 }
 
 #[cfg(test)]
