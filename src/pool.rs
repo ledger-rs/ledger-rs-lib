@@ -99,13 +99,19 @@ impl CommodityPool {
         mut_cdty as *const Commodity
     }
 
+    pub fn find(&self, symbol: &str) -> Option<&Commodity> {
+        self.commodities.get(symbol)
+    }
+
     pub fn find_index(&self, symbol: &str) -> Option<CommodityIndex> {
         let x = self.commodities.get(symbol);
         x.unwrap().graph_index
     }
 
-    pub fn find_commodity(&self, symbol: &str) -> Option<&Commodity> {
-        self.commodities.get(symbol)
+    pub fn find_or_create_by_name(&self, symbol: &str) {
+        todo!()
+        // find
+        // create
     }
 
     /// Finds a commodity with the given symbol, or creates one.
@@ -301,7 +307,7 @@ mod tests {
 
         assert_eq!(SYMBOL, cdty.symbol);
 
-        assert_eq!(SYMBOL, pool.find_commodity(SYMBOL).unwrap().symbol);
+        assert_eq!(SYMBOL, pool.find(SYMBOL).unwrap().symbol);
     }
 
     #[test]

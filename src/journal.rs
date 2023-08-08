@@ -57,8 +57,21 @@ impl Journal {
         self.xacts.len() - 1
     }
 
+    pub fn create_account(&mut self, name: &str) -> *const Account {
+        let acct = Account::new(name);
+        let ptr = &acct as *const Account;
+        self.add_account(acct);
+        ptr
+    }
+
     pub fn get_account(&self, index: AccountIndex) -> &Account {
         &self.accounts[index]
+    }
+
+    pub fn get_account_from_ptr(&self, acct_ptr: *const Account) -> &Account {
+        unsafe {
+            &*acct_ptr
+        }
     }
 
     pub fn get_commodity(&self, index: CommodityIndex) -> &Commodity {

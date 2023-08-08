@@ -128,7 +128,7 @@ fn test_parsing_lots_per_unit() {
     assert_eq!(cost.quantity, 200.into());
     // sell
     // let cur_index: CommodityIndex = 1.into();
-    let cdty = journal.commodity_pool.find_commodity("EUR").unwrap();
+    let cdty = journal.commodity_pool.find("EUR").unwrap();
     let expected_cost = Amount::new((-250).into(), Some(cdty));
     assert_eq!(expected_cost, journal.posts[2].cost.unwrap());
 

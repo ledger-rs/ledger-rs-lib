@@ -230,7 +230,7 @@ Account Expenses has balance 20"#;
         assert_eq!(1, journal.commodity_pool.commodities.len());
         assert_eq!(
             "EUR",
-            journal.commodity_pool.find_commodity("EUR").unwrap().symbol
+            journal.commodity_pool.find("EUR").unwrap().symbol
         );
     }
 }

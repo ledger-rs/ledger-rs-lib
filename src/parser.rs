@@ -752,7 +752,7 @@ mod posting_parsing_tests {
         let cost = post.cost.unwrap();
         assert_eq!(cost.quantity, 127.5.into());
 
-        let eur = j.commodity_pool.find_commodity("EUR").unwrap();
+        let eur = j.commodity_pool.find("EUR").unwrap();
         assert_eq!(cost.commodity, eur);
     }
 

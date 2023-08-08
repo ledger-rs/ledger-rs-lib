@@ -2,7 +2,8 @@
  * Proof-of-concept and ideas
  *
  * References between model entities
- * It seems that only using Rc<> would work for this purpose.
+ * Testing Rc<> and RefCell<>, raw pointers, and other concepts to find
+ * an optimal data structure.
  */
 
 use core::panic;
@@ -32,12 +33,6 @@ impl Account {
     pub fn get_children(&self) -> &Vec<Rc<RefCell<Account>>> {
         &self.children
     }
-}
-
-#[derive(Debug)]
-struct Post {
-    // account: Rc<Account>,
-    // other post fields...
 }
 
 /// Using references with Rc<RefCell<>>
