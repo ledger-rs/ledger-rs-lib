@@ -825,7 +825,7 @@ mod posting_parsing_tests {
 mod amount_parsing_tests {
     use super::Amount;
     use crate::{
-        amount::Quantity, commodity::Commodity, journal::Journal, parser::parse_post, xact::Xact,
+        amount::Quantity, journal::Journal, parser::parse_post, xact::Xact,
     };
 
     fn setup() -> Journal {
@@ -857,7 +857,7 @@ mod amount_parsing_tests {
         const SYMBOL: &str = "EUR";
         let mut journal = setup();
         let eur_ptr = journal.commodity_pool.create(SYMBOL, None);
-        let xact_ptr = journal.xacts.get(0).unwrap() as *const Xact;
+        let xact_ptr = &journal.xacts[0] as *const Xact;
         let expected = Amount::new(20.into(), Some(eur_ptr));
 
         // Act
@@ -869,7 +869,9 @@ mod amount_parsing_tests {
         let post = xact.posts.first().unwrap();
         let amount = &post.amount.unwrap();
 
-        // assert!(actual.is_some());
+        // assert!(amount.is_some());
+        println!("pointers: {:?} {:?} {:?} {:?}", expected.commodity, &expected.commodity, amount.commodity, &amount.commodity);
+        assert_eq!(&expected.commodity, &amount.commodity);
         assert_eq!(expected, *amount);
 
         // commodity
@@ -879,21 +881,22 @@ mod amount_parsing_tests {
 
     #[test]
     fn test_neg_commodity_separated() {
-        let eur = Commodity::new("EUR");
-        let expected = Amount::new((-20).into(), Some(&eur));
+        const SYMBOL: &str = "EUR";
         let mut journal = setup();
+        let eur_ptr = journal.commodity_pool.create(SYMBOL, None);
+        let expected = Amount::new((-20).into(), Some(eur_ptr));
         let xact_ptr = &journal.xacts[0] as *const Xact;
 
         // Act
-        parse_post("  Assets  -20 EUR", xact_ptr, &mut journal);
+        let _ = parse_post("  Assets  -20 EUR", xact_ptr, &mut journal);
 
         // Assert
         let xact = &journal.xacts[0];
         let post = xact.posts.first().unwrap();
-        let Some(a) = &post.amount else { panic!() };
-        assert_eq!(&expected, a);
+        let Some(amt) = &post.amount else { panic!() };
+        assert_eq!(&expected, amt);
 
-        let commodity = a.get_commodity().unwrap();
+        let commodity = amt.get_commodity().unwrap();
         assert_eq!("EUR", commodity.symbol);
     }
 

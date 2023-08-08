@@ -60,14 +60,13 @@ impl CommodityPool {
     }
 
     /// Creates a new Commodity for the given Symbol.
-    pub fn create(&mut self, symbol: &str, annotation: Option<Annotation>) -> *const Commodity {
+    pub fn create(&mut self, symbol: &str, annotation_option: Option<Annotation>) -> *const Commodity {
         // todo: handle double quotes
-
         
         let mut c = Commodity::new(symbol);
         
         // Annotation
-        if let Some(ann) = annotation {
+        if let Some(ann) = annotation_option {
             // Create an annotated commodity.
             // TODO: assert that the commodity does not have an annotation already.
 
@@ -77,26 +76,28 @@ impl CommodityPool {
             self.annotated_commodities.insert(symbol.to_owned(), ann);
         }
 
+        // let mut_cdty = self.commodities.entry(symbol.to_owned())
+        //     .or_insert(c);
+
         // add to map
-        // self.commodities.insert(symbol.to_string(), Rc::new(c));
-        // let x = &mut c as *mut Commodity;
-        // self.commodities.insert(symbol.to_string(), c);
-        let mut_cdty = self.commodities.entry(symbol.to_owned())
-            .or_insert(c);
+        self.commodities.insert(symbol.to_string(), c);
+        // get the new variable address.
+        let new_commodity = self.commodities.get(symbol).unwrap();
 
-        // let mut_cdty = self.commodities.get_mut(symbol).unwrap();
         // add to price history graph.
-        let i = self.commodity_history.add_commodity(mut_cdty as *mut Commodity);
+        let cdty_ptr = new_commodity as *const Commodity;
+        log::debug!("commodity pointer: {:?}", cdty_ptr);
+        let i = self.commodity_history.add_commodity(cdty_ptr);
 
-        mut_cdty.graph_index = Some(i);
-        // Add index to map.
-        // self.commodities.insert(symbol.to_owned(), i);
+        unsafe {
+            let mut_ptr = cdty_ptr as *mut Commodity;
+            let mut_cdty = &mut *mut_ptr;
+            mut_cdty.graph_index = Some(i);
+        }
 
         log::debug!("Commodity {:?} created. index: {:?}", symbol, i);
 
-        // let x = self.commodities.get(symbol).unwrap();
-        // x
-        mut_cdty as *const Commodity
+        cdty_ptr
     }
 
     pub fn find(&self, symbol: &str) -> Option<&Commodity> {
