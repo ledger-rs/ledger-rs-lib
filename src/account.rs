@@ -20,7 +20,7 @@ pub struct Account {
     // pub posts: Vec<Post>,
     /// indices of Posts in the Journal.Posts array.
     // pub post_indices: Vec<PostIndex>,
-    posts: Vec<*const Post>,
+    pub posts: Vec<*const Post>,
     // deferred posts
     // value_expr
 }

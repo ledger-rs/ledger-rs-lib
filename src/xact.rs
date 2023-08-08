@@ -80,9 +80,12 @@ impl Xact {
         self.note = Some(note.into());
     }
 
-    pub fn add_post(&mut self, mut post: Post) {
+    /// Adds the post to the collection and returns the reference to it.
+    pub fn add_post(&mut self, mut post: Post) -> &Post {
         post.xact_ptr = self as *const Xact;
         self.posts.push(post);
+
+        self.posts.last().unwrap()
     }
 }
 

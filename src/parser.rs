@@ -75,7 +75,7 @@ pub fn parse_amount_parts(
 ) -> Result<Amount, Error> {
     // Create Commodity, add to collection
     let commodity_ptr = journal.commodity_pool.find_or_create(commodity, None);
-    
+
     let quantity = Quantity::from_str(quantity).unwrap();
 
     Ok(Amount::new(quantity, Some(commodity_ptr)))
@@ -247,7 +247,7 @@ impl<'j, T: Read> Parser<'j, T> {
     fn create_xact(&mut self) -> *const Xact {
         let tokens = scanner::tokenize_xact_header(&self.buffer);
         let xact = Xact::create(tokens[0], tokens[1], tokens[2], tokens[3]);
-        
+
         let ptr = &xact as *const Xact;
         // Add xact to the journal
         self.journal.add_xact(xact);
@@ -424,23 +424,12 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     // TODO: parse note
     let note = None;
 
-    // let post_index;
-    let post: Post;
+    // Create Post, link Xact, Account, Commodity
+    let post_ref: &Post;
     {
-        // Create Post, link Xact, Account, Commodity
+        let post: Post;
         post = Post::new(account_index, xact_ptr, Some(amount), cost_option, note);
-        // post_index = journal.add_post(post);
-    }
 
-    // add Post to Account.posts
-    {
-        let account = journal.accounts.get_mut(account_index).unwrap();
-        // account.post_indices.push(post_index);
-        // TODO: todo!("Add a reference to account");
-        // account.po
-    }
-
-    {
         // add Post to Xact.
         // let xact = journal.xacts.get_mut(xact_ptr).unwrap();
         let xact: &mut Xact;
@@ -448,7 +437,13 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
             xact = &mut *(xact_ptr.cast_mut());
         }
         // xact.post_indices.push(post_index);
-        xact.add_post(post);
+        post_ref = xact.add_post(post);
+    }
+
+    // add Post to Account.posts
+    {
+        let account = journal.accounts.get_mut(account_index).unwrap();
+        account.posts.push(post_ref);
     }
 
     Ok(())
@@ -814,19 +809,14 @@ mod posting_parsing_tests {
         let xact = &journal.xacts[0];
         assert!(xact.posts[0].note.is_some());
         assert!(xact.posts[1].note.is_none());
-        assert_eq!(
-            Some("this is post comment".to_string()),
-            xact.posts[0].note
-        );
+        assert_eq!(Some("this is post comment".to_string()), xact.posts[0].note);
     }
 }
 
 #[cfg(test)]
 mod amount_parsing_tests {
     use super::Amount;
-    use crate::{
-        amount::Quantity, journal::Journal, parser::parse_post, xact::Xact,
-    };
+    use crate::{amount::Quantity, journal::Journal, parser::parse_post, xact::Xact};
 
     fn setup() -> Journal {
         let mut journal = Journal::new();
@@ -869,8 +859,6 @@ mod amount_parsing_tests {
         let post = xact.posts.first().unwrap();
         let amount = &post.amount.unwrap();
 
-        // assert!(amount.is_some());
-        println!("pointers: {:?} {:?} {:?} {:?}", expected.commodity, &expected.commodity, amount.commodity, &amount.commodity);
         assert_eq!(&expected.commodity, &amount.commodity);
         assert_eq!(expected, *amount);
 
