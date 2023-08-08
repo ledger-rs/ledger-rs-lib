@@ -60,7 +60,7 @@ pub fn parse_datetime(iso_str: &str) -> Result<NaiveDateTime, anyhow::Error> {
     ))
 }
 
-pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Result<Amount, Error> {
+pub fn parse_amount(amount_str: &str, journal: &mut Journal) -> Option<Amount> {
     let (tokens, _) = scanner::scan_amount(amount_str);
     parse_amount_parts(tokens.quantity, tokens.symbol, journal)
 }
@@ -72,13 +72,16 @@ pub fn parse_amount_parts(
     quantity: &str,
     commodity: &str,
     journal: &mut Journal,
-) -> Result<Amount, Error> {
+) -> Option<Amount> {
     // Create Commodity, add to collection
     let commodity_ptr = journal.commodity_pool.find_or_create(commodity, None);
 
-    let quantity = Quantity::from_str(quantity).unwrap();
+    if let Some(quantity) = Quantity::from_str(quantity) {
+        Some(Amount::new(quantity, Some(commodity_ptr)))
+    } else {
+        None
+    }
 
-    Ok(Amount::new(quantity, Some(commodity_ptr)))
 }
 
 pub(crate) struct Parser<'j, T: Read> {
@@ -396,7 +399,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     let account_index = journal.register_account(tokens.account).unwrap();
 
     // create amount
-    let amount = parse_amount_parts(tokens.quantity, tokens.symbol, journal)?;
+    let amount_opt = parse_amount_parts(tokens.quantity, tokens.symbol, journal);
 
     // parse and add annotations.
     {
@@ -417,7 +420,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     }
 
     // handle cost (2nd amount)
-    let cost_option = parse_cost(&tokens, &Some(amount), journal);
+    let cost_option = parse_cost(&tokens, &amount_opt, journal);
 
     // note
     // TODO: parse note
@@ -427,7 +430,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     let post_ref: &Post;
     {
         let post: Post;
-        post = Post::new(account_index, xact_ptr, Some(amount), cost_option, note);
+        post = Post::new(account_index, xact_ptr, amount_opt, cost_option, note);
 
         // add Post to Xact.
         // let xact = journal.xacts.get_mut(xact_ptr).unwrap();
@@ -459,7 +462,7 @@ fn parse_cost(
 
     // parse cost (per-unit vs total)
     let cost_result = parse_amount_parts(tokens.cost_quantity, tokens.cost_symbol, journal);
-    if cost_result.is_err() {
+    if cost_result.is_none() {
         return None;
     }
     let mut cost = cost_result.unwrap();

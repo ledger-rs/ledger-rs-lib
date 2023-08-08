@@ -64,7 +64,9 @@ impl Account {
             unsafe {
                 post = post_ptr.read();                
             }
-            bal.add(&post.amount.unwrap());
+            if let Some(amt) = post.amount {
+                bal.add(&amt);
+            }
         }
 
         bal
