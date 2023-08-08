@@ -100,6 +100,7 @@ mod tests {
 
     use crate::{amount::Quantity, journal::Journal, parse_file, parser};
 
+    /// Search for an account by the full account name.
     #[test]
     fn test_fullname() {
         let mut j = Journal::new();

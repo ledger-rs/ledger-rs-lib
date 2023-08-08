@@ -23,7 +23,7 @@ pub struct Journal {
 
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
-    pub posts: Vec<Post>,
+    // pub posts: Vec<Post>,
     pub accounts: Vec<Account>,
 }
 
@@ -34,7 +34,7 @@ impl Journal {
 
             commodity_pool: CommodityPool::new(),
             xacts: vec![],
-            posts: vec![],
+            // posts: vec![],
             accounts: vec![],
             // sources: Vec<fileinfo?>
         };
@@ -55,6 +55,11 @@ impl Journal {
     pub fn add_xact(&mut self, xact: Xact) -> XactIndex {
         self.xacts.push(xact);
         self.xacts.len() - 1
+    }
+
+    pub fn all_posts(&self) -> Vec<&Post> {
+        self.xacts.iter().flat_map(|x| x.posts.iter())
+        .collect()
     }
 
     pub fn create_account(&mut self, name: &str) -> *const Account {

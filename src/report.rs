@@ -84,7 +84,9 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
     // calculate balances
     for (i, acc) in journal.accounts.iter().enumerate() {
         // get posts for this account.
-        let filtered_posts = journal.posts.iter().filter(|post| post.account_index == i);
+        let filtered_posts = journal
+            .xacts.iter().flat_map(|x| x.posts.iter())
+            .filter(|post| post.account_index == i);
 
         // TODO: separate balance per currency
 

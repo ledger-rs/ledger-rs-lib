@@ -713,8 +713,9 @@ mod parser_tests {
         read_into_journal(cursor, &mut journal);
 
         // Assert
+        let xact = &journal.xacts[0];
         assert_eq!(1, journal.xacts.len());
-        assert_eq!(4, journal.posts.len());
+        assert_eq!(4, xact.posts.len());
         assert_eq!(7, journal.accounts.len());
         assert_eq!(2, journal.commodity_pool.commodities.len());
     }
@@ -806,11 +807,12 @@ mod posting_parsing_tests {
         parser.parse();
 
         // Assert
-        assert!(journal.posts[0].note.is_some());
-        assert!(journal.posts[1].note.is_none());
+        let xact = &journal.xacts[0];
+        assert!(xact.posts[0].note.is_some());
+        assert!(xact.posts[1].note.is_none());
         assert_eq!(
             Some("this is post comment".to_string()),
-            journal.posts[0].note
+            xact.posts[0].note
         );
     }
 }
@@ -851,11 +853,14 @@ mod amount_parsing_tests {
         let eur = Commodity::new("EUR");
         let expected = Amount::new(20.into(), Some(&eur));
         let mut journal = setup();
+        let xact_ptr = journal.xacts.get(0).unwrap() as *const Xact;
 
         // Act
 
-        parse_post("  Assets  20 EUR", std::ptr::null(), &mut journal);
-        let post = journal.posts.first().unwrap();
+        let _ = parse_post("  Assets  20 EUR", xact_ptr, &mut journal);
+        // let post = journal.posts.first().unwrap();
+        let xact = &journal.xacts[0];
+        let post = xact.posts.first().unwrap();
         let Some(amount) = &post.amount else { todo!() }; // else None;
 
         // assert!(actual.is_some());
@@ -871,13 +876,14 @@ mod amount_parsing_tests {
         let eur = Commodity::new("EUR");
         let expected = Amount::new((-20).into(), Some(&eur));
         let mut journal = setup();
-        let xact = journal.xacts.get(0).unwrap();
+        let xact_ptr = &journal.xacts[0] as *const Xact;
 
         // Act
-        parse_post("  Assets  -20 EUR", xact, &mut journal);
+        parse_post("  Assets  -20 EUR", xact_ptr, &mut journal);
 
         // Assert
-        let post = journal.posts.first().unwrap();
+        let xact = &journal.xacts[0];
+        let post = xact.posts.first().unwrap();
         let Some(a) = &post.amount else { panic!() };
         assert_eq!(&expected, a);
 
@@ -889,11 +895,12 @@ mod amount_parsing_tests {
     fn test_full_w_commodity_separated() {
         // Arrange
         let mut journal = setup();
-        let xact = journal.xacts.get(0).unwrap();
+        let xact_ptr = &journal.xacts[0] as *const Xact;
 
         // Act
-        parse_post("  Assets  -20000.00 EUR", xact, &mut journal);
-        let post = journal.posts.first().unwrap();
+        let _ = parse_post("  Assets  -20000.00 EUR", xact_ptr, &mut journal);
+        let xact = &journal.xacts[0];
+        let post = xact.posts.first().unwrap();
         let Some(ref amount) = post.amount else { panic!()};
 
         // Assert
@@ -905,11 +912,12 @@ mod amount_parsing_tests {
     fn test_full_commodity_first() {
         // Arrange
         let mut journal = setup();
-        let xact = journal.xacts.get(0).unwrap();
+        let xact_ptr = &journal.xacts[0] as *const Xact;
 
         // Act
-        let _ = parse_post("  Assets  A$-20000.00", xact, &mut journal);
-        let post = journal.posts.first().unwrap();
+        let _ = parse_post("  Assets  A$-20000.00", xact_ptr, &mut journal);
+        let xact = &journal.xacts[0];
+        let post = xact.posts.first().unwrap();
         let Some(ref amount) = post.amount else { panic!()};
 
         // Assert

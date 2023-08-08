@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 
 use crate::{
     balance::Balance,
-    journal::{Journal, XactIndex},
+    journal::Journal,
     parser,
     post::Post,
 };

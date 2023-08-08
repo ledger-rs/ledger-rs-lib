@@ -205,18 +205,22 @@ Account Expenses has balance 20"#;
         let journal = super::session_read_journal_files(&input_options);
 
         // Assert
+        let xact0 = &journal.xacts[0];
+        let xact1 = &journal.xacts[1];
 
         // xacts
         assert_eq!(2, journal.xacts.len());
-        assert_eq!("Payee", journal.xacts[0].payee);
-        assert_eq!("Supermarket", journal.xacts[1].payee);
+        assert_eq!("Payee", xact0.payee);
+        assert_eq!("Supermarket", xact1.payee);
 
         // posts
-        assert_eq!(4, journal.posts.len());
-        assert_eq!(Some(Amount::new(20.into(), None)), journal.posts[0].amount);
+        // assert_eq!(4, journal.posts.len());
+        assert_eq!(2, xact0.posts.len());
+        assert_eq!(2, xact1.posts.len());
+        assert_eq!(Some(Amount::new(20.into(), None)), xact0.posts[0].amount);
         assert_eq!(
             Some(Amount::new(20.into(), Some(&cdty))),
-            journal.posts[2].amount
+            xact1.posts[0].amount
         );
 
         // accounts
