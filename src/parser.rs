@@ -418,7 +418,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     }
 
     // handle cost (2nd amount)
-    let cost = parse_cost(&tokens, &Some(amount), journal)?;
+    let cost_option = parse_cost(&tokens, &Some(amount), journal);
 
     // note
     // TODO: parse note
@@ -428,9 +428,8 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     let post: Post;
     {
         // Create Post, link Xact, Account, Commodity
-        post = Post::new(account_index, xact_ptr, Some(amount), Some(cost), note);
+        post = Post::new(account_index, xact_ptr, Some(amount), cost_option, note);
         // post_index = journal.add_post(post);
-        
     }
 
     // add Post to Account.posts
@@ -438,6 +437,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
         let account = journal.accounts.get_mut(account_index).unwrap();
         // account.post_indices.push(post_index);
         // TODO: todo!("Add a reference to account");
+        // account.po
     }
 
     {
@@ -458,14 +458,17 @@ fn parse_cost(
     tokens: &PostTokens,
     amount: &Option<Amount>,
     journal: &mut Journal,
-) -> Result<Amount, Error> {
+) -> Option<Amount> {
     if tokens.cost_quantity.is_empty() || amount.is_none() {
-        // TODO: return Err();
-        panic!("no quantity");
+        return None;
     }
 
     // parse cost (per-unit vs total)
-    let mut cost = parse_amount_parts(tokens.cost_quantity, tokens.cost_symbol, journal)?;
+    let cost_result = parse_amount_parts(tokens.cost_quantity, tokens.cost_symbol, journal);
+    if cost_result.is_err() {
+        return None;
+    }
+    let mut cost = cost_result.unwrap();
 
     if tokens.is_per_unit {
         // per-unit cost
@@ -475,7 +478,7 @@ fn parse_cost(
     }
     // Total cost is already the end-value.
 
-    Ok(cost)
+    Some(cost)
 }
 
 #[cfg(test)]
@@ -851,18 +854,20 @@ mod amount_parsing_tests {
 
     #[test]
     fn test_pos_w_commodity_separated() {
-        let eur = Commodity::new("EUR");
-        let expected = Amount::new(20.into(), Some(&eur));
+        const SYMBOL: &str = "EUR";
         let mut journal = setup();
+        let eur_ptr = journal.commodity_pool.create(SYMBOL, None);
         let xact_ptr = journal.xacts.get(0).unwrap() as *const Xact;
+        let expected = Amount::new(20.into(), Some(eur_ptr));
 
         // Act
 
         let _ = parse_post("  Assets  20 EUR", xact_ptr, &mut journal);
-        // let post = journal.posts.first().unwrap();
+
+        // Assert
         let xact = &journal.xacts[0];
         let post = xact.posts.first().unwrap();
-        let Some(amount) = &post.amount else { todo!() }; // else None;
+        let amount = &post.amount.unwrap();
 
         // assert!(actual.is_some());
         assert_eq!(expected, *amount);
