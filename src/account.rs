@@ -120,8 +120,9 @@ mod tests {
         assert_eq!("Expenses:Food", actual);
     }
 
+    /// Test parsing of Amount
     #[test]
-    fn test_amount() {
+    fn test_amount_parsing() {
         let mut journal = Journal::new();
         parse_file("tests/basic.ledger", &mut journal);
         let index = journal.find_account_index("Assets:Cash").unwrap();
@@ -129,6 +130,7 @@ mod tests {
 
         let actual = account.amount();
 
+        // assert
         assert!(!actual.amounts.is_empty());
         assert_eq!(Quantity::from(-20), actual.amounts[0].quantity);
         let commodity = actual.amounts[0].get_commodity().unwrap();

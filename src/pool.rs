@@ -120,12 +120,12 @@ impl CommodityPool {
         &mut self,
         symbol: &str,
         annotation: Option<Annotation>,
-    ) -> Option<*const Commodity> {
+    ) -> *const Commodity {
         if symbol.is_empty() {
-            return None;
+            return std::ptr::null();
         }
 
-        // Try using entry.
+        // Try using entry?
         // self.commodities.entry(symbol).
 
         if let Some(c) = self.commodities.get(symbol) {
@@ -136,10 +136,9 @@ impl CommodityPool {
                     .insert(symbol.to_owned(), annotation.unwrap());
             }
 
-            Some(c)
+            c
         } else {
-            todo!("complete")
-            // Some(self.create(symbol, annotation))
+            self.create(symbol, annotation)
         }
     }
 
@@ -245,8 +244,7 @@ impl CommodityPool {
         let datetime = NaiveDateTime::new(date, time);
 
         // commodity
-        let Some(commodity_index) = self.find_or_create(tokens[2], None)
-            else {panic!("could not add commodity")};
+        let commodity_ptr = self.find_or_create(tokens[2], None);
 
         // quantity
         let quantity = Quantity::from_str(tokens[3]).expect("quantity parsed");
@@ -255,12 +253,11 @@ impl CommodityPool {
         let cost_commodity = self.find_or_create(tokens[4], None);
 
         // cost
-        let cost = Amount::new(quantity, cost_commodity);
+        let cost = Amount::new(quantity, Some(cost_commodity));
 
         // Add price for commodity
-        todo!("fix")
-        // self.commodity_history
-        //     .add_price(commodity_index, datetime, cost);
+        self.commodity_history
+            .add_price(commodity_ptr, datetime, cost);
     }
 }
 

@@ -24,10 +24,11 @@ use std::{
     todo,
 };
 
+use anyhow::Error;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 use crate::{
-    amount::Amount,
+    amount::{Amount, Quantity},
     annotate::Annotation,
     journal::{Journal, XactIndex},
     post::Post,
@@ -75,7 +76,7 @@ pub fn parse_amount_parts(
     // Create Commodity, add to collection
     let commodity_opt = journal.commodity_pool.find_or_create(commodity, None);
 
-    Amount::parse(quantity, commodity_opt)
+    Some(Amount::new(Quantity::from_str(quantity).unwrap(), Some(commodity_opt)))
 }
 
 pub(crate) struct Parser<'j, T: Read> {
@@ -377,7 +378,7 @@ impl<'j, T: Read> Parser<'j, T> {
 
 /// Parses Post from the buffer, adds it to the Journal and links
 /// to Xact, Account, etc.
-fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
+fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) -> Result<(), Error> {
     let tokens = scanner::scan_post(input);
 
     // Create Account, add to collection
@@ -393,7 +394,7 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
             tokens.price_quantity,
             tokens.price_commodity,
             journal,
-        );
+        )?;
 
         // TODO: if the cost price is total (not per unit)
         // details.price /= amount
@@ -432,6 +433,8 @@ fn parse_post(input: &str, xact_index: XactIndex, journal: &mut Journal) {
         // xact.post_indices.push(post_index);
         xact.add_post(post);
     }
+
+    Ok(())
 }
 
 fn parse_cost(
@@ -816,14 +819,14 @@ mod amount_parsing_tests {
     #[test]
     fn test_positive_no_commodity() {
         let expected = Amount::new(20.into(), None);
-        let actual = Amount::parse("20", None).unwrap();
+        let actual = Amount::new(20.into(), None);
 
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_negative_no_commodity() {
-        let actual = Amount::parse("-20", None).unwrap();
+        let actual = Amount::new((-20).into(), None);
         let expected = Amount::new((-20).into(), None);
 
         assert_eq!(expected, actual);
@@ -902,10 +905,9 @@ mod amount_parsing_tests {
         let input = "-1000000.00";
         let expected = Quantity::from(-1_000_000);
 
-        let amount = Amount::parse(input, None);
-        assert!(amount.is_some());
+        let amount = Amount::new(Quantity::from_str(input).unwrap(), None);
 
-        let actual = amount.unwrap().quantity;
+        let actual = amount.quantity;
 
         assert_eq!(expected, actual);
     }
@@ -935,14 +937,6 @@ mod amount_parsing_tests {
         actual.add(&other);
 
         assert_eq!(Quantity::from(34), actual.quantity);
-    }
-
-    #[test]
-    fn test_null_amount() {
-        let input = " ";
-        let actual = Amount::parse(input, None);
-
-        assert_eq!(None, actual);
     }
 
     #[test]

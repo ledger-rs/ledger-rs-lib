@@ -38,12 +38,6 @@ impl Commodity {
             annotated: false,
         }
     }
-
-    // pub fn from_ptr(ptr: *const Commodity) -> Commodity {
-    //     unsafe {
-    //         *ptr
-    //     }
-    // }
 }
 
 /// commodity.cc

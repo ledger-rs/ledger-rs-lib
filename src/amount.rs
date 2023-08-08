@@ -39,27 +39,27 @@ impl Amount {
 
     /// Creates a new Amount instance.
     /// Parses the quantity only and uses the given commodity index.
-    pub fn parse(quantity: &str, commodity: Option<*const Commodity>) -> Option<Self> {
-        if quantity.is_empty() {
-            return None;
-        }
+    // pub fn parse(quantity: &str, commodity: Option<*const Commodity>) -> Option<Self> {
+    //     if quantity.is_empty() {
+    //         return None;
+    //     }
 
-        let quantity_result = Quantity::from_str(quantity);
-        if quantity_result.is_err() {
-            return None;
-        }
+    //     let quantity_result = Quantity::from_str(quantity);
+    //     if quantity_result.is_err() {
+    //         return None;
+    //     }
 
-        let amount = Self {
-            quantity: quantity_result.unwrap(),
-            commodity: if commodity.is_some() {
-                commodity.unwrap()
-            } else {
-                std::ptr::null()
-            },
-        };
+    //     let amount = Self {
+    //         quantity: quantity_result.unwrap(),
+    //         commodity: if commodity.is_some() {
+    //             commodity.unwrap()
+    //         } else {
+    //             std::ptr::null()
+    //         },
+    //     };
 
-        Some(amount)
-    }
+    //     Some(amount)
+    // }
 
     pub fn copy_from(other: &Amount) -> Self {
         Self {
