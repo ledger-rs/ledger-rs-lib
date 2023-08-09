@@ -15,11 +15,10 @@ use crate::{
     xact::Xact,
 };
 
-pub type AccountIndex = usize;
 pub type XactIndex = usize;
 
 pub struct Journal {
-    pub master: AccountIndex,
+    pub master: *const Account,
 
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
@@ -30,7 +29,7 @@ pub struct Journal {
 impl Journal {
     pub fn new() -> Self {
         let mut j = Journal {
-            master: 0,
+            master: std::ptr::null(),
 
             commodity_pool: CommodityPool::new(),
             xacts: vec![],

@@ -6,7 +6,7 @@ use std::{collections::HashMap, vec};
 
 use crate::{
     balance::Balance,
-    journal::{AccountIndex, Journal}, post::Post,
+    journal::Journal, post::Post,
 };
 
 #[derive(Debug, PartialEq)]
