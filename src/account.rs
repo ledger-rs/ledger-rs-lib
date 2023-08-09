@@ -12,14 +12,10 @@ use crate::{
 #[derive(Debug, PartialEq)]
 pub struct Account {
     pub(crate) parent: *const Account,
-    // pub parent_index: Option<AccountIndex>,
     pub name: String,
     // note
     // depth
     pub accounts: HashMap<String, *const Account>,
-    // pub posts: Vec<Post>,
-    /// indices of Posts in the Journal.Posts array.
-    // pub post_indices: Vec<PostIndex>,
     pub posts: Vec<*const Post>,
     // deferred posts
     // value_expr
@@ -56,7 +52,17 @@ impl Account {
     }
 
     pub fn find_account(&self, name: &str) -> Option<*const Account> {
-        Some(*self.accounts.get(name).unwrap())
+        self.find_or_create(name, true)
+    }
+
+    /// The variant with all the parameters.
+    /// account_t * find_account(const string& name, bool auto_create = true);
+    pub fn find_or_create(&self, name: &str, auto_create: bool) -> Option<*const Account> {
+        if let Some(found) = self.accounts.get(name) {
+            return Some(*found);
+        }
+
+        todo!("create")
     }
 
     pub fn get_account(&self, acct_ptr: *const Account) -> &Account {

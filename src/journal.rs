@@ -38,8 +38,9 @@ impl Journal {
             // sources: Vec<fileinfo?>
         };
 
-        // Add master account
-        j.add_account(Account::new(""));
+        // Create master account
+        let master = j.add_account(Account::new(""));
+        j.master = master;
 
         j
     }
@@ -103,7 +104,7 @@ impl Journal {
 
         // todo: expand_aliases
 
-        let account_ptr = self.create_sub_account(std::ptr::null(), name, true);
+        let account_ptr = self.create_sub_account(self.master, name, true);
 
         // todo: add any validity checks here.
 
@@ -111,14 +112,14 @@ impl Journal {
     }
 
     pub fn find_account(&self, name: &str) -> Option<&Account> {
-        let Some(index) = self.find_account_index(name)
+        let Some(ptr) = self.find_account_index(name)
         else {return None};
 
-        Some(self.get_account(index))
+        Some(self.get_account(ptr))
     }
 
     pub fn find_account_index(&self, name: &str) -> Option<*const Account> {
-        self.find_sub_account(std::ptr::null(), name)
+        self.find_sub_account(self.master, name)
     }
 
     /// Finds account by full name.
@@ -171,10 +172,10 @@ impl Journal {
         acct_name: &str,
         auto_create: bool,
     ) -> Option<*const Account> {
-        // let parent = self.accounts.get(root_ptr).unwrap();
         let parent = self.get_account(root_ptr);
         if parent.accounts.contains_key(acct_name) {
-            return Some(*parent.accounts.get(acct_name).unwrap());
+            let ptr = parent.accounts.get(acct_name).unwrap();
+            return Some(*ptr);
         }
 
         // if not found, try to break down
@@ -320,6 +321,7 @@ mod tests {
         let actual = j.get_master_account();
 
         assert_eq!("", actual.name);
+        assert_ne!(std::ptr::null(), actual);
     }
 
     #[test]

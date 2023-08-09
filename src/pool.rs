@@ -76,12 +76,9 @@ impl CommodityPool {
             self.annotated_commodities.insert(symbol.to_owned(), ann);
         }
 
-        // let mut_cdty = self.commodities.entry(symbol.to_owned())
-        //     .or_insert(c);
-
-        // add to map
+        // move to map
         self.commodities.insert(symbol.to_string(), c);
-        // get the new variable address.
+        // get the new address.
         let new_commodity = self.commodities.get(symbol).unwrap();
 
         // add to price history graph.
@@ -107,12 +104,6 @@ impl CommodityPool {
     pub fn find_index(&self, symbol: &str) -> Option<CommodityIndex> {
         let x = self.commodities.get(symbol);
         x.unwrap().graph_index
-    }
-
-    pub fn find_or_create_by_name(&self, symbol: &str) {
-        todo!()
-        // find
-        // create
     }
 
     /// Finds a commodity with the given symbol, or creates one.
