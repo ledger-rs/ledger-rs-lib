@@ -56,14 +56,14 @@ fn detailed_basic_test() {
     // Posts
     assert_eq!(2, journal.all_posts().len());
     let post1 = &xact.posts[0];
-    assert_eq!("Food", journal.get_account(post1.account_index).name);
+    assert_eq!("Food", journal.get_account(post1.account).name);
     let amount1 = &post1.amount.as_ref().unwrap();
     assert_eq!(Quantity::from(20), amount1.quantity);
     let symbol = &amount1.get_commodity().unwrap().symbol;
     assert_eq!("EUR", symbol);
 
     let post2 = &xact.posts[1];
-    assert_eq!("Cash", journal.get_account(post2.account_index).name);
+    assert_eq!("Cash", journal.get_account(post2.account).name);
     let amount2 = &post2.amount.as_ref().unwrap();
     assert_eq!(Quantity::from(-20), amount2.quantity);
     let symbol = &amount2.get_commodity().unwrap().symbol;

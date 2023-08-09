@@ -283,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_add_post() {
-        let post = Post::new(0, std::ptr::null(), None, None, None);
+        let post = Post::new(std::ptr::null(), std::ptr::null(), None, None, None);
         let mut xact = Xact::default();
 
         // act

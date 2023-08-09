@@ -12,7 +12,7 @@ use crate::{
 pub struct Post {
     /// Pointer to the Account.
     pub account: *const Account,
-    pub account_index: AccountIndex,
+    // pub account_index: AccountIndex,
     /// Pointer to the Xact.
     pub xact_ptr: *const Xact,
     // pub xact_index: XactIndex,
@@ -29,15 +29,14 @@ pub struct Post {
 impl Post {
     /// Creates a Post from post tokens.
     pub fn new(
-        account_index: AccountIndex,
+        account: *const Account,
         xact_ptr: *const Xact,
         amount: Option<Amount>,
         cost: Option<Amount>,
         note: Option<&str>,
     ) -> Self {
         Self {
-            account: std::ptr::null(),
-            account_index,
+            account,
             xact_ptr,
             amount,
             cost,
@@ -57,7 +56,6 @@ impl Default for Post {
     fn default() -> Self {
         Self {
             account: std::ptr::null(),
-            account_index: Default::default(),
             xact_ptr: std::ptr::null(),
             amount: Default::default(),
             cost: Default::default(),

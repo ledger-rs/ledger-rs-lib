@@ -11,12 +11,12 @@ use crate::{
 
 #[derive(Debug, PartialEq)]
 pub struct Account {
-    // parent
-    pub parent_index: Option<AccountIndex>,
+    pub(crate) parent: *const Account,
+    // pub parent_index: Option<AccountIndex>,
     pub name: String,
     // note
     // depth
-    pub accounts: HashMap<String, AccountIndex>,
+    pub accounts: HashMap<String, *const Account>,
     // pub posts: Vec<Post>,
     /// indices of Posts in the Journal.Posts array.
     // pub post_indices: Vec<PostIndex>,
@@ -28,7 +28,7 @@ pub struct Account {
 impl Account {
     pub fn new(name: &str) -> Self {
         Self {
-            parent_index: None,
+            parent: std::ptr::null(),
             name: name.to_owned(),
             accounts: HashMap::new(),
             posts: vec![],
@@ -36,13 +36,17 @@ impl Account {
         }
     }
 
-    pub fn fullname(&self, journal: &Journal) -> String {
-        let mut parent_index_opt = self.parent_index;
+    pub fn fullname(&self) -> String {
+        // let mut parent_index_opt = self.parent_index;
+        let mut parent: *const Account = self.parent;
         let mut fullname = self.name.to_owned();
 
-        while parent_index_opt.is_some() {
-            let acct = journal.get_account(parent_index_opt.unwrap());
-            parent_index_opt = acct.parent_index;
+        while !parent.is_null() {
+            // let acct = journal.get_account(parent_index_opt.unwrap());
+            // let acct = journal.get_account(parent);
+            let acct: &Account = self.get_account(parent);
+            
+            parent = acct.parent;
             if !acct.name.is_empty() {
                 fullname = format!("{}:{}", acct.name, fullname);
             }
@@ -51,8 +55,14 @@ impl Account {
         fullname
     }
 
-    pub fn get_account(&self, name: &str) -> Option<AccountIndex> {
+    pub fn find_account(&self, name: &str) -> Option<*const Account> {
         Some(*self.accounts.get(name).unwrap())
+    }
+
+    pub fn get_account(&self, acct_ptr: *const Account) -> &Account {
+        unsafe {
+            &*acct_ptr
+        }
     }
 
     /// Returns the amount of this account only.
@@ -116,7 +126,7 @@ mod tests {
             else {panic!("account not found");};
         let account = j.get_account(acct_id);
 
-        let actual = account.fullname(&j);
+        let actual = account.fullname();
 
         assert_eq!(5, j.accounts.len());
         assert_eq!("Food", account.name);
@@ -127,7 +137,10 @@ mod tests {
     #[test]
     fn test_amount_parsing() {
         let mut journal = Journal::new();
+
+        // act
         parse_file("tests/basic.ledger", &mut journal);
+
         let index = journal.find_account_index("Assets:Cash").unwrap();
         let account = journal.get_account(index);
 

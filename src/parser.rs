@@ -396,7 +396,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     let tokens = scanner::scan_post(input);
 
     // Create Account, add to collection
-    let account_index = journal.register_account(tokens.account).unwrap();
+    let account_ptr = journal.register_account(tokens.account).unwrap();
 
     // create amount
     let amount_opt = parse_amount_parts(tokens.quantity, tokens.symbol, journal);
@@ -430,7 +430,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     let post_ref: &Post;
     {
         let post: Post;
-        post = Post::new(account_index, xact_ptr, amount_opt, cost_option, note);
+        post = Post::new(account_ptr, xact_ptr, amount_opt, cost_option, note);
 
         // add Post to Xact.
         // let xact = journal.xacts.get_mut(xact_ptr).unwrap();
@@ -444,7 +444,8 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
 
     // add Post to Account.posts
     {
-        let account = journal.accounts.get_mut(account_index).unwrap();
+        //let account = journal.accounts.get_mut(account_ptr).unwrap();
+        let account = journal.get_account_mut(account_ptr);
         account.posts.push(post_ref);
     }
 
@@ -547,12 +548,12 @@ mod full_tests {
         assert_eq!(2, xact.posts.len());
 
         let post1 = &xact.posts[0];
-        assert_eq!("Expenses", journal.get_account(post1.account_index).name);
+        assert_eq!("Expenses", journal.get_account(post1.account).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().get_commodity());
 
         let post2 = &xact.posts[1];
-        assert_eq!("Assets", journal.get_account(post2.account_index).name);
+        assert_eq!("Assets", journal.get_account(post2.account).name);
     }
 
     #[test]
@@ -605,13 +606,13 @@ mod parser_tests {
 
         // let exp_account = journal.get
         let post1 = &xact.posts[0];
-        assert_eq!("Expenses", journal.get_account(post1.account_index).name);
+        assert_eq!("Expenses", journal.get_account(post1.account).name);
         assert_eq!("20", post1.amount.as_ref().unwrap().quantity.to_string());
         assert_eq!(None, post1.amount.as_ref().unwrap().get_commodity());
 
         // let post_2 = xact.posts.iter().nth(1).unwrap();
         let post2 = &xact.posts[1];
-        assert_eq!("Assets", journal.get_account(post2.account_index).name);
+        assert_eq!("Assets", journal.get_account(post2.account).name);
     }
 
     #[test]
@@ -639,9 +640,9 @@ mod parser_tests {
             let posts = &xact.posts;
             assert_eq!(2, posts.len());
 
-            let acc1 = journal.get_account(posts[0].account_index);
+            let acc1 = journal.get_account(posts[0].account);
             assert_eq!("Expenses", acc1.name);
-            let acc2 = journal.get_account(posts[1].account_index);
+            let acc2 = journal.get_account(posts[1].account);
             assert_eq!("Assets", acc2.name);
         } else {
             assert!(false);
@@ -671,9 +672,9 @@ mod parser_tests {
 
         // post 1
         let p1 = &posts[0];
-        let account = journal.get_post_account(&p1);
+        let account = journal.get_account(p1.account);
         assert_eq!("Investment", account.name);
-        let parent = journal.get_account(account.parent_index.unwrap());
+        let parent = journal.get_account(account.parent);
         assert_eq!("Assets", parent.name);
         // amount
         let Some(a1) = &p1.amount else {panic!()};
@@ -687,7 +688,7 @@ mod parser_tests {
 
         // post 2
         let p2 = &posts[1];
-        assert_eq!("Assets", journal.get_post_account(&p2).name);
+        assert_eq!("Assets", journal.get_account(p2.account).name);
         // amount
         let Some(a2) = &p2.amount else {panic!()};
         assert_eq!("-200", a2.quantity.to_string());

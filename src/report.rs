@@ -55,7 +55,7 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
             }
         }
     }
-    result.push(format!("Account {} has balance {}", account.fullname(journal), balance_line));
+    result.push(format!("Account {} has balance {}", account.fullname(), balance_line));
 
     // Sort child account names alphabetically. Mainly for consistent output.
     let mut acct_names: Vec<_> = account.accounts.keys().collect();
@@ -86,7 +86,7 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
         // get posts for this account.
         let filtered_posts = journal
             .xacts.iter().flat_map(|x| x.posts.iter())
-            .filter(|post| post.account_index == i);
+            .filter(|post| post.account == acc);
 
         // TODO: separate balance per currency
 
@@ -95,7 +95,7 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
             balance.add(&post.amount.as_ref().unwrap());
         }
 
-        balances.push((acc.fullname(journal), balance));
+        balances.push((acc.fullname(), balance));
     }
     balances
 }

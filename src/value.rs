@@ -7,7 +7,7 @@ use chrono::NaiveDateTime;
 
 use crate::{
     commodity::{Commodity, PricePoint},
-    pool::{CommodityIndex, CommodityPool},
+    pool::CommodityPool,
 };
 
 /// commodities = comma-separated list of symbols. Also can contain `=`.
