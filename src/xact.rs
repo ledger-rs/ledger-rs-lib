@@ -7,12 +7,7 @@
 
 use chrono::NaiveDate;
 
-use crate::{
-    balance::Balance,
-    journal::Journal,
-    parser,
-    post::Post,
-};
+use crate::{balance::Balance, journal::Journal, parser, post::Post};
 
 #[derive(Debug)]
 pub struct Xact {
@@ -108,10 +103,12 @@ impl Default for Xact {
 /// `bool xact_base_t::finalize()`
 ///
 pub fn finalize(xact_ptr: *const Xact, journal: &mut Journal) {
-    // let mut balance: Option<Amount> = None;
+    // Scan through and compute the total balance for the xact.  This is used
+    // for auto-calculating the value of xacts with no cost, and the per-unit
+    // price of unpriced commodities.
+
     let mut balance = Balance::new();
     // The pointer to the post that has no amount.
-    // let mut null_post: Option<PostIndex> = None;
     let mut null_post: *mut Post = std::ptr::null_mut();
     // let xact = journal.xacts.get_mut(xact_index).expect("xact");
     let xact: &mut Xact;
@@ -122,8 +119,7 @@ pub fn finalize(xact_ptr: *const Xact, journal: &mut Journal) {
     // Balance
     for post in &mut xact.posts {
         // must balance?
-
-        // let post = journal.posts.get(*post_index).expect("post");
+        // if (! post->must_balance())
 
         log::debug!("finalizing {:?}", post);
 
@@ -169,8 +165,15 @@ pub fn finalize(xact_ptr: *const Xact, journal: &mut Journal) {
         if top_post.is_some() {
             // log::debug("there were no costs, and a valid top_post")
 
-            let mut x = balance.amounts.iter().nth(0).unwrap();
-            let mut y = balance.amounts.iter().nth(1).unwrap();
+            // We need a separate readonly reference for reading the amounts.
+            let const_bal: &Balance;
+            unsafe {
+                let const_ptr = &balance as *const Balance;
+                const_bal = &*const_ptr;
+            }
+
+            let mut x = const_bal.amounts.iter().nth(0).unwrap();
+            let mut y = const_bal.amounts.iter().nth(1).unwrap();
 
             // if x && y
             if !x.is_zero() && !y.is_zero() {
@@ -182,12 +185,11 @@ pub fn finalize(xact_ptr: *const Xact, journal: &mut Journal) {
                 let per_unit_cost = (*y / *x).abs();
 
                 for post in &mut xact.posts {
-                    // let post = journal.posts.get_mut(*i).unwrap();
                     let amt = post.amount.unwrap();
 
                     if amt.get_commodity() == comm {
-                        todo!("check below");
-                        // balance -= amt;
+                        // todo!("check below");
+                        balance -= amt;
                         post.cost = Some(per_unit_cost * amt);
                         balance += post.cost.unwrap();
                     }
@@ -247,9 +249,9 @@ pub fn finalize(xact_ptr: *const Xact, journal: &mut Journal) {
         //     else {panic!("should not happen")};
         // let Some(post) = journal.posts.get_mut(null_post_index)
         //     else {panic!("should not happen")};
-        let mut post: Post;
+        let post: &mut Post;
         unsafe {
-            post = null_post.read();
+            post = &mut *null_post;
         }
 
         // use inverse amount
