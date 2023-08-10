@@ -63,8 +63,7 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
 
     // children amounts
     for acct_name in acct_names {
-        let index = account.accounts.get(acct_name).unwrap();
-        let acct = journal.get_account(*index);
+        let acct = account.accounts.get(acct_name).unwrap();
         result.extend(get_children_lines(acct, journal));
     }
 

@@ -710,7 +710,7 @@ mod scanner_tests_post {
     fn test_scan_amount_symbol_first() {
         let input = "EUR25,0.01";
 
-        let (tokens, rest) = scan_amount(input);
+        let (tokens, _rest) = scan_amount(input);
 
         assert_eq!("25,0.01", tokens.quantity);
         assert_eq!("EUR", tokens.symbol);
@@ -720,7 +720,7 @@ mod scanner_tests_post {
     fn test_scan_amount_symbol_first_neg() {
         let input = "EUR-25,0.01";
 
-        let (tokens, rest) = scan_amount(input);
+        let (tokens, _rest) = scan_amount(input);
 
         assert_eq!("-25,0.01", tokens.quantity);
         assert_eq!("EUR", tokens.symbol);

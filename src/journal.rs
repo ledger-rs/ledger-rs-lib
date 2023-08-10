@@ -47,7 +47,7 @@ impl Journal {
 
     /// Adds the account to the storage.
     /// Should be used only during account registration.
-    fn add_account(&mut self, acct: Account) -> *const Account {
+    fn add_account(&mut self, acct: Account) -> &Account {
         self.accounts.push(acct);
         // self.accounts.len() - 1
         self.accounts.last().unwrap()
@@ -60,8 +60,7 @@ impl Journal {
     }
 
     pub fn all_posts(&self) -> Vec<&Post> {
-        self.xacts.iter().flat_map(|x| x.posts.iter())
-        .collect()
+        self.xacts.iter().flat_map(|x| x.posts.iter()).collect()
     }
 
     pub fn create_account(&mut self, name: &str) -> *const Account {
@@ -72,9 +71,7 @@ impl Journal {
     }
 
     pub fn get_account(&self, acct_ptr: *const Account) -> &Account {
-        unsafe {
-            &*acct_ptr
-        }
+        unsafe { &*acct_ptr }
     }
 
     pub fn get_account_mut(&self, acct_ptr: *const Account) -> &mut Account {
@@ -96,131 +93,38 @@ impl Journal {
         self.accounts.get_mut(0).expect("master account")
     }
 
-    /// 
+    /// Called to create an account during Post parsing.
+    ///
+    /// account_t * journal_t::register_account(const string& name, post_t * post,
+    ///                                         account_t * master_account)
+    ///
     pub fn register_account(&mut self, name: &str) -> Option<*const Account> {
         if name.is_empty() {
             panic!("Invalid account name {:?}", name);
         }
 
         // todo: expand_aliases
+        // account_t * result = expand_aliases(name);
 
-        let account_ptr = self.create_sub_account(self.master, name, true);
+        let master_account: &mut Account = self.get_master_account_mut();
+
+        // Create the account object and associate it with the journal; this
+        // is registering the account.
+
+        // let account_ptr = self.create_sub_account(self.master, name, true);
+
+        let account = master_account.find_account(name);
 
         // todo: add any validity checks here.
 
-        account_ptr
+        account
     }
 
     pub fn find_account(&self, name: &str) -> Option<&Account> {
-        let Some(ptr) = self.find_account_index(name)
+        let Some(ptr) = self.find_account(name)
         else {return None};
 
         Some(self.get_account(ptr))
-    }
-
-    pub fn find_account_index(&self, name: &str) -> Option<*const Account> {
-        self.find_sub_account(self.master, name)
-    }
-
-    /// Finds account by full name.
-    /// i.e. "Assets:Cash"
-    /// returns account index, if found
-    pub fn find_sub_account(&self, parent_ptr: *const Account, name: &str) -> Option<*const Account> {
-        //let parent = self.accounts.get(parent).unwrap();
-        let parent = self.get_account(parent_ptr);
-        if parent.accounts.contains_key(name) {
-            return Some(*parent.accounts.get(name).unwrap());
-        }
-
-        let first: &str;
-        let rest: &str;
-        if let Some(separator_index) = name.find(':') {
-            // Contains separators
-            first = &name[..separator_index];
-            rest = &name[separator_index + 1..];
-        } else {
-            // take all
-            first = name;
-            rest = "";
-        }
-
-        let mut account_ptr: Option<*const Account>;
-        if !parent.accounts.contains_key(first) {
-            return None;
-        } else {
-            account_ptr = Some(*parent.accounts.get(first).unwrap());
-        }
-
-        // Search recursively.
-        if !rest.is_empty() {
-            account_ptr = self
-                .find_sub_account(account_ptr.unwrap(), rest);
-        }
-
-        account_ptr
-    }
-
-    /// Create an account tree from the account full-name.
-    /// 
-    /// In Ledger, this is
-    /// account_t * account_t::find_account(
-    /// but in order not to mix mutable and immutable access, the function is separated into
-    /// find_account and create_account.
-    fn create_sub_account(
-        &mut self,
-        root_ptr: *const Account,
-        acct_name: &str,
-        auto_create: bool,
-    ) -> Option<*const Account> {
-        let parent = self.get_account(root_ptr);
-        if parent.accounts.contains_key(acct_name) {
-            let ptr = parent.accounts.get(acct_name).unwrap();
-            return Some(*ptr);
-        }
-
-        // if not found, try to break down
-        let first: &str;
-        let rest: &str;
-        if let Some(separator_index) = acct_name.find(':') {
-            // Contains separators
-            first = &acct_name[..separator_index];
-            rest = &acct_name[separator_index + 1..];
-        } else {
-            // take all
-            first = acct_name;
-            rest = "";
-        }
-
-        let mut account_ptr: *const Account;
-        if !parent.accounts.contains_key(first) {
-            if !auto_create {
-                return None;
-            } // else
-
-            // create and add to the store.
-            let mut new_account = Account::new(first);
-            new_account.parent = root_ptr;
-
-            account_ptr = self.add_account(new_account);
-
-            log::debug!("Created account {:?}, index {:?}", first, account_ptr);
-
-            // Add to local map
-            // let root_mut = self.accounts.get_mut(root_id).unwrap();
-            let root_mut = self.get_account_mut(root_ptr);
-            root_mut.accounts.insert(first.into(), account_ptr);
-        } else {
-            account_ptr = *parent.accounts.get(first).unwrap();
-        }
-
-        // Search recursively.
-        if !rest.is_empty() {
-            account_ptr = self
-                .create_sub_account(account_ptr, rest, auto_create)
-                .unwrap()
-        }
-
-        Some(account_ptr)
     }
 
     /// Read journal source (file or string).
@@ -248,8 +152,7 @@ mod tests {
         const ACCT_NAME: &str = "Assets";
         let mut journal = Journal::new();
         let a = Account::new(ACCT_NAME);
-        let i = journal.add_account(a);
-        let actual = journal.get_account(i);
+        let actual = journal.add_account(a);
 
         // There is master account
         // assert_eq!(1, i);
@@ -261,9 +164,8 @@ mod tests {
         let mut journal = Journal::new();
         let a = Account::new("Assets");
         let expected = Account::new("Assets");
-        let index = journal.add_account(a);
 
-        let actual = journal.get_account(index);
+        let actual = journal.add_account(a);
 
         assert_eq!(expected, *actual);
     }
@@ -280,18 +182,19 @@ mod tests {
 
     #[test]
     fn test_register_account() {
-        let name = "Assets:Investments:Broker";
+        const NAME: &str = "Assets:Investments:Broker";
         let mut journal = Journal::new();
 
-        let acct_ptr = journal.register_account(name).unwrap();
-        let actual = journal.get_account(acct_ptr);
+        // act
+        let new_acct = journal.register_account(NAME).unwrap();
+        let actual = journal.get_account(new_acct);
 
         // Asserts
         assert_eq!(4, journal.accounts.len());
-        assert_eq!(name, actual.fullname());
+        assert_eq!(NAME, actual.fullname());
 
         // tree structure
-        let master = journal.get_master_account();
+        let master = journal.get_master_account_mut();
         assert_eq!("", master.name);
 
         let assets_ptr = master.find_account("Assets").unwrap();

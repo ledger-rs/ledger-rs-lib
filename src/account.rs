@@ -4,10 +4,7 @@
 
 use std::{collections::HashMap, vec};
 
-use crate::{
-    balance::Balance,
-    journal::Journal, post::Post,
-};
+use crate::{balance::Balance, journal::Journal, post::Post};
 
 #[derive(Debug, PartialEq)]
 pub struct Account {
@@ -15,7 +12,7 @@ pub struct Account {
     pub name: String,
     // note
     // depth
-    pub accounts: HashMap<String, *const Account>,
+    pub accounts: HashMap<String, Account>,
     pub posts: Vec<*const Post>,
     // deferred posts
     // value_expr
@@ -41,7 +38,7 @@ impl Account {
             // let acct = journal.get_account(parent_index_opt.unwrap());
             // let acct = journal.get_account(parent);
             let acct: &Account = self.get_account(parent);
-            
+
             parent = acct.parent;
             if !acct.name.is_empty() {
                 fullname = format!("{}:{}", acct.name, fullname);
@@ -51,24 +48,68 @@ impl Account {
         fullname
     }
 
-    pub fn find_account(&self, name: &str) -> Option<*const Account> {
+    /// Finds account by full name.
+    /// i.e. "Assets:Cash"
+    pub fn find_account(&mut self, name: &str) -> Option<*const Account> {
         self.find_or_create(name, true)
     }
 
     /// The variant with all the parameters.
     /// account_t * find_account(const string& name, bool auto_create = true);
-    pub fn find_or_create(&self, name: &str, auto_create: bool) -> Option<*const Account> {
+    fn find_or_create(&mut self, name: &str, auto_create: bool) -> Option<*const Account> {
         if let Some(found) = self.accounts.get(name) {
-            return Some(*found);
+            return Some(found);
         }
 
-        todo!("create")
+        // otherwise create
+
+        let mut account: *const Account;
+        let first: &str;
+        let rest: &str;
+        if let Some(separator_index) = name.find(':') {
+            // Contains separators
+            first = &name[..separator_index];
+            rest = &name[separator_index + 1..];
+        } else {
+            // take all
+            first = name;
+            rest = "";
+        }
+
+        if let Some(account_opt) = self.accounts.get_mut(first) {
+            // keep this value
+            account = account_opt;
+        } else {
+            if !auto_create {
+                return None;
+            }
+
+            let mut new_account = Account::new(name);
+            new_account.set_parent(self);
+
+            self.accounts.insert(first.into(), new_account);
+
+            let Some(new_ref) = self.accounts.get(first)
+                else {panic!("should not happen")};
+            account = new_ref;
+        }
+
+        // Search recursively.
+        if !rest.is_empty() {
+            let acct = self.get_account_mut(account);
+            account = acct.find_or_create(rest, auto_create).unwrap();
+        }
+
+        Some(account)
     }
 
     pub fn get_account(&self, acct_ptr: *const Account) -> &Account {
-        unsafe {
-            &*acct_ptr
-        }
+        unsafe { &*acct_ptr }
+    }
+
+    pub fn get_account_mut(&self, acct_ptr: *const Account) -> &mut Account {
+        let mut_ptr = acct_ptr as *mut Account;
+        unsafe { &mut *mut_ptr }
     }
 
     /// Returns the amount of this account only.
@@ -78,7 +119,7 @@ impl Account {
         for post_ptr in &self.posts {
             let post: Post;
             unsafe {
-                post = post_ptr.read();                
+                post = post_ptr.read();
             }
             if let Some(amt) = post.amount {
                 bal.add(&amt);
@@ -86,6 +127,10 @@ impl Account {
         }
 
         bal
+    }
+
+    pub(crate) fn set_parent(&mut self, parent: &Account) {
+        self.parent = parent;
     }
 
     /// Returns the balance of this account and all sub-accounts.
@@ -98,8 +143,8 @@ impl Account {
 
         // iterate through children and get their totals
         for acct_name in acct_names {
-            let index = self.accounts.get(acct_name).unwrap();
-            let subacct = journal.get_account(*index);
+            let subacct = self.accounts.get(acct_name).unwrap();
+            // let subacct = journal.get_account(*index);
             let subtotal = subacct.total(journal);
 
             total += subtotal;
@@ -128,7 +173,7 @@ mod tests {
 "#;
         parser::read_into_journal(Cursor::new(input), &mut j);
 
-        let Some(acct_id) = j.find_account_index("Expenses:Food")
+        let Some(acct_id) = j.find_account("Expenses:Food")
             else {panic!("account not found");};
         let account = j.get_account(acct_id);
 
@@ -147,7 +192,7 @@ mod tests {
         // act
         parse_file("tests/basic.ledger", &mut journal);
 
-        let index = journal.find_account_index("Assets:Cash").unwrap();
+        let index = journal.find_account("Assets:Cash").unwrap();
         let account = journal.get_account(index);
 
         let actual = account.amount();

@@ -395,6 +395,8 @@ impl<'j, T: Read> Parser<'j, T> {
 fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Result<(), Error> {
     let tokens = scanner::scan_post(input);
 
+    // TODO: Make this more like Ledger now that we have pointers.
+    
     // Create Account, add to collection
     let account_ptr = journal.register_account(tokens.account).unwrap();
 
