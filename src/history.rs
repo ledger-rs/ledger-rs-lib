@@ -414,8 +414,7 @@ mod tests {
         let mut journal = Journal::new();
         // add commodities
         let eur = journal.commodity_pool.create("EUR", None);
-        // let usd_index = journal.commodity_pool.create("USD", None);
-        let usd = Commodity::new("USD");
+        let usd = journal.commodity_pool.create("USD", None);
         // add price
         let date = parse_datetime("2023-05-01").unwrap();
         let price = parse_amount("1.20 USD", &mut journal).unwrap();
@@ -426,15 +425,13 @@ mod tests {
         let actual = journal
             .commodity_pool
             .commodity_history
-            .find_price(eur, &usd, date, oldest)
+            .find_price(eur, usd, date, oldest)
             .expect("price found");
 
         // assert
-        // assert!(actual.is_some());
-        // assert_eq!(eur_index, price.commodity_index.unwrap());
         assert_eq!(actual.when, date);
         assert_eq!(actual.price.quantity, "1.20".into());
-        assert_eq!(actual.price.get_commodity(), Some(&usd));
+        assert_eq!(actual.price.commodity, usd);
     }
 
     #[test]
