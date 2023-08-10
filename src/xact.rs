@@ -269,7 +269,7 @@ pub fn finalize(xact_ptr: *const Xact, journal: &mut Journal) {
         };
 
         post.amount = Some(amt);
-        // null_post = None;
+
         null_post = std::ptr::null_mut();
     }
 

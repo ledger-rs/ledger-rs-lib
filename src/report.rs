@@ -45,7 +45,7 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
     // account.total(journal).amounts.iter().map(|amt| amt.quantity)
 
     let mut balance_line = String::new();
-    let total = account.total(journal);
+    let total = account.total();
     for amount in total.amounts {
         balance_line += amount.quantity.to_string().as_str();
         if amount.get_commodity().is_some() {

@@ -4,7 +4,7 @@
 
 use std::{collections::HashMap, vec};
 
-use crate::{balance::Balance, journal::Journal, post::Post};
+use crate::{balance::Balance, post::Post};
 
 #[derive(Debug, PartialEq)]
 pub struct Account {
@@ -138,9 +138,9 @@ impl Account {
         let mut bal = Balance::new();
 
         for post_ptr in &self.posts {
-            let post: Post;
+            let post: &Post;
             unsafe {
-                post = post_ptr.read();
+                post = &**post_ptr;
             }
             if let Some(amt) = post.amount {
                 bal.add(&amt);
@@ -164,7 +164,7 @@ impl Account {
     }
 
     /// Returns the balance of this account and all sub-accounts.
-    pub fn total(&self, journal: &Journal) -> Balance {
+    pub fn total(&self) -> Balance {
         let mut total = Balance::new();
 
         // Sort the accounts by name
@@ -175,7 +175,7 @@ impl Account {
         for acct_name in acct_names {
             let subacct = self.accounts.get(acct_name).unwrap();
             // let subacct = journal.get_account(*index);
-            let subtotal = subacct.total(journal);
+            let subtotal = subacct.total();
 
             total += subtotal;
         }
@@ -212,7 +212,7 @@ mod tests {
         let mut counter: u8 = 0;
 
         let _acct = j.register_account("Assets:Cash");
-        for a in j.master.flatten_account_tree() {
+        for _a in j.master.flatten_account_tree() {
             //println!("sub-account: {:?}", a);
             counter += 1;
         }
@@ -270,7 +270,7 @@ mod tests {
         let assets = journal.get_account(ptr);
 
         // act
-        let actual = assets.total(&journal);
+        let actual = assets.total();
 
         // assert
         assert_eq!(1, actual.amounts.len());

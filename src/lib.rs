@@ -175,7 +175,7 @@ pub fn wasm_test() -> String {
 mod lib_tests {
     use std::assert_eq;
 
-    use crate::{amount::Amount, option, run, commodity::Commodity};
+    use crate::{amount::{Amount, Quantity}, option, run, commodity::Commodity};
 
     #[test]
     fn test_minimal() {
@@ -199,7 +199,7 @@ Account Expenses has balance 20"#;
         let args =
             shell_words::split("accounts -f tests/minimal.ledger -f tests/basic.ledger").unwrap();
         let (_commands, input_options) = option::process_arguments(args);
-        let cdty = Commodity::new("EUR");
+        // let cdty = Commodity::new("EUR");
 
         // Act
         let journal = super::session_read_journal_files(&input_options);
@@ -218,18 +218,20 @@ Account Expenses has balance 20"#;
         assert_eq!(2, xact0.posts.len());
         assert_eq!(2, xact1.posts.len());
         assert_eq!(Some(Amount::new(20.into(), None)), xact0.posts[0].amount);
-        assert_eq!(
-            Some(Amount::new(20.into(), Some(&cdty))),
-            xact1.posts[0].amount
-        );
+        // amount
+        assert_eq!(xact1.posts[0].amount.unwrap().quantity, Quantity::from_str("20").unwrap());
+        assert_eq!(xact1.posts[0].amount.unwrap().get_commodity().unwrap().symbol, "EUR");
 
         // accounts
-        let accounts = journal.master.flatten_account_tree();
+        let mut accounts = journal.master.flatten_account_tree();
+        // hack for the test, since the order of items in a hashmap is not guaranteed.
+        accounts.sort_unstable_by_key(|acc| &acc.name);
+
         assert_eq!("", accounts[0].name);
-        assert_eq!("Expenses", accounts[1].name);
-        assert_eq!("Assets", accounts[2].name);
-        assert_eq!("Food", accounts[3].name);
-        assert_eq!("Cash", accounts[4].name);
+        assert_eq!("Assets", accounts[1].name);
+        assert_eq!("Cash", accounts[2].name);
+        assert_eq!("Expenses", accounts[3].name);
+        assert_eq!("Food", accounts[4].name);
 
         // commodities
         assert_eq!(1, journal.commodity_pool.commodities.len());
