@@ -162,7 +162,7 @@ mod tests {
 
         // act
         let new_acct = journal.register_account(NAME).unwrap();
-        let actual = journal.get_account(new_acct);
+        let actual = journal.get_account_mut(new_acct);
 
         // Asserts
         assert_eq!(4, journal.master.flatten_account_tree().len());

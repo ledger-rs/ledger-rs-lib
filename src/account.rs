@@ -16,6 +16,7 @@ pub struct Account {
     pub posts: Vec<*const Post>,
     // deferred posts
     // value_expr
+    fullname: String,
 }
 
 impl Account {
@@ -23,29 +24,43 @@ impl Account {
         Self {
             parent: std::ptr::null(),
             name: name.to_owned(),
+            // note
             accounts: HashMap::new(),
             posts: vec![],
+            fullname: "".to_string(),
             // post_indices: vec![],
         }
     }
 
-    pub fn fullname(&self) -> String {
-        // let mut parent_index_opt = self.parent_index;
-        let mut parent: *const Account = self.parent;
+    pub fn fullname(&self) -> &str {
+        if !self.fullname.is_empty() {
+            return &self.fullname;
+        }
+
         let mut fullname = self.name.to_owned();
+        let mut first = self;
 
-        while !parent.is_null() {
-            // let acct = journal.get_account(parent_index_opt.unwrap());
-            // let acct = journal.get_account(parent);
-            let acct: &Account = self.get_account(parent);
+        while !first.parent.is_null() {
+            // If there is a parent account, use it.
+            first = self.get_account_mut(first.parent);
 
-            parent = acct.parent;
-            if !acct.name.is_empty() {
-                fullname = format!("{}:{}", acct.name, fullname);
+            if !first.name.is_empty() {
+                fullname = format!("{}:{}", &first.name, fullname);
             }
         }
 
-        fullname
+        self.set_fullname(fullname);
+
+        &self.fullname
+    }
+
+    fn set_fullname(&self, fullname: String) {
+        // alchemy?
+        let ptr = self as *const Account;
+        let mut_ptr = ptr as *mut Account;
+        let subject = self.get_account_mut(mut_ptr);
+
+        subject.fullname = fullname;
     }
 
     /// Finds account by full name.

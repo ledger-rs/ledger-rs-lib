@@ -77,7 +77,7 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
 /// Calculates account balances.
 /// returns (account_name, balance)
 ///
-fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
+fn get_account_balances(journal: &Journal) -> Vec<(&str, Balance)> {
     let mut balances = vec![];
 
     // calculate balances
