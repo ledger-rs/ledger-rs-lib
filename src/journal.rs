@@ -22,8 +22,7 @@ pub struct Journal {
 
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
-    // pub posts: Vec<Post>,
-    pub accounts: Vec<Account>,
+    pub accounts: Vec<Account>
 }
 
 impl Journal {
@@ -198,22 +197,19 @@ mod tests {
         assert_eq!("", master.name);
 
         let assets_ptr = master.find_account("Assets").unwrap();
-        let assets = journal.get_account(assets_ptr);
+        let assets = journal.get_account_mut(assets_ptr);
         assert_eq!("Assets", assets.name);
-        // assert_eq!(Some(0), assets.parent_index);
-        todo!("fix above");
+        assert_eq!(journal.master, assets.parent);
 
         let inv_ix = assets.find_account("Investments").unwrap();
-        let inv = journal.get_account(inv_ix);
+        let inv = journal.get_account_mut(inv_ix);
         assert_eq!("Investments", inv.name);
-        // assert_eq!(Some(assets_ptr), inv.parent_index);
-        todo!("fix above");
+        assert_eq!(assets_ptr, inv.parent);
 
         let broker_ix = inv.find_account("Broker").unwrap();
         let broker = journal.get_account(broker_ix);
         assert_eq!("Broker", broker.name);
-        // assert_eq!(Some(inv_ix), broker.parent_index);
-        todo!("fix above");
+        assert_eq!(inv_ix, broker.parent);
     }
 
     /// The master account needs to be created in the Journal automatically.

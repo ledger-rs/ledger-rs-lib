@@ -157,11 +157,46 @@ impl Account {
     }
 }
 
+impl <'a>IntoIterator for &'a Account {
+    type Item = &'a Account;
+    type IntoIter = AccountIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        AccountIterator {
+            inner: self.accounts.values()
+        }
+    }
+}
+
+pub struct AccountIterator<'a> {
+    inner: std::collections::hash_map::Values<'a, String, Account>,
+}
+
+impl <'a>Iterator for AccountIterator<'a> {
+    type Item = &'a Account;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
 
     use crate::{amount::Quantity, journal::Journal, parse_file, parser};
+
+    #[test]
+    fn test_account_iterator() {
+        let mut j = Journal::new();
+
+        let acct = j.register_account("Assets:Cash");
+        for a in j.get_master_account().into_iter() {
+            println!("sub-account: {:?}", a);
+        }
+
+        todo!("complete")
+    }
 
     /// Search for an account by the full account name.
     #[test]
