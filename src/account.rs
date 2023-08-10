@@ -129,6 +129,15 @@ impl Account {
         bal
     }
 
+    pub fn flatten<'a>(&'a self, nodes: &mut Vec<&'a Account>) {
+        // Push the current node to the Vec
+        nodes.push(self);
+        // If the node has children, recursively call flatten on them
+        for (name, child) in &self.accounts {
+            child.flatten(nodes);
+        }
+    }
+
     pub(crate) fn set_parent(&mut self, parent: &Account) {
         self.parent = parent;
     }
@@ -186,16 +195,31 @@ mod tests {
 
     use crate::{amount::Quantity, journal::Journal, parse_file, parser};
 
+    use super::Account;
+
+    #[test]
+    fn test_flatten() {
+        let mut j = Journal::new();
+        let _acct = j.register_account("Assets:Cash");
+        let mut nodes: Vec<&Account> = vec![];
+
+        j.get_master_account().flatten(&mut nodes);
+
+        assert_eq!(3, nodes.len());
+    }
+
     #[test]
     fn test_account_iterator() {
         let mut j = Journal::new();
+        let mut counter: u8 = 0;
 
-        let acct = j.register_account("Assets:Cash");
+        let _acct = j.register_account("Assets:Cash");
         for a in j.get_master_account().into_iter() {
-            println!("sub-account: {:?}", a);
+            //println!("sub-account: {:?}", a);
+            counter += 1;
         }
 
-        todo!("complete")
+        assert_eq!(2, counter);
     }
 
     /// Search for an account by the full account name.

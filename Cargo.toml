@@ -16,6 +16,10 @@ keywords = ["library", "finance", "wasm"]
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+# [[bin]]
+# filename = "ledger-rs-cli"
+
+
 [dependencies]
 anyhow = "1.0.71"
 chrono = "0.4.26"
