@@ -127,16 +127,14 @@ mod tests {
     }
 
     #[test]
-    fn test_add_account_data() {
+    fn test_add_account_to_master() {
         let mut journal = Journal::new();
         const NAME: &str = "Assets";
-        let a = Account::new(NAME);
-        let expected = Account::new(NAME);
 
         let Some(ptr) = journal.register_account(NAME) else {panic!("unexpected")};
         let actual = journal.get_account(ptr);
 
-        assert_eq!(expected, *actual);
+        assert_eq!(&journal.master as *const Account, actual.parent);
     }
 
     #[test]
