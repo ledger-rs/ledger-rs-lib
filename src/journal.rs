@@ -90,12 +90,6 @@ impl Journal {
     }
 
     pub fn find_account(&mut self, name: &str) -> Option<*const Account> {
-        // if let Some(ptr) = self.master.find_account(name) {
-        //     return Some(self.get_account(ptr));
-        // } else {
-        //     return None
-        // }
-
         self.master.find_account(name)
     }
 

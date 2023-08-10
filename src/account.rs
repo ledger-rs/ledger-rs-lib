@@ -187,34 +187,6 @@ impl Account {
     }
 }
 
-// impl <'a>IntoIterator for &'a Account {
-//     type Item = &'a Account;
-//     type IntoIter = AccountIterator<'a>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         let mut nodes: Vec<&Account> = vec![];
-//         self.flatten(&mut nodes);
-
-//         AccountIterator {
-//             // inner: self.accounts.values()
-//             inner: nodes
-//         }
-//     }
-// }
-
-// pub struct AccountIterator<'a> {
-//     // inner: std::collections::hash_map::Values<'a, String, Account>,
-//     inner: Vec<&'a Account>
-// }
-
-// impl Iterator for AccountIterator<'a> {
-//     type Item = &Account;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         self.inner.iter().next()
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
@@ -277,8 +249,8 @@ mod tests {
         // act
         parse_file("tests/basic.ledger", &mut journal);
 
-        let index = journal.find_account("Assets:Cash").unwrap();
-        let account = journal.get_account(index);
+        let ptr = journal.find_account("Assets:Cash").unwrap();
+        let account = journal.get_account(ptr);
 
         let actual = account.amount();
 
