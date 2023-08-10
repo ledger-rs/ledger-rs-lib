@@ -85,15 +85,4 @@ mod tests {
 
         assert!(c1 != c2);
     }
-
-    #[test]
-    fn test_find_price() {
-        // arrange
-
-        // act
-        // let actual = find_price(commodity, moment, oldest);
-
-        // assert
-        todo!()
-    }
 }

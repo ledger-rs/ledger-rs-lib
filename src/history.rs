@@ -329,17 +329,16 @@ mod tests {
     #[test]
     fn test_adding_price() {
         // Arrange
-        let mut hist = CommodityHistory::new();
-        let eur = Commodity::new("EUR");
-        let _eur_index = hist.add_commodity(&eur);
-        let usd = Commodity::new("USD");
-        let _usd_index = hist.add_commodity(&usd);
+        let mut journal = Journal::new();
+        let eur = journal.commodity_pool.create("EUR", None);
+        let usd = journal.commodity_pool.create("USD", None);
         let local = Local::now();
         let today = local.naive_local();
-        let price = Amount::new(25.into(), Some(&usd));
+        let price = Amount::new(25.into(), Some(usd));
+        let hist = &mut journal.commodity_pool.commodity_history;
 
         // Act
-        hist.add_price(&eur, today, price);
+        hist.add_price(eur, today, price);
 
         // Assert
         assert_eq!(2, hist.node_count());
