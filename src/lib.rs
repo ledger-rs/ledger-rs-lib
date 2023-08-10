@@ -224,11 +224,12 @@ Account Expenses has balance 20"#;
         );
 
         // accounts
-        assert_eq!("", journal.accounts[0].name);
-        assert_eq!("Expenses", journal.accounts[1].name);
-        assert_eq!("Assets", journal.accounts[2].name);
-        assert_eq!("Food", journal.accounts[3].name);
-        assert_eq!("Cash", journal.accounts[4].name);
+        let accounts = journal.master.flatten_account_tree();
+        assert_eq!("", accounts[0].name);
+        assert_eq!("Expenses", accounts[1].name);
+        assert_eq!("Assets", accounts[2].name);
+        assert_eq!("Food", accounts[3].name);
+        assert_eq!("Cash", accounts[4].name);
 
         // commodities
         assert_eq!(1, journal.commodity_pool.commodities.len());

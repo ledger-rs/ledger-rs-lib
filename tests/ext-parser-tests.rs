@@ -108,7 +108,7 @@ fn test_parsing_account_tree() {
 
     // Assert
     assert!(!journal.xacts.is_empty());
-    assert_eq!(5, journal.accounts.len());
+    assert_eq!(5, journal.master.flatten_account_tree().len());
 }
 
 #[test]

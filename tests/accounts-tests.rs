@@ -15,10 +15,11 @@ fn test_creating_account_tree() {
     ledger_rs_lib::parse_file(file_path, &mut journal);
 
     // Assert
-    assert_eq!(5, journal.accounts.len());
-    assert_eq!("", journal.accounts.iter().nth(0).unwrap().name);
-    assert_eq!("Expenses", journal.accounts.iter().nth(1).unwrap().name);
-    assert_eq!("Food", journal.accounts.iter().nth(2).unwrap().name);
-    assert_eq!("Assets", journal.accounts.iter().nth(3).unwrap().name);
-    assert_eq!("Cash", journal.accounts.iter().nth(4).unwrap().name);
+    let accounts = journal.master.flatten_account_tree();
+    assert_eq!(5, accounts.len());
+    assert_eq!("", accounts.iter().nth(0).unwrap().name);
+    assert_eq!("Expenses", accounts.iter().nth(1).unwrap().name);
+    assert_eq!("Food", accounts.iter().nth(2).unwrap().name);
+    assert_eq!("Assets", accounts.iter().nth(3).unwrap().name);
+    assert_eq!("Cash", accounts.iter().nth(4).unwrap().name);
 }

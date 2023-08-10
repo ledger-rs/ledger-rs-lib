@@ -396,7 +396,7 @@ fn parse_post(input: &str, xact_ptr: *const Xact, journal: &mut Journal) -> Resu
     let tokens = scanner::scan_post(input);
 
     // TODO: Make this more like Ledger now that we have pointers.
-    
+
     // Create Account, add to collection
     let account_ptr = journal.register_account(tokens.account).unwrap();
 
@@ -519,7 +519,7 @@ mod tests {
         parser.parse();
 
         // Assert
-        assert_eq!(3, journal.accounts.len());
+        assert_eq!(3, journal.master.flatten_account_tree().len());
     }
 }
 
@@ -720,7 +720,7 @@ mod parser_tests {
         let xact = &journal.xacts[0];
         assert_eq!(1, journal.xacts.len());
         assert_eq!(4, xact.posts.len());
-        assert_eq!(7, journal.accounts.len());
+        assert_eq!(7, journal.master.flatten_account_tree().len());
         assert_eq!(2, journal.commodity_pool.commodities.len());
     }
 }
@@ -742,7 +742,7 @@ mod posting_parsing_tests {
 
         // Assert
         assert_eq!(1, j.xacts.len());
-        assert_eq!(4, j.accounts.len());
+        assert_eq!(4, j.master.flatten_account_tree().len());
         assert_eq!(2, j.commodity_pool.commodities.len());
         // price
         assert_eq!(2, j.commodity_pool.commodity_history.node_count());

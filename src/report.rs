@@ -35,8 +35,7 @@ pub fn balance_report(journal: &Journal) -> Vec<String> {
     // Format output
     // format_balance_report(balances, &journal)
 
-    let master = journal.get_master_account();
-    get_children_lines(master, journal)
+    get_children_lines(&journal.master, journal)
 }
 
 /// Quick test of the account traversal for assembling the totals.
@@ -82,7 +81,7 @@ fn get_account_balances(journal: &Journal) -> Vec<(String, Balance)> {
     let mut balances = vec![];
 
     // calculate balances
-    for (i, acc) in journal.accounts.iter().enumerate() {
+    for acc in journal.master.flatten_account_tree() {
         // get posts for this account.
         let filtered_posts = journal
             .xacts.iter().flat_map(|x| x.posts.iter())

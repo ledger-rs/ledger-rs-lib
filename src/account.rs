@@ -84,7 +84,7 @@ impl Account {
                 return None;
             }
 
-            let mut new_account = Account::new(name);
+            let mut new_account = Account::new(first);
             new_account.set_parent(self);
 
             self.accounts.insert(first.into(), new_account);
@@ -112,6 +112,12 @@ impl Account {
         unsafe { &mut *mut_ptr }
     }
 
+    pub fn flatten_account_tree(&self) -> Vec<&Account> {
+        let mut list: Vec<&Account> = vec![];
+        self.flatten(&mut list);
+        list
+    }
+
     /// Returns the amount of this account only.
     pub fn amount(&self) -> Balance {
         let mut bal = Balance::new();
@@ -129,11 +135,11 @@ impl Account {
         bal
     }
 
-    pub fn flatten<'a>(&'a self, nodes: &mut Vec<&'a Account>) {
+    fn flatten<'a>(&'a self, nodes: &mut Vec<&'a Account>) {
         // Push the current node to the Vec
         nodes.push(self);
         // If the node has children, recursively call flatten on them
-        for (name, child) in &self.accounts {
+        for (_name, child) in &self.accounts {
             child.flatten(nodes);
         }
     }
@@ -166,28 +172,33 @@ impl Account {
     }
 }
 
-impl <'a>IntoIterator for &'a Account {
-    type Item = &'a Account;
-    type IntoIter = AccountIterator<'a>;
+// impl <'a>IntoIterator for &'a Account {
+//     type Item = &'a Account;
+//     type IntoIter = AccountIterator<'a>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        AccountIterator {
-            inner: self.accounts.values()
-        }
-    }
-}
+//     fn into_iter(self) -> Self::IntoIter {
+//         let mut nodes: Vec<&Account> = vec![];
+//         self.flatten(&mut nodes);
 
-pub struct AccountIterator<'a> {
-    inner: std::collections::hash_map::Values<'a, String, Account>,
-}
+//         AccountIterator {
+//             // inner: self.accounts.values()
+//             inner: nodes
+//         }
+//     }
+// }
 
-impl <'a>Iterator for AccountIterator<'a> {
-    type Item = &'a Account;
+// pub struct AccountIterator<'a> {
+//     // inner: std::collections::hash_map::Values<'a, String, Account>,
+//     inner: Vec<&'a Account>
+// }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-    }
-}
+// impl Iterator for AccountIterator<'a> {
+//     type Item = &Account;
+
+//     fn next(&mut self) -> Option<Self::Item> {
+//         self.inner.iter().next()
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -203,7 +214,7 @@ mod tests {
         let _acct = j.register_account("Assets:Cash");
         let mut nodes: Vec<&Account> = vec![];
 
-        j.get_master_account().flatten(&mut nodes);
+        j.master.flatten(&mut nodes);
 
         assert_eq!(3, nodes.len());
     }
@@ -214,12 +225,12 @@ mod tests {
         let mut counter: u8 = 0;
 
         let _acct = j.register_account("Assets:Cash");
-        for a in j.get_master_account().into_iter() {
+        for a in j.master.flatten_account_tree() {
             //println!("sub-account: {:?}", a);
             counter += 1;
         }
 
-        assert_eq!(2, counter);
+        assert_eq!(3, counter);
     }
 
     /// Search for an account by the full account name.
@@ -232,13 +243,13 @@ mod tests {
 "#;
         parser::read_into_journal(Cursor::new(input), &mut j);
 
-        let Some(acct_id) = j.find_account("Expenses:Food")
+        let Some(ptr) = j.find_account("Expenses:Food")
             else {panic!("account not found");};
-        let account = j.get_account(acct_id);
+        let account = j.get_account(ptr);
 
         let actual = account.fullname();
 
-        assert_eq!(5, j.accounts.len());
+        assert_eq!(5, j.master.flatten_account_tree().len());
         assert_eq!("Food", account.name);
         assert_eq!("Expenses:Food", actual);
     }
@@ -268,7 +279,8 @@ mod tests {
     fn test_total() {
         let mut journal = Journal::new();
         parse_file("tests/two-xact-sub-acct.ledger", &mut journal);
-        let assets = journal.find_account("Assets").unwrap();
+        let ptr = journal.find_account("Assets").unwrap();
+        let assets = journal.get_account(ptr);
 
         // act
         let actual = assets.total(&journal);

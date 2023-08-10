@@ -18,38 +18,21 @@ use crate::{
 pub type XactIndex = usize;
 
 pub struct Journal {
-    pub master: *const Account,
+    pub master: Account,
 
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
-    pub accounts: Vec<Account>
 }
 
 impl Journal {
     pub fn new() -> Self {
-        let mut j = Journal {
-            master: std::ptr::null(),
+        Self {
+            master: Account::new(""),
 
             commodity_pool: CommodityPool::new(),
             xacts: vec![],
-            // posts: vec![],
-            accounts: vec![],
             // sources: Vec<fileinfo?>
-        };
-
-        // Create master account
-        let master = j.add_account(Account::new(""));
-        j.master = master;
-
-        j
-    }
-
-    /// Adds the account to the storage.
-    /// Should be used only during account registration.
-    fn add_account(&mut self, acct: Account) -> &Account {
-        self.accounts.push(acct);
-        // self.accounts.len() - 1
-        self.accounts.last().unwrap()
+        }
     }
 
     pub fn add_xact(&mut self, xact: Xact) -> &Xact {
@@ -60,13 +43,6 @@ impl Journal {
 
     pub fn all_posts(&self) -> Vec<&Post> {
         self.xacts.iter().flat_map(|x| x.posts.iter()).collect()
-    }
-
-    pub fn create_account(&mut self, name: &str) -> *const Account {
-        let acct = Account::new(name);
-        let ptr = &acct as *const Account;
-        self.add_account(acct);
-        ptr
     }
 
     pub fn get_account(&self, acct_ptr: *const Account) -> &Account {
@@ -84,14 +60,6 @@ impl Journal {
         self.commodity_pool.get_by_index(index)
     }
 
-    pub fn get_master_account(&self) -> &Account {
-        self.accounts.get(0).expect("master account")
-    }
-
-    pub fn get_master_account_mut(&mut self) -> &mut Account {
-        self.accounts.get_mut(0).expect("master account")
-    }
-
     /// Called to create an account during Post parsing.
     ///
     /// account_t * journal_t::register_account(const string& name, post_t * post,
@@ -105,25 +73,30 @@ impl Journal {
         // todo: expand_aliases
         // account_t * result = expand_aliases(name);
 
-        let master_account: &mut Account = self.get_master_account_mut();
+        let master_account: &mut Account = &mut self.master;
 
         // Create the account object and associate it with the journal; this
         // is registering the account.
 
         // let account_ptr = self.create_sub_account(self.master, name, true);
 
-        let account = master_account.find_account(name);
+        let Some(account_ptr) = master_account.find_account(name)
+        else { return None };
 
         // todo: add any validity checks here.
 
-        account
+        let account = self.get_account(account_ptr);
+        Some(account)
     }
 
-    pub fn find_account(&self, name: &str) -> Option<&Account> {
-        let Some(ptr) = self.find_account(name)
-        else {return None};
+    pub fn find_account(&mut self, name: &str) -> Option<*const Account> {
+        // if let Some(ptr) = self.master.find_account(name) {
+        //     return Some(self.get_account(ptr));
+        // } else {
+        //     return None
+        // }
 
-        Some(self.get_account(ptr))
+        self.master.find_account(name)
     }
 
     /// Read journal source (file or string).
@@ -141,6 +114,7 @@ impl Journal {
 
 #[cfg(test)]
 mod tests {
+    use core::panic;
     use std::io::Cursor;
 
     use super::Journal;
@@ -150,8 +124,8 @@ mod tests {
     fn test_add_account() {
         const ACCT_NAME: &str = "Assets";
         let mut journal = Journal::new();
-        let a = Account::new(ACCT_NAME);
-        let actual = journal.add_account(a);
+        let ptr = journal.register_account(ACCT_NAME).unwrap();
+        let actual = journal.get_account(ptr);
 
         // There is master account
         // assert_eq!(1, i);
@@ -161,10 +135,12 @@ mod tests {
     #[test]
     fn test_add_account_data() {
         let mut journal = Journal::new();
-        let a = Account::new("Assets");
-        let expected = Account::new("Assets");
+        const NAME: &str = "Assets";
+        let a = Account::new(NAME);
+        let expected = Account::new(NAME);
 
-        let actual = journal.add_account(a);
+        let Some(ptr) = journal.register_account(NAME) else {panic!("unexpected")};
+        let actual = journal.get_account(ptr);
 
         assert_eq!(expected, *actual);
     }
@@ -189,17 +165,17 @@ mod tests {
         let actual = journal.get_account(new_acct);
 
         // Asserts
-        assert_eq!(4, journal.accounts.len());
+        assert_eq!(4, journal.master.flatten_account_tree().len());
         assert_eq!(NAME, actual.fullname());
 
         // tree structure
-        let master = journal.get_master_account_mut();
+        let master = &mut journal.master;
         assert_eq!("", master.name);
 
         let assets_ptr = master.find_account("Assets").unwrap();
         let assets = journal.get_account_mut(assets_ptr);
         assert_eq!("Assets", assets.name);
-        assert_eq!(journal.master, assets.parent);
+        assert_eq!(&journal.master as *const Account, assets.parent);
 
         let inv_ix = assets.find_account("Investments").unwrap();
         let inv = journal.get_account_mut(inv_ix);
@@ -217,10 +193,9 @@ mod tests {
     fn test_master_gets_created() {
         let j = Journal::new();
 
-        let actual = j.get_master_account();
+        let actual = j.master;
 
         assert_eq!("", actual.name);
-        assert_ne!(std::ptr::null(), actual);
     }
 
     #[test]
