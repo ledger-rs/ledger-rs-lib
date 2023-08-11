@@ -2,7 +2,7 @@
  * Account definition and operations
  */
 
-use std::{collections::HashMap, vec};
+use std::{collections::HashMap, ptr::addr_of, vec};
 
 use crate::{balance::Balance, post::Post};
 
@@ -30,6 +30,22 @@ impl Account {
             fullname: "".to_string(),
             // post_indices: vec![],
         }
+    }
+
+    /// called from find_or_create.
+    fn create_account(&self, first: &str) -> &Account {
+        let mut new_account = Account::new(first);
+        log::debug!("Setting account parent: {:?}", self);
+        new_account.set_parent(self);
+
+        let self_mut = self.get_account_mut(self as *const Account as *mut Account);
+
+        self_mut.accounts.insert(first.into(), new_account);
+
+        let Some(new_ref) = self.accounts.get(first)
+            else {panic!("should not happen")};
+
+        new_ref
     }
 
     pub fn fullname(&self) -> &str {
@@ -61,8 +77,8 @@ impl Account {
 
     fn set_fullname(&self, fullname: String) {
         // alchemy?
-        let ptr = self as *const Account;
-        // let mut_ptr = ptr as *mut Account;
+        // let ptr = self as *const Account;
+        let ptr = addr_of!(*self);
         let subject = self.get_account_mut(ptr);
 
         subject.fullname = fullname;
@@ -70,18 +86,24 @@ impl Account {
 
     /// Finds account by full name.
     /// i.e. "Assets:Cash"
-    pub fn find_account(&mut self, name: &str) -> Option<*const Account> {
-        self.find_or_create(name, true)
+    pub fn find_account(&self, name: &str) -> Option<&Account> {
+        if let Some(ptr) = self.find_or_create(name, true) {
+            let acct = self.get_account(ptr);
+            return Some(acct);
+        } else {
+            return None;
+        }
     }
 
     /// The variant with all the parameters.
     /// account_t * find_account(const string& name, bool auto_create = true);
-    fn find_or_create(&mut self, name: &str, auto_create: bool) -> Option<*const Account> {
+    pub fn find_or_create(&self, name: &str, auto_create: bool) -> Option<*const Account> {
+        // search for direct hit.
         if let Some(found) = self.accounts.get(name) {
             return Some(found);
         }
 
-        // otherwise create
+        // otherwise search for name parts in between the `:`
 
         let mut account: *const Account;
         let first: &str;
@@ -96,7 +118,7 @@ impl Account {
             rest = "";
         }
 
-        if let Some(account_opt) = self.accounts.get_mut(first) {
+        if let Some(account_opt) = self.accounts.get(first) {
             // keep this value
             account = account_opt;
         } else {
@@ -104,15 +126,7 @@ impl Account {
                 return None;
             }
 
-            let mut new_account = Account::new(first);
-            log::debug!("Setting account parent: {:?}", self);
-            new_account.set_parent(self);
-
-            self.accounts.insert(first.into(), new_account);
-
-            let Some(new_ref) = self.accounts.get(first)
-                else {panic!("should not happen")};
-            account = new_ref;
+            account = self.create_account(first);
         }
 
         // Search recursively.
@@ -166,7 +180,8 @@ impl Account {
     }
 
     pub(crate) fn set_parent(&mut self, parent: &Account) {
-        self.parent = parent as *const Account;
+        // self.parent = parent as *const Account;
+        self.parent = addr_of!(*parent);
     }
 
     /// Returns the balance of this account and all sub-accounts.
@@ -195,7 +210,7 @@ impl Account {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Cursor;
+    use std::{io::Cursor, ptr::addr_of};
 
     use crate::{amount::Quantity, journal::Journal, parse_file, parse_text, parser};
 
@@ -229,20 +244,18 @@ mod tests {
     /// Search for an account by the full account name.
     #[test]
     fn test_fullname() {
-        let mut j = Journal::new();
         let input = r#"2023-05-01 Test
     Expenses:Food  10 EUR
     Assets:Cash
 "#;
-        parser::read_into_journal(Cursor::new(input), &mut j);
+        let mut journal = Journal::new();
+        parser::read_into_journal(Cursor::new(input), &mut journal);
 
-        let Some(ptr) = j.find_account("Expenses:Food")
-            else {panic!("account not found");};
-        let account = j.get_account(ptr);
+        let account = journal.find_account("Expenses:Food").unwrap();
 
         let actual = account.fullname();
 
-        assert_eq!(5, j.master.flatten_account_tree().len());
+        assert_eq!(5, journal.master.flatten_account_tree().len());
         assert_eq!("Food", account.name);
         assert_eq!("Expenses:Food", actual);
     }
@@ -291,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parent_pointers() {
+    fn test_parent_pointer() {
         let input = r#"2023-05-05 Payee
     Expenses  20
     Assets
@@ -304,11 +317,11 @@ mod tests {
         let ptr = journal.master.find_account("Assets").unwrap();
         let assets = journal.get_account(ptr);
 
-        assert_eq!(&journal.master as *const Account, assets.parent);
+        assert_eq!(addr_of!(journal.master), assets.parent);
     }
 
     #[test]
-    fn test_parent_pointers_after_fullname() {
+    fn test_parent_pointer_after_fullname() {
         let input = r#"2023-05-05 Payee
     Expenses  20
     Assets
@@ -317,10 +330,10 @@ mod tests {
         parse_text(input, &mut journal);
 
         // test parent
-        // let ptr = journal.master.find_account("Assets").unwrap();
-        // let assets = journal.get_account(ptr);
+        let ptr = journal.master.find_account("Assets").unwrap();
+        let assets = journal.get_account(ptr);
 
-        // assert_eq!(&journal.master as *const Account, assets.parent);
+        assert_eq!(&journal.master as *const Account, assets.parent);
 
         // test fullname
         let assets_fullname = journal.master.accounts.get("Assets").unwrap().fullname();
@@ -333,6 +346,31 @@ mod tests {
         let ptr = journal.master.find_account("Assets").unwrap();
         let assets = journal.get_account(ptr);
 
-        assert_eq!(&journal.master as *const Account, assets.parent);
+        assert_eq!(addr_of!(journal.master), assets.parent);
+    }
+
+    #[test]
+    fn test_parent_pointers() {
+        let input = r#"2023-05-05 Payee
+        Expenses:Groceries  20
+        Assets:Cash
+    "#;
+        let mut journal = Journal::new();
+
+        parse_text(input, &mut journal);
+
+        // assets
+        let ptr = journal.master.find_account("Assets").unwrap();
+        let assets = journal.get_account(ptr);
+        assert_eq!(addr_of!(journal.master), assets.parent);
+
+        // cash
+        let ptr = journal.master.find_account("Cash").unwrap();
+        let cash = journal.get_account(ptr);
+        assert_eq!(addr_of!(*assets), cash.parent);
+
+        // expenses
+
+        // groceries
     }
 }

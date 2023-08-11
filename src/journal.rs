@@ -78,7 +78,7 @@ impl Journal {
         // Create the account object and associate it with the journal; this
         // is registering the account.
 
-        let Some(account_ptr) = master_account.find_account(name)
+        let Some(account_ptr) = master_account.find_or_create(name, true)
         else { return None };
 
         // todo: add any validity checks here.
@@ -87,7 +87,7 @@ impl Journal {
         Some(account)
     }
 
-    pub fn find_account(&mut self, name: &str) -> Option<*const Account> {
+    pub fn find_account(&self, name: &str) -> Option<&Account> {
         self.master.find_account(name)
     }
 
@@ -107,7 +107,7 @@ impl Journal {
 #[cfg(test)]
 mod tests {
     use core::panic;
-    use std::io::Cursor;
+    use std::{io::Cursor, ptr::addr_of};
 
     use super::Journal;
     use crate::{account::Account, parse_file};
@@ -148,34 +148,36 @@ mod tests {
     #[test]
     fn test_register_account() {
         const NAME: &str = "Assets:Investments:Broker";
-        let mut journal = Journal::new();
+        let mut j = Journal::new();
 
         // act
-        let new_acct = journal.register_account(NAME).unwrap();
-        let actual = journal.get_account_mut(new_acct);
+        let new_acct = j.register_account(NAME).unwrap();
+        let actual = j.get_account_mut(new_acct);
+        
+        let journal = &j;
 
         // Asserts
         assert_eq!(4, journal.master.flatten_account_tree().len());
         assert_eq!(NAME, actual.fullname());
 
         // tree structure
-        let master = &mut journal.master;
+        let master = &journal.master;
         assert_eq!("", master.name);
 
-        let assets_ptr = master.find_account("Assets").unwrap();
-        let assets = journal.get_account_mut(assets_ptr);
+        let assets = master.find_account("Assets").unwrap();
+        // let assets = journal.get_account(assets_ptr);
         assert_eq!("Assets", assets.name);
-        assert_eq!(&journal.master as *const Account, assets.parent);
+        assert_eq!(addr_of!(journal.master), assets.parent);
 
-        let inv_ix = assets.find_account("Investments").unwrap();
-        let inv = journal.get_account_mut(inv_ix);
+        let inv = assets.find_account("Investments").unwrap();
+        // let inv = journal.get_account_mut(inv_ix);
         assert_eq!("Investments", inv.name);
-        assert_eq!(assets_ptr, inv.parent);
+        assert_eq!(addr_of!(*assets), inv.parent);
 
-        let broker_ix = inv.find_account("Broker").unwrap();
-        let broker = journal.get_account(broker_ix);
+        let broker = inv.find_account("Broker").unwrap();
+        // let broker = journal.get_account(broker_ix);
         assert_eq!("Broker", broker.name);
-        assert_eq!(inv_ix, broker.parent);
+        assert_eq!(inv as *const Account, broker.parent);
     }
 
     /// The master account needs to be created in the Journal automatically.

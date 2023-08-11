@@ -177,6 +177,7 @@ mod lib_tests {
 
     use crate::{amount::{Amount, Quantity}, option, run};
 
+    // Try to understand why this test fails when dereferencing.
     #[test]
     fn test_minimal() {
         // create a ledger command
