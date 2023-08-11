@@ -30,6 +30,8 @@ fn report_payees() {
 /// Or accounts_report in ledger.
 /// Vec<String>
 pub fn balance_report(journal: &Journal) -> Vec<String> {
+    log::debug!("Running the balance report");
+
     // let balances = get_account_balances(&journal);
     // Now that the account totals are implemented, simply walk the master account.
     // Format output
@@ -41,8 +43,6 @@ pub fn balance_report(journal: &Journal) -> Vec<String> {
 /// Quick test of the account traversal for assembling the totals.
 fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<String> {
     let mut result = vec![];
-
-    // account.total(journal).amounts.iter().map(|amt| amt.quantity)
 
     let mut balance_line = String::new();
     let total = account.total();
@@ -66,9 +66,6 @@ fn get_children_lines<'a>(account: &'a Account, journal: &'a Journal) -> Vec<Str
         let acct = account.accounts.get(acct_name).unwrap();
         result.extend(get_children_lines(acct, journal));
     }
-
-    // account.accounts.values().map(|index| format!("Account") journal.get_account(*index).name)
-    // .into_iter()
 
     result
 }

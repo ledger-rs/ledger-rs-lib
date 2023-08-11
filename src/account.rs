@@ -33,6 +33,11 @@ impl Account {
     }
 
     pub fn fullname(&self) -> &str {
+        // skip the master account.
+        if self.parent.is_null() {
+            return "";
+        }
+
         if !self.fullname.is_empty() {
             return &self.fullname;
         }
@@ -57,8 +62,8 @@ impl Account {
     fn set_fullname(&self, fullname: String) {
         // alchemy?
         let ptr = self as *const Account;
-        let mut_ptr = ptr as *mut Account;
-        let subject = self.get_account_mut(mut_ptr);
+        // let mut_ptr = ptr as *mut Account;
+        let subject = self.get_account_mut(ptr);
 
         subject.fullname = fullname;
     }
@@ -100,6 +105,7 @@ impl Account {
             }
 
             let mut new_account = Account::new(first);
+            log::debug!("Setting account parent: {:?}", self);
             new_account.set_parent(self);
 
             self.accounts.insert(first.into(), new_account);
@@ -160,7 +166,7 @@ impl Account {
     }
 
     pub(crate) fn set_parent(&mut self, parent: &Account) {
-        self.parent = parent;
+        self.parent = parent as *const Account;
     }
 
     /// Returns the balance of this account and all sub-accounts.
@@ -191,7 +197,7 @@ impl Account {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{amount::Quantity, journal::Journal, parse_file, parser};
+    use crate::{amount::Quantity, journal::Journal, parse_file, parse_text, parser};
 
     use super::Account;
 
@@ -282,5 +288,51 @@ mod tests {
 
         assert_eq!(actual.amounts[0].quantity, (-30).into());
         assert_eq!(actual.amounts[0].get_commodity().unwrap().symbol, "EUR");
+    }
+
+    #[test]
+    fn test_parent_pointers() {
+        let input = r#"2023-05-05 Payee
+    Expenses  20
+    Assets
+"#;
+        let mut journal = Journal::new();
+
+        // act
+        parse_text(input, &mut journal);
+
+        let ptr = journal.master.find_account("Assets").unwrap();
+        let assets = journal.get_account(ptr);
+
+        assert_eq!(&journal.master as *const Account, assets.parent);
+    }
+
+    #[test]
+    fn test_parent_pointers_after_fullname() {
+        let input = r#"2023-05-05 Payee
+    Expenses  20
+    Assets
+"#;
+        let mut journal = Journal::new();
+        parse_text(input, &mut journal);
+
+        // test parent
+        // let ptr = journal.master.find_account("Assets").unwrap();
+        // let assets = journal.get_account(ptr);
+
+        // assert_eq!(&journal.master as *const Account, assets.parent);
+
+        // test fullname
+        let assets_fullname = journal.master.accounts.get("Assets").unwrap().fullname();
+        let expenses_fullname = journal.master.accounts.get("Expenses").unwrap().fullname();
+
+        assert_eq!("Assets", assets_fullname);
+        assert_eq!("Expenses", expenses_fullname);
+
+        // test parent
+        let ptr = journal.master.find_account("Assets").unwrap();
+        let assets = journal.get_account(ptr);
+
+        assert_eq!(&journal.master as *const Account, assets.parent);
     }
 }

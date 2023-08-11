@@ -30,7 +30,7 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use crate::{
     amount::{Amount, Quantity},
     annotate::Annotation,
-    journal::{Journal, XactIndex},
+    journal::Journal,
     post::Post,
     scanner::{self, PostTokens},
     xact::Xact,

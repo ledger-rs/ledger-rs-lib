@@ -15,7 +15,7 @@ use crate::{
     xact::Xact,
 };
 
-pub type XactIndex = usize;
+// pub type XactIndex = usize;
 
 pub struct Journal {
     pub master: Account,
@@ -77,8 +77,6 @@ impl Journal {
 
         // Create the account object and associate it with the journal; this
         // is registering the account.
-
-        // let account_ptr = self.create_sub_account(self.master, name, true);
 
         let Some(account_ptr) = master_account.find_account(name)
         else { return None };

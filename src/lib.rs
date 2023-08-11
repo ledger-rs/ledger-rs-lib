@@ -175,7 +175,7 @@ pub fn wasm_test() -> String {
 mod lib_tests {
     use std::assert_eq;
 
-    use crate::{amount::{Amount, Quantity}, option, run, commodity::Commodity};
+    use crate::{amount::{Amount, Quantity}, option, run};
 
     #[test]
     fn test_minimal() {
@@ -185,6 +185,9 @@ mod lib_tests {
         let expected = r#"Account  has balance 0
 Account Assets has balance -20
 Account Expenses has balance 20"#;
+
+        // the test fails when checking the parent in fullname() for
+        // Assets (the first child account).
 
         let actual = run(args).join("\n");
 
