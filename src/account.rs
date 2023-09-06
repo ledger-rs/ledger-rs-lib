@@ -87,7 +87,7 @@ impl Account {
     /// Finds account by full name.
     /// i.e. "Assets:Cash"
     pub fn find_account(&self, name: &str) -> Option<&Account> {
-        if let Some(ptr) = self.find_or_create(name, true) {
+        if let Some(ptr) = self.find_or_create(name, false) {
             let acct = self.get_account(ptr);
             return Some(acct);
         } else {
@@ -364,21 +364,24 @@ mod tests {
 
         parse_text(input, &mut journal);
 
+        // expenses
+        let expenses = journal.master.find_account("Expenses").unwrap();
+        assert_eq!(addr_of!(journal.master), expenses.parent);
+
+        // groceries
+        let groceries = expenses.find_account("Groceries").unwrap();
+        assert_eq!(expenses as *const Account, groceries.parent);
+
         // assets
-        let ptr = journal.master.find_account("Assets").unwrap();
-        let assets = journal.get_account(ptr);
+        let assets = journal.master.find_account("Assets").unwrap();
         assert_eq!(addr_of!(journal.master), assets.parent);
 
         // confirm that addr_of! and `as *const` are the same.
         assert_eq!(assets as *const Account, addr_of!(*assets));
 
         // cash
-        let ptr = journal.master.find_account("Cash").unwrap();
-        let cash = journal.get_account(ptr);
+        let cash = assets.find_account("Cash").unwrap();
         assert_eq!(assets as *const Account, cash.parent);
 
-        // expenses
-
-        // groceries
     }
 }
