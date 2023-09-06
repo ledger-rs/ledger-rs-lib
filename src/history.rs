@@ -135,10 +135,14 @@ impl CommodityHistory {
             };
             let pp = PricePoint::new(*date, Amount::new(*quantity, Some(target_ptr)));
             return Some(pp);
+        } else {
+            // else calculate the rate
+            self.calculate_rate(source, target_ptr, path);
+            todo!()
         }
+    }
 
-        // else calculate the rate
-
+    fn calculate_rate(&self, source: CommodityIndex, target_ptr: *const Commodity, path: Vec<NodeIndex>) -> (NaiveDateTime, Quantity) {
         let mut result = Amount::new(Quantity::ONE, Some(target_ptr));
         let mut temp_source = source;
         for temp_target in path {
@@ -149,23 +153,21 @@ impl CommodityHistory {
 
             // get the price
             // TODO: include the datetime
-            todo!("resolve this below");
-            // let temp_price = self
-            //     .get_direct_price(
-            //         temp_source as *const Commodity,
-            //         temp_target as *const Commodity,
-            //     )
-            //     .expect("price"); // , moment, oldest);
+            let (&temp_date, &temp_quantity) = self
+                .get_direct_price(
+                    temp_source,
+                    temp_target,
+                )
+                .expect("price"); // , moment, oldest);
 
             // TODO: calculate the amount.
-            // result *= temp_price.price;
+            result.quantity *= temp_quantity;
             // temp_price.when
 
-            // log::debug!("intermediate price from {:?} to {:?} = {:?}", temp_source, temp_target, temp_price);
+            log::debug!("intermediate price from {:?} to {:?} = {:?} on {:?}", temp_source, temp_target, temp_quantity, temp_date);
 
             // source for the next leg
-            todo!("fix below");
-            // temp_source = temp_target;
+            temp_source = temp_target;
         }
 
         // TODO: What is the final date when multiple hops involved?
@@ -173,9 +175,10 @@ impl CommodityHistory {
         let when = Local::now().naive_local();
 
         // TODO: add to the price map.
-        // self.add_price(commodity_index, datetime, price)
+        // self.add_price(commodity_index, datetime, price);
 
-        Some(PricePoint::new(when, result))
+        // Some(PricePoint::new(when, result))
+        (when, result.quantity)
     }
 
     /// Finds the price
@@ -237,12 +240,6 @@ fn get_latest_price(
     // prices.get(last_date)
 
     // BTreeMap does this for us.
-    // if let Some((date, quantity)) = prices.last_key_value() {
-    //     // Some(v)
-    //     // Some(PricePoint::new(*date, Amount::new(*quantity, None)))
-    // } else {
-    //     None
-    // }
     prices.last_key_value()
 }
 
@@ -355,8 +352,9 @@ mod tests {
         prices.insert(parse_datetime("2023-05-02").unwrap(), Quantity::from(40));
 
         // act
-        let Some((actual_date, actual_quantity)) = get_latest_price(&prices)
-            else {panic!("Should not happen!")};
+        let Some((actual_date, actual_quantity)) = get_latest_price(&prices) else {
+            panic!("Should not happen!")
+        };
 
         // assert!(actual.is_some());
         assert_eq!(newest_date, *actual_date);
@@ -392,6 +390,7 @@ mod tests {
         assert_eq!(Quantity::from("1.20"), *actual_quantity);
     }
 
+    /// Test commodity exchange when there is a direct rate. EUR->USD
     #[test_log::test]
     fn test_find_price_1_hop() {
         let mut journal = Journal::new();
@@ -421,33 +420,59 @@ mod tests {
     }
 
     #[test_log::test]
+    fn test_calculate_rate() {
+        // arrange
+        let mut journal = Journal::new();
+        let eur_ptr = journal.commodity_pool.create("EUR", None);
+        let aud_ptr = journal.commodity_pool.create("AUD", None);
+        let usd_ptr = journal.commodity_pool.create("USD", None);
+        let source = commodity::from_ptr(eur_ptr).graph_index.unwrap();
+        let path = vec![NodeIndex::new(0), NodeIndex::new(1), NodeIndex::new(2)];
+        // prices
+        let date = parse_datetime("2023-05-01").unwrap();
+        // 1 EUR = 2 AUD
+        let two_aud = parse_amount("2 AUD", &mut journal).unwrap();
+        journal.commodity_pool.add_price(eur_ptr, date, two_aud);
+        // 1 AUD = 3 USD
+        let three_usd = parse_amount("3 USD", &mut journal).unwrap();
+        journal.commodity_pool.add_price(aud_ptr, date, three_usd);
+
+        // act
+        let (actual_date, actual_quantity) = journal.commodity_pool.commodity_history.calculate_rate(source, usd_ptr, path);
+
+        // assert
+        assert_eq!(date, actual_date);
+        assert_eq!(Quantity::from_str("3 USD").unwrap(), actual_quantity);
+    }
+
+    /// Test commodity exchange via an intermediary. EUR->AUD->USD
+    #[test_log::test]
     fn test_find_price_2_hops() {
         let mut journal = Journal::new();
-        let usd = Commodity::new("USD");
-        let eur_index = journal.commodity_pool.create("EUR", None);
-        let aud_index = journal.commodity_pool.create("AUD", None);
-        let usd_index = journal.commodity_pool.create("USD", None);
+        let eur_ptr = journal.commodity_pool.create("EUR", None);
+        let aud_ptr = journal.commodity_pool.create("AUD", None);
+        let usd_ptr = journal.commodity_pool.create("USD", None);
         // prices
         let date = parse_datetime("2023-05-01").unwrap();
         // 1 EUR = 2 AUD
         let euraud = parse_amount("2 AUD", &mut journal).unwrap();
-        journal.commodity_pool.add_price(eur_index, date, euraud);
+        journal.commodity_pool.add_price(eur_ptr, date, euraud);
         // 1 AUD = 3 USD
         let audusd = parse_amount("3 USD", &mut journal).unwrap();
-        journal.commodity_pool.add_price(aud_index, date, audusd);
+        journal.commodity_pool.add_price(aud_ptr, date, audusd);
         let oldest = Local::now().naive_local();
 
         // act
         let actual = journal
             .commodity_pool
             .commodity_history
-            .find_price(eur_index, usd_index, date, oldest)
+            .find_price(eur_ptr, usd_ptr, date, oldest)
             .unwrap();
 
         // assert
-        // TODO: assert_eq!(actual.when, date);
+        assert_eq!(actual.when, date);
         // 1 EUR = 2 AUD = 6 USD
         assert_eq!(actual.price.quantity, 6.into());
-        assert_eq!(actual.price.get_commodity(), Some(&usd));
+        assert_eq!(actual.price.get_commodity().unwrap().symbol, "USD");
     }
 }
