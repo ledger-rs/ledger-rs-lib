@@ -35,7 +35,6 @@ impl Account {
     /// called from find_or_create.
     fn create_account(&self, first: &str) -> &Account {
         let mut new_account = Account::new(first);
-        log::debug!("Setting account parent: {:?}", self);
         new_account.set_parent(self);
 
         let self_mut = self.get_account_mut(self as *const Account as *mut Account);
@@ -45,6 +44,7 @@ impl Account {
         let Some(new_ref) = self.accounts.get(first)
             else {panic!("should not happen")};
 
+        log::debug!("The new account {:?} reference: {:p}", new_ref.name, new_ref);
         new_ref
     }
 
@@ -180,8 +180,13 @@ impl Account {
     }
 
     pub(crate) fn set_parent(&mut self, parent: &Account) {
+        // Confirm the pointers are the same.
+        assert_eq!(parent as *const Account, addr_of!(*parent));
+
         // self.parent = parent as *const Account;
         self.parent = addr_of!(*parent);
+        
+        log::debug!("Setting the {:?} parent to {:?}, {:p}", self.name, parent.name, self.parent);
     }
 
     /// Returns the balance of this account and all sub-accounts.
@@ -349,7 +354,7 @@ mod tests {
         assert_eq!(addr_of!(journal.master), assets.parent);
     }
 
-    #[test]
+    #[test_log::test]
     fn test_parent_pointers() {
         let input = r#"2023-05-05 Payee
         Expenses:Groceries  20
@@ -364,10 +369,13 @@ mod tests {
         let assets = journal.get_account(ptr);
         assert_eq!(addr_of!(journal.master), assets.parent);
 
+        // confirm that addr_of! and `as *const` are the same.
+        assert_eq!(assets as *const Account, addr_of!(*assets));
+
         // cash
         let ptr = journal.master.find_account("Cash").unwrap();
         let cash = journal.get_account(ptr);
-        assert_eq!(addr_of!(*assets), cash.parent);
+        assert_eq!(assets as *const Account, cash.parent);
 
         // expenses
 
