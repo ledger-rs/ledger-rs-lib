@@ -83,7 +83,7 @@ impl CommodityPool {
 
         // add to price history graph.
         let cdty_ptr = new_commodity as *const Commodity;
-        log::debug!("commodity pointer: {:?}", cdty_ptr);
+        // log::debug!("commodity pointer: {:?} for {:?}", cdty_ptr, symbol);
         let i = self.commodity_history.add_commodity(cdty_ptr);
 
         unsafe {
@@ -92,7 +92,7 @@ impl CommodityPool {
             mut_cdty.graph_index = Some(i);
         }
 
-        log::debug!("Commodity {:?} created. index: {:?}", symbol, i);
+        log::debug!("Commodity {:?} created. index: {:?}, addr:{:?}", symbol, i, cdty_ptr);
 
         cdty_ptr
     }

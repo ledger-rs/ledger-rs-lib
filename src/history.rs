@@ -21,7 +21,7 @@ use petgraph::{algo::astar, stable_graph::NodeIndex, Graph};
 
 use crate::{
     amount::{Amount, Quantity},
-    commodity::{Commodity, PricePoint, self},
+    commodity::{self, Commodity, PricePoint},
     pool::CommodityIndex,
 };
 
@@ -56,15 +56,12 @@ impl CommodityHistory {
         datetime: NaiveDateTime,
         price: Amount,
     ) {
-        let source: &Commodity;
-        unsafe {
-            source = &*source_ptr;
-        }
+        let source = commodity::from_ptr(source_ptr);
         assert!(Some(source) != price.get_commodity());
 
         log::debug!(
             "adding price for {:?}, date: {:?}, price: {:?}",
-            source,
+            source.symbol,
             datetime,
             price
         );
@@ -115,35 +112,32 @@ impl CommodityHistory {
         let target: CommodityIndex = commodity::from_ptr(target_ptr).graph_index.unwrap();
 
         // Search for the shortest path using a*.
-        let shortest_path = astar(
-            &self.0,
-            source,
-            |finish| finish == target,
-            |e| 1,
-            |_| 0,
-        );
+        let shortest_path = astar(&self.0, source, |finish| finish == target, |e| 1, |_| 0);
         if shortest_path.is_none() {
             return None;
         }
 
-        log::debug!("Shortest path is {:?}", shortest_path);
-
         // Get the price.
-        // let Some(distance) = shortest_paths.get(&target)
-        // else {
-        //     return None;
-        // };
-        // cost, path
-        let Some((cost, path)) = shortest_path
-            else { panic!("Check this case") };
+        let Some((distance, path)) = shortest_path else {
+            panic!("should not happen")
+        };
 
-        // if *distance == 1 {
-        //     // direct link
-        //     self.get_direct_price(source, target)
-        // } else {
-        //     // calculate the rate
-        //     todo!()
-        // }
+        log::debug!(
+            "Shortest path found: hops={:?}, nodes={:?}",
+            distance,
+            &path
+        );
+
+        if distance == 1 {
+            // direct link
+            let Some((date, quantity)) = self.get_direct_price(source, target) else {
+                panic!("should not happen!")
+            };
+            let pp = PricePoint::new(*date, Amount::new(*quantity, Some(target_ptr)));
+            return Some(pp);
+        }
+
+        // else calculate the rate
 
         let mut result = Amount::new(Quantity::ONE, Some(target_ptr));
         let mut temp_source = source;
@@ -190,17 +184,13 @@ impl CommodityHistory {
     /// target: USD
     pub fn get_direct_price(
         &self,
-        source_ptr: *const Commodity,
-        target_ptr: *const Commodity,
-    ) -> Option<PricePoint> {
-        let source: CommodityIndex = commodity::from_ptr(source_ptr).graph_index.unwrap();
-        let target: CommodityIndex = commodity::from_ptr(target_ptr).graph_index.unwrap();
-
+        source: CommodityIndex,
+        target: CommodityIndex,
+    ) -> Option<(&NaiveDateTime, &Quantity)> {
         let direct = self.find_edge(source, target);
         if let Some(edge_index) = direct {
             let price_history = self.edge_weight(edge_index).unwrap();
-            if let Some(mut price_point) = get_latest_price(price_history) {
-                // price_point.price.get_commodity().unwrap().graph_index = Some(target);
+            if let Some(price_point) = get_latest_price(price_history) {
                 Some(price_point)
             } else {
                 None
@@ -234,7 +224,9 @@ impl DerefMut for CommodityHistory {
 /// Returns the latest (newest) price from the prices map.
 ///
 /// BTree is doing all the work here, sorting the keys (dates).
-fn get_latest_price(prices: &BTreeMap<NaiveDateTime, Quantity>) -> Option<PricePoint> {
+fn get_latest_price(
+    prices: &BTreeMap<NaiveDateTime, Quantity>,
+) -> Option<(&NaiveDateTime, &Quantity)> {
     if prices.is_empty() {
         return None;
     }
@@ -245,12 +237,13 @@ fn get_latest_price(prices: &BTreeMap<NaiveDateTime, Quantity>) -> Option<PriceP
     // prices.get(last_date)
 
     // BTreeMap does this for us.
-    if let Some((date, quantity)) = prices.last_key_value() {
-        // Some(v)
-        Some(PricePoint::new(*date, Amount::new(*quantity, None)))
-    } else {
-        None
-    }
+    // if let Some((date, quantity)) = prices.last_key_value() {
+    //     // Some(v)
+    //     // Some(PricePoint::new(*date, Amount::new(*quantity, None)))
+    // } else {
+    //     None
+    // }
+    prices.last_key_value()
 }
 
 /// Represents a price of a commodity.
@@ -289,7 +282,7 @@ mod tests {
     use super::{get_latest_price, CommodityHistory, PriceMap};
     use crate::{
         amount::{Amount, Quantity},
-        commodity::{Commodity, PricePoint},
+        commodity::{self, Commodity, PricePoint},
         journal::Journal,
         parser::{parse_amount, parse_datetime},
     };
@@ -362,13 +355,12 @@ mod tests {
         prices.insert(parse_datetime("2023-05-02").unwrap(), Quantity::from(40));
 
         // act
-        let actual = get_latest_price(&prices);
+        let Some((actual_date, actual_quantity)) = get_latest_price(&prices)
+            else {panic!("Should not happen!")};
 
-        assert!(actual.is_some());
-        assert_eq!(
-            PricePoint::new(newest_date, Amount::new(Quantity::from(30), None)),
-            actual.unwrap()
-        );
+        // assert!(actual.is_some());
+        assert_eq!(newest_date, *actual_date);
+        assert_eq!(Quantity::from(30), *actual_quantity);
     }
 
     #[test]
@@ -379,51 +371,53 @@ mod tests {
         // add price
         let date = parse_datetime("2023-05-01").unwrap();
         let price = parse_amount("1.20 USD", journal).unwrap();
-        journal
-            .commodity_pool
-            .commodity_history
-            .add_price(eur_ptr, date, price);
+        assert!(!price.get_commodity().unwrap().symbol.is_empty());
+        journal.commodity_pool.add_price(eur_ptr, date, price);
 
         // act
-        let actual = journal
+        let (actual_date, actual_quantity) = journal
             .commodity_pool
             .commodity_history
-            .get_direct_price(eur_ptr, usd_ptr)
+            .get_direct_price(
+                commodity::from_ptr(eur_ptr).graph_index.unwrap(),
+                commodity::from_ptr(usd_ptr).graph_index.unwrap(),
+            )
             .unwrap();
 
         // assert
-        // assert_eq!(eur_index, actual.commodity_index);
+        // assert_eq!(eur_ptr, actual.price.commodity);
         // assert_eq!("2023-05-01 00:00:00", actual.datetime.to_string());
         // assert_eq!(actual.price.quantity, 1.20.into());
-        assert_eq!(
-            PricePoint::new(date, Amount::new(Quantity::from("1.20"), None)),
-            actual
-        );
+        assert_eq!(actual_date, &date);
+        assert_eq!(Quantity::from("1.20"), *actual_quantity);
     }
 
     #[test_log::test]
     fn test_find_price_1_hop() {
         let mut journal = Journal::new();
         // add commodities
-        let eur = journal.commodity_pool.create("EUR", None);
-        let usd = journal.commodity_pool.create("USD", None);
+        let eur_ptr = journal.commodity_pool.create("EUR", None);
+        let usd_ptr = journal.commodity_pool.create("USD", None);
         // add price
         let date = parse_datetime("2023-05-01").unwrap();
         let price = parse_amount("1.20 USD", &mut journal).unwrap();
         let oldest = Local::now().naive_local();
-        journal.commodity_pool.add_price(eur, date, price);
+        journal.commodity_pool.add_price(eur_ptr, date, price);
 
         // act
         let actual = journal
             .commodity_pool
             .commodity_history
-            .find_price(eur, usd, date, oldest)
+            .find_price(eur_ptr, usd_ptr, date, oldest)
             .expect("price found");
 
         // assert
         assert_eq!(actual.when, date);
         assert_eq!(actual.price.quantity, "1.20".into());
-        assert_eq!(actual.price.commodity, usd);
+        assert_eq!(
+            actual.price.get_commodity().unwrap(),
+            commodity::from_ptr(usd_ptr)
+        );
     }
 
     #[test_log::test]
