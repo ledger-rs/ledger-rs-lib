@@ -180,13 +180,13 @@ impl Account {
     }
 
     pub(crate) fn set_parent(&mut self, parent: &Account) {
-        // Confirm the pointers are the same.
-        assert_eq!(parent as *const Account, addr_of!(*parent));
-
+        // Confirms the pointers are the same:
+        // assert_eq!(parent as *const Account, addr_of!(*parent));
         // self.parent = parent as *const Account;
+
         self.parent = addr_of!(*parent);
         
-        log::debug!("Setting the {:?} parent to {:?}, {:p}", self.name, parent.name, self.parent);
+        // log::debug!("Setting the {:?} parent to {:?}, {:p}", self.name, parent.name, self.parent);
     }
 
     /// Returns the balance of this account and all sub-accounts.

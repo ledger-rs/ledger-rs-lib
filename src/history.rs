@@ -21,7 +21,7 @@ use petgraph::{algo::astar, stable_graph::NodeIndex, Graph};
 
 use crate::{
     amount::{Amount, Quantity},
-    commodity::{Commodity, PricePoint},
+    commodity::{Commodity, PricePoint, self},
     pool::CommodityIndex,
 };
 
@@ -111,16 +111,10 @@ impl CommodityHistory {
     ) -> Option<PricePoint> {
         assert_ne!(source_ptr, target_ptr);
 
-        let source: CommodityIndex;
-        let target: CommodityIndex;
-        unsafe {
-            source = (*source_ptr).graph_index.unwrap();
-            target = (*target_ptr).graph_index.unwrap();
-        }
+        let source: CommodityIndex = commodity::from_ptr(source_ptr).graph_index.unwrap();
+        let target: CommodityIndex = commodity::from_ptr(target_ptr).graph_index.unwrap();
 
-        // Dijkstra returns a map of destination NodeId, path cost.
-        // let shortest_paths = dijkstra(&self.graph, source, Some(target), |_| 1);
-        // TODO: use the actual latest price value.
+        // Search for the shortest path using a*.
         let shortest_path = astar(
             &self.0,
             source,
@@ -131,6 +125,8 @@ impl CommodityHistory {
         if shortest_path.is_none() {
             return None;
         }
+
+        log::debug!("Shortest path is {:?}", shortest_path);
 
         // Get the price.
         // let Some(distance) = shortest_paths.get(&target)
@@ -197,12 +193,8 @@ impl CommodityHistory {
         source_ptr: *const Commodity,
         target_ptr: *const Commodity,
     ) -> Option<PricePoint> {
-        let source: CommodityIndex;
-        let target: CommodityIndex;
-        unsafe {
-            source = (*source_ptr).graph_index.unwrap();
-            target = (*target_ptr).graph_index.unwrap();
-        }
+        let source: CommodityIndex = commodity::from_ptr(source_ptr).graph_index.unwrap();
+        let target: CommodityIndex = commodity::from_ptr(target_ptr).graph_index.unwrap();
 
         let direct = self.find_edge(source, target);
         if let Some(edge_index) = direct {
@@ -409,7 +401,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[test_log::test]
     fn test_find_price_1_hop() {
         let mut journal = Journal::new();
         // add commodities
@@ -434,7 +426,7 @@ mod tests {
         assert_eq!(actual.price.commodity, usd);
     }
 
-    #[test]
+    #[test_log::test]
     fn test_find_price_2_hops() {
         let mut journal = Journal::new();
         let usd = Commodity::new("USD");

@@ -7,7 +7,6 @@
 use chrono::NaiveDateTime;
 
 use crate::{amount::Amount, pool::CommodityIndex};
-// use crate::pool::CommodityIndex;
 
 #[derive(Debug, PartialEq)]
 pub struct Commodity {
@@ -52,6 +51,12 @@ pub(crate) fn find_price(commodity: &Commodity, moment: NaiveDateTime, oldest: N
     // commodity.price_map.find(entry)
 
     todo!()
+}
+
+pub(crate) fn from_ptr<'a>(ptr: *const Commodity) -> &'a Commodity {
+    unsafe {
+        &*ptr
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
