@@ -156,7 +156,6 @@ impl CommodityPool {
         is_per_unit: bool,
         moment: NaiveDateTime,
     ) -> (CostBreakdown, Option<Price>) {
-        // amount.commodity_index
 
         // annotations
         let annotation_opt: Option<&Annotation> =

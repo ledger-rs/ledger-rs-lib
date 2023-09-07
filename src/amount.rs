@@ -21,11 +21,10 @@ impl Amount {
     pub fn new(quantity: Quantity, commodity: Option<*const Commodity>) -> Self {
         Self {
             quantity,
-            commodity: if commodity.is_some() {
-                commodity.unwrap()
-            } else {
-                std::ptr::null()
-            },
+            commodity: match commodity {
+                Some(c) => c,
+                _ => std::ptr::null()
+            }
         }
     }
 
