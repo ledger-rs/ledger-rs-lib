@@ -10,12 +10,11 @@ use crate::{balance::Balance, journal::Journal, account::Account};
 /// in output.cc
 /// report_accounts
 pub fn report_accounts(journal: &Journal) -> Vec<String> {
-    // journal
-    //     .accounts
-    //     .iter()
-    //     .map(|account| account.name.to_string())
-    //     .collect()
-    todo!("redo")
+    let accts = journal.master.flatten_account_tree();
+    accts
+        .iter()
+        .map(|account| account.name.to_string())
+        .collect()
 }
 
 fn report_commodities() {
