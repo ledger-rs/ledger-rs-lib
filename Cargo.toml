@@ -21,17 +21,17 @@ crate-type = ["cdylib", "rlib"]
 
 
 [dependencies]
-anyhow = "1.0.71"
-chrono = "0.4.26"
+anyhow = "1.0.75"
+chrono = "0.4.29"
 env_logger = "0.10.0"
-log = "0.4.19"
-petgraph = "0.6.3"
-rust_decimal = "1.31.0"
+log = "0.4.20"
+petgraph = "0.6.4"
+rust_decimal = "1.32.0"
 shell-words = "1.1.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2.85"
+wasm-bindgen = "0.2.87"
 wasm-bindgen-test = "*"
 
 [dev-dependencies]
-test-log = "0.2.11"
+test-log = "0.2.12"
