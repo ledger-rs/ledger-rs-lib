@@ -18,7 +18,7 @@ use crate::{
 // pub type XactIndex = usize;
 
 pub struct Journal {
-    pub master: Account,
+    pub master: Box<Account>,
 
     pub commodity_pool: CommodityPool,
     pub xacts: Vec<Xact>,
@@ -27,7 +27,7 @@ pub struct Journal {
 impl Journal {
     pub fn new() -> Self {
         Self {
-            master: Account::new(""),
+            master: Box::new(Account::new("")),
 
             commodity_pool: CommodityPool::new(),
             xacts: vec![],
@@ -132,7 +132,7 @@ mod tests {
         let Some(ptr) = journal.register_account(NAME) else {panic!("unexpected")};
         let actual = journal.get_account(ptr);
 
-        assert_eq!(&journal.master as *const Account, actual.parent);
+        assert_eq!(&*journal.master as *const Account, actual.parent);
     }
 
     #[test]
@@ -167,7 +167,7 @@ mod tests {
         let assets = master.find_account("Assets").unwrap();
         // let assets = journal.get_account(assets_ptr);
         assert_eq!("Assets", assets.name);
-        assert_eq!(addr_of!(journal.master), assets.parent);
+        assert_eq!(&*journal.master as *const Account, assets.parent);
 
         let inv = assets.find_account("Investments").unwrap();
         // let inv = journal.get_account_mut(inv_ix);

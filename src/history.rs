@@ -241,12 +241,7 @@ fn get_latest_price(
         return None;
     }
 
-    // let mut dates: Vec<&NaiveDateTime> = prices.keys().collect();
-    // dates.sort();
-    // let last_date = *dates.last().unwrap();
-    // prices.get(last_date)
-
-    // BTreeMap does this for us.
+    // BTreeMap orders by key (date) by default.
     prices.last_key_value()
 }
 
@@ -359,13 +354,13 @@ mod tests {
         prices.insert(parse_datetime("2023-05-02").unwrap(), Quantity::from(40));
 
         // act
-        let Some((actual_date, actual_quantity)) = get_latest_price(&prices) else {
+        let Some((&actual_date, &actual_quantity)) = get_latest_price(&prices) else {
             panic!("Should not happen!")
         };
 
         // assert!(actual.is_some());
-        assert_eq!(newest_date, *actual_date);
-        assert_eq!(Quantity::from(30), *actual_quantity);
+        assert_eq!(newest_date, actual_date);
+        assert_eq!(Quantity::from(30), actual_quantity);
     }
 
     #[test]

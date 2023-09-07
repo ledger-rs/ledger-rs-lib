@@ -322,7 +322,7 @@ mod tests {
         let ptr = journal.master.find_account("Assets").unwrap();
         let assets = journal.get_account(ptr);
 
-        assert_eq!(addr_of!(journal.master), assets.parent);
+        assert_eq!(&*journal.master as *const Account, assets.parent);
     }
 
     #[test]
@@ -338,7 +338,7 @@ mod tests {
         let ptr = journal.master.find_account("Assets").unwrap();
         let assets = journal.get_account(ptr);
 
-        assert_eq!(&journal.master as *const Account, assets.parent);
+        assert_eq!(&*journal.master as *const Account, assets.parent);
 
         // test fullname
         let assets_fullname = journal.master.accounts.get("Assets").unwrap().fullname();
@@ -351,7 +351,7 @@ mod tests {
         let ptr = journal.master.find_account("Assets").unwrap();
         let assets = journal.get_account(ptr);
 
-        assert_eq!(addr_of!(journal.master), assets.parent);
+        assert_eq!(&*journal.master as *const Account, assets.parent);
     }
 
     #[test_log::test]
@@ -366,7 +366,7 @@ mod tests {
 
         // expenses
         let expenses = journal.master.find_account("Expenses").unwrap();
-        assert_eq!(addr_of!(journal.master), expenses.parent);
+        assert_eq!(&*journal.master as *const Account, expenses.parent);
 
         // groceries
         let groceries = expenses.find_account("Groceries").unwrap();
@@ -374,7 +374,7 @@ mod tests {
 
         // assets
         let assets = journal.master.find_account("Assets").unwrap();
-        assert_eq!(addr_of!(journal.master), assets.parent);
+        assert_eq!(&*journal.master as *const Account, assets.parent);
 
         // confirm that addr_of! and `as *const` are the same.
         assert_eq!(assets as *const Account, addr_of!(*assets));
