@@ -22,7 +22,7 @@ impl Amount {
         Self {
             quantity,
             commodity: if commodity.is_some() {
-                commodity.unwrap() as *const Commodity
+                commodity.unwrap()
             } else {
                 std::ptr::null()
             },

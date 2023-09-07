@@ -88,7 +88,7 @@ impl Account {
     /// i.e. "Assets:Cash"
     pub fn find_account(&self, name: &str) -> Option<&Account> {
         if let Some(ptr) = self.find_or_create(name, false) {
-            let acct = self.get_account(ptr);
+            let acct = Account::from_ptr(ptr);
             return Some(acct);
         } else {
             return None;
@@ -138,7 +138,7 @@ impl Account {
         Some(account)
     }
 
-    pub fn get_account(&self, acct_ptr: *const Account) -> &Account {
+    pub fn from_ptr<'a>(acct_ptr: *const Account) -> &'a Account {
         unsafe { &*acct_ptr }
     }
 

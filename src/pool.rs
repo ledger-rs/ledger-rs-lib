@@ -188,7 +188,7 @@ impl CommodityPool {
             // self.add_price(amount.commodity_index.unwrap(), moment, per_unit_cost);
             // Instead, return the new price and have the caller store it.
             new_price = Some(Price::new(
-                amount.get_commodity().unwrap(),
+                amount.commodity,
                 moment,
                 per_unit_cost,
             ));

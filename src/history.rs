@@ -266,9 +266,9 @@ pub struct Price {
 }
 
 impl Price {
-    pub fn new(commodity: &Commodity, datetime: NaiveDateTime, cost: Amount) -> Self {
+    pub fn new(commodity: *const Commodity, datetime: NaiveDateTime, cost: Amount) -> Self {
         Self {
-            commodity: commodity as *const Commodity,
+            commodity,
             datetime,
             price: cost,
         }
