@@ -343,4 +343,21 @@ mod tests {
 
         assert_eq!(Amount::new(Quantity::from_str("50").unwrap(), None), actual);
     }
+
+    #[test]
+    fn test_from_str() {
+        // act
+        let actual = Quantity::from_str("3");
+
+        // assert
+        assert!(actual.is_some());
+        assert_eq!(Quantity::from(3), actual.unwrap())
+    }
+
+    #[test]
+    fn test_from_str_num_only() {
+        let actual = Quantity::from_str("3 USD");
+
+        assert!(actual.is_none());
+    }
 }

@@ -149,16 +149,22 @@ impl CommodityHistory {
     /// Calculate the exchange rate by using the existing rates, through multiple
     /// hops through intermediaries between two commodities.
     /// i.e. EUR->AUD->USD.
+    /// 
+    /// The final date of the price, when multiple hops involved, is the least recent date of the available
+    /// intermediate rates.
     fn calculate_rate(&self, source: CommodityIndex, target_ptr: *const Commodity, path: Vec<NodeIndex>) -> (NaiveDateTime, Quantity) {
         let mut result = Amount::new(Quantity::ONE, Some(target_ptr));
         let mut temp_source = source;
+        let mut least_recent: NaiveDateTime = Local::now().naive_local();
+
+        // iterate through intermediate rates and calculate (multiply).
         for temp_target in path {
             // skip self
             if temp_target == temp_source {
                 continue;
             }
 
-            // TODO: include the datetime
+            // include the datetime
             // get the price
             let (&temp_date, &temp_quantity) = self
                 .get_direct_price(
@@ -166,6 +172,11 @@ impl CommodityHistory {
                     temp_target,
                 )
                 .expect("price"); // , moment, oldest);
+
+            // date
+            if temp_date < least_recent {
+                least_recent = temp_date;
+            }
 
             // calculate the amount.
             result.quantity *= temp_quantity;
@@ -177,9 +188,7 @@ impl CommodityHistory {
             temp_source = temp_target;
         }
 
-        // TODO: What is the final date when multiple hops involved?
-        //
-        let when = Local::now().naive_local();
+        let when = least_recent;
 
         // TODO: add to the price map.
         // self.add_price(commodity_index, datetime, price);
@@ -421,7 +430,10 @@ mod tests {
         );
     }
 
-    // TODO: #[test_log::test]
+    /// Test calculating the rate.
+    /// EUR->AUD->USD
+    /// where 1 EUR = 2 AUD, 1 AUD = 3 USD => 1 EUR = 2 AUD = 6 USD.
+    #[test_log::test]
     fn test_calculate_rate() {
         // arrange
         let mut journal = Journal::new();
@@ -444,7 +456,7 @@ mod tests {
 
         // assert
         assert_eq!(date, actual_date);
-        assert_eq!(Quantity::from_str("3 USD").unwrap(), actual_quantity);
+        assert_eq!(Quantity::from_str("6").unwrap(), actual_quantity);
     }
 
     /// Test commodity exchange via an intermediary. EUR->AUD->USD
