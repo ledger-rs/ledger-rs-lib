@@ -143,8 +143,10 @@ fn test_parsing_lots_per_unit() {
 
 #[test]
 fn test_parsing_lots_full_price() {
+    // arrange
     let mut journal = Journal::new();
 
+    // act
     parse_file("tests/trade-buy-sell-full-price.ledger", &mut journal);
 
     // Assert
@@ -155,8 +157,9 @@ fn test_parsing_lots_full_price() {
 
     // posts
     assert_eq!(4, journal.all_posts().len());
-    let expected_cost = Amount::new(25.into(), Some(&Commodity::new("EUR")));
     let xact = &journal.xacts[1];
+    let eur = journal.commodity_pool.find("EUR").unwrap() as *const Commodity;
+    let expected_cost = Amount::new(25.into(), Some(eur));
     assert_eq!(expected_cost, xact.posts[0].cost.unwrap());
 }
 
