@@ -460,7 +460,7 @@ mod tests {
     }
 
     /// Test commodity exchange via an intermediary. EUR->AUD->USD
-    /// TODO: #[test_log::test]
+    #[test_log::test]
     fn test_find_price_2_hops() {
         let mut journal = Journal::new();
         let eur_ptr = journal.commodity_pool.create("EUR", None);
