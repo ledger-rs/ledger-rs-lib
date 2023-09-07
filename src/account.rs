@@ -173,8 +173,11 @@ impl Account {
     fn flatten<'a>(&'a self, nodes: &mut Vec<&'a Account>) {
         // Push the current node to the Vec
         nodes.push(self);
+        // 
+        let mut children: Vec<&Account> = self.accounts.values().into_iter().collect();
+        children.sort_unstable_by_key(|acc| &acc.name);
         // If the node has children, recursively call flatten on them
-        for (_name, child) in &self.accounts {
+        for child in children {
             child.flatten(nodes);
         }
     }

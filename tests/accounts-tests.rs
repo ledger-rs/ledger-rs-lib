@@ -17,9 +17,10 @@ fn test_creating_account_tree() {
     // Assert
     let accounts = journal.master.flatten_account_tree();
     assert_eq!(5, accounts.len());
-    assert_eq!("", accounts.iter().nth(0).unwrap().name);
-    assert_eq!("Expenses", accounts.iter().nth(1).unwrap().name);
-    assert_eq!("Food", accounts.iter().nth(2).unwrap().name);
-    assert_eq!("Assets", accounts.iter().nth(3).unwrap().name);
-    assert_eq!("Cash", accounts.iter().nth(4).unwrap().name);
+    let mut iterator = accounts.iter();
+    assert_eq!("", iterator.next().unwrap().name);
+    assert_eq!("Assets", iterator.next().unwrap().name);
+    assert_eq!("Cash", iterator.next().unwrap().name);
+    assert_eq!("Expenses", iterator.next().unwrap().name);
+    assert_eq!("Food", iterator.next().unwrap().name);
 }
