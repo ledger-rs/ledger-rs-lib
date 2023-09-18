@@ -44,6 +44,7 @@ pub mod amount;
 mod balance;
 pub mod commodity;
 mod directives;
+mod directive_reader;
 pub mod history;
 mod iterator;
 pub mod journal;

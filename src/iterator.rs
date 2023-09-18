@@ -1,5 +1,7 @@
 /*!
- * Implemetation of the parser that returns an iterator over the results
+ * Implemetation of the parser that returns an iterator over the results.
+ * 
+ * An example on how to use Iterators.
  */
 
 use crate::{directives::DirectiveType, xact::Xact};
