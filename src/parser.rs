@@ -104,6 +104,8 @@ impl<'j, T: Read> Parser<'j, T> {
         }
     }
 
+    /// Parse given input.
+    /// Fill the Journal with parsed elements.
     pub fn parse(&mut self) {
         loop {
             match self.reader.read_line(&mut self.buffer) {

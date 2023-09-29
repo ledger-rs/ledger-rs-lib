@@ -1,16 +1,16 @@
-//! Directive Reader
-//! Reads directives from the given source.
+//! The Journal Reader.
+//! Reads directives from the given source and returns them as an iterator.
 
-use std::io::{Read, Cursor, BufReader};
+use std::io::{Read, Cursor, BufReader, BufRead};
 
 use crate::directives::DirectiveType;
 
-pub fn read<T: Read>(source: T) -> DirectiveIter<T> {
+pub fn create_reader<T: Read>(source: T) -> DirectiveIter<T> {
     let iter = DirectiveIter::new(source);
     iter
 }
 
-pub fn read_str<T: Read>(source: &str) -> DirectiveIter<Cursor<&str>> {
+pub fn create_str_reader<T: Read>(source: &str) -> DirectiveIter<Cursor<&str>> {
     let cursor = Cursor::new(source);
     let iter: DirectiveIter<Cursor<&str>> = DirectiveIter::new(cursor);
     // read(cursor)
@@ -19,7 +19,8 @@ pub fn read_str<T: Read>(source: &str) -> DirectiveIter<Cursor<&str>> {
 
 pub struct DirectiveIter<T: Read> {
     // source: T,
-    reader: BufReader<T>
+    reader: BufReader<T>,
+    buffer: String
 }
 
 impl<T: Read> DirectiveIter<T> {
@@ -28,7 +29,8 @@ impl<T: Read> DirectiveIter<T> {
 
         Self {
             // source,
-            reader
+            reader,
+            buffer: String::new()
         }
     }
 }
@@ -39,6 +41,11 @@ impl<T: Read> Iterator for DirectiveIter<T> {
     fn next(self: &mut DirectiveIter<T>) -> Option<Self::Item> {
         // Read lines and recognise the directive.
         // TODO: Read line.
+        match self.reader.read_line(&mut self.buffer) {
+            Ok(result) => println!("Result: {:?}", result),
+            Err(error) => panic!("Error: {:?}", error)
+        };
+
         // TODO: Recognise directive, if any.
         // TODO: Read additional lines, if needed (like for Xact).
         // TODO: Parse and return the directive.
@@ -55,24 +62,27 @@ impl<T: Read> Iterator for DirectiveIter<T> {
 mod tests {
     use std::io::Cursor;
 
-    use crate::directive_reader::read_str;
+    use crate::reader::create_str_reader;
 
-    use super::DirectiveIter;
-
+    #[test]
     fn basic_test() {
         let content = "blah blah";
-        // let reader = DirectiveIter::new();
 
-        let output = read_str::<Cursor<&str>>(content);
+        let output = create_str_reader::<Cursor<&str>>(content);
 
-        todo!("incomplete");
+        let mut counter = 0;
+        for item in output {
+            println!("item: {:?}", item);
+            counter += 1;
+        }
+        assert_eq!(3, counter);
     }
 
     // #[test]
     fn iterator_test() {
         let content = "blah blah";
         //let iter = DirectiveIter::new();
-        let iter = read_str::<Cursor<&str>>(content);
+        let iter = create_str_reader::<Cursor<&str>>(content);
 
         for x in iter {
             println!("Directive: {:?}", x);
