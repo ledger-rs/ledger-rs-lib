@@ -1,7 +1,7 @@
 //! The Journal Reader.
 //! Reads directives from the given source and returns them as an iterator.
 
-use std::io::{Read, Cursor, BufReader, BufRead};
+use std::io::{BufRead, BufReader, Cursor, Read};
 
 use crate::directives::DirectiveType;
 
@@ -20,7 +20,7 @@ pub fn create_str_reader<T: Read>(source: &str) -> DirectiveIter<Cursor<&str>> {
 pub struct DirectiveIter<T: Read> {
     // source: T,
     reader: BufReader<T>,
-    buffer: String
+    buffer: String,
 }
 
 impl<T: Read> DirectiveIter<T> {
@@ -30,7 +30,7 @@ impl<T: Read> DirectiveIter<T> {
         Self {
             // source,
             reader,
-            buffer: String::new()
+            buffer: String::new(),
         }
     }
 }
@@ -40,23 +40,24 @@ impl<T: Read> Iterator for DirectiveIter<T> {
 
     fn next(self: &mut DirectiveIter<T>) -> Option<Self::Item> {
         // Read lines and recognise the directive.
-        // TODO: Read line.
         match self.reader.read_line(&mut self.buffer) {
-            Ok(result) => println!("Result: {:?}", result),
-            Err(error) => panic!("Error: {:?}", error)
+            Err(error) => panic!("Error: {:?}", error),
+            Ok(0) => {
+                // end of file
+                return None;
+            }
+            Ok(result) => {
+                // TODO: Recognise directive, if any.
+                // TODO: Read additional lines, if needed (like for Xact).
+                // TODO: Parse and return the directive.
+
+                // return Some(DirectiveType::Xact(Xact::default()))
+                println!("Result: {:?}", result);
+                return Some(DirectiveType::Comment);
+            }
         };
-
-        // TODO: Recognise directive, if any.
-        // TODO: Read additional lines, if needed (like for Xact).
-        // TODO: Parse and return the directive.
-
-        // return Some(DirectiveType::Xact(Xact::default()))
-
-        // TODO: "Return None when complete";
-        return None
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -66,7 +67,7 @@ mod tests {
 
     #[test]
     fn basic_test() {
-        let content = "blah blah";
+        let content = "; blah blah";
 
         let output = create_str_reader::<Cursor<&str>>(content);
 
@@ -75,7 +76,7 @@ mod tests {
             println!("item: {:?}", item);
             counter += 1;
         }
-        assert_eq!(3, counter);
+        assert_eq!(1, counter);
     }
 
     // #[test]
