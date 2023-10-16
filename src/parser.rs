@@ -33,7 +33,7 @@ use crate::{
     journal::Journal,
     post::Post,
     scanner::{self, PostTokens},
-    xact::Xact,
+    xact::Xact, parse_file,
 };
 
 pub const ISO_DATE_FORMAT: &str = "%Y-%m-%d";
@@ -81,7 +81,6 @@ pub fn parse_amount_parts(
     } else {
         None
     }
-
 }
 
 pub(crate) struct Parser<'j, T: Read> {
@@ -172,20 +171,23 @@ impl<'j, T: Read> Parser<'j, T> {
             c => {
                 // 4.7.2 command directives
 
-                // if !general_directive()
-                match c {
-                    // ACDNY
-                    'P' => {
-                        // price
-                        self.price_xact_directive();
-                    }
-
-                    c => {
-                        log::warn!("not handled: {:?}", c);
-                        todo!("handle other directives");
-                    }
+                if self.general_directive() {
+                    return Ok(());
                 }
-                // TODO: todo!("the rest")
+
+                match c {
+                        // ACDNPY
+                        'P' => {
+                            // a pricing xact
+                            self.price_xact_directive();
+                        }
+
+                        c => {
+                            log::warn!("not handled: {:?}", c);
+                            todo!("handle other directives");
+                        }
+                    }
+                    // TODO: todo!("the rest")
             }
         }
 
@@ -194,12 +196,14 @@ impl<'j, T: Read> Parser<'j, T> {
 
     /// textual.cc
     /// bool instance_t::general_directive(char *line)
-    fn general_directive(&self) -> bool {
+    fn general_directive(&mut self) -> bool {
         // todo: skip if (*p == '@' || *p == '!')
 
         // split directive and argument
         let mut iter = self.buffer.split_whitespace();
-        let Some(directive) = iter.next() else { panic!("no directive?") };
+        let Some(directive) = iter.next() else {
+            panic!("no directive?")
+        };
         let argument = iter.next();
 
         // todo: check arguments for directives that require one
@@ -220,7 +224,7 @@ impl<'j, T: Read> Parser<'j, T> {
             }
 
             // bcde
-            'i' => match self.buffer.as_str() {
+            'i' => match directive {
                 "include" => {
                     self.include_directive(argument.unwrap());
                     return true;
@@ -324,7 +328,9 @@ impl<'j, T: Read> Parser<'j, T> {
         Ok(())
     }
 
-    fn include_directive(&self, argument: &str) {
+    /// textual.cc
+    /// void instance_t::include_directive(char *line)
+    fn include_directive(&mut self, argument: &str) {
         let mut filename: PathBuf;
 
         // if (line[0] != '/' && line[0] != '\\' && line[0] != '~')
@@ -332,30 +338,44 @@ impl<'j, T: Read> Parser<'j, T> {
             filename = PathBuf::from_str(argument).unwrap();
         } else {
             // relative path
-            // TODO: get the parent path?
-            // dir = parent_path()
-            // if (parent_path.empty())
-            // else, use current directory
+            /*
+            filename = PathBuf::from_str(argument).unwrap();
+            // get the parent path?
+            match filename.parent() {
+                Some(parent) => {
+                    // absolute path
+                    filename = parent.to_path_buf();
+                },
+                None => {
+                    // no parent path, use current directory
+                    filename = env::current_dir().unwrap();
+                },
+            }
+            */
             filename = env::current_dir().unwrap();
-
-            filename.set_file_name(argument);
+            filename.push(argument);
         }
 
-        let mut file_found = false;
+        // TODO: resolve glob, i.e *.ledger
+
+        // let mut file_found = false;
         let parent_path = filename.parent().unwrap();
         if parent_path.exists() {
             if filename.is_file() {
                 // let base = filename.file_name();
 
-                // TODO: read file
-                // read_into_journal(source, journal)
-                todo!("read file")
+                // read file.
+                //read_into_journal(source, journal);
+                // parse_file(filename.to_str().unwrap(), self.journal);
+                todo!("read file");
+                // The problem is again having a mutable reference and immutable ones.
+                // Try using Nom for parsing instead.
             }
         }
 
-        if !file_found {
-            panic!("Include file not found");
-        }
+        // if !file_found {
+        //     panic!("Include file not found");
+        // }
     }
 
     /// Parses the trailing note from the buffer.
@@ -491,14 +511,15 @@ mod tests {
     use crate::journal::Journal;
 
     /// Enable this test again when the functionality is complete
-    //#[test]
+    #[test]
     fn test_general_directive() {
-        let source = Cursor::new("include some-file.ledger");
+        let source = Cursor::new("include tests/basic.ledger");
         let mut journal = Journal::new();
 
-        let parser = Parser::new(source, &mut journal);
+        let mut parser = Parser::new(source, &mut journal);
 
-        parser.general_directive();
+        parser.parse();
+        //parser.general_directive();
 
         todo!("assert")
     }
@@ -681,11 +702,11 @@ mod parser_tests {
         let parent = journal.get_account(account.parent);
         assert_eq!("Assets", parent.name);
         // amount
-        let Some(a1) = &p1.amount else {panic!()};
+        let Some(a1) = &p1.amount else { panic!() };
         assert_eq!("20", a1.quantity.to_string());
         let comm1 = a1.get_commodity().unwrap();
         assert_eq!("VEUR", comm1.symbol);
-        let Some(ref cost1) = p1.cost else { panic!()};
+        let Some(ref cost1) = p1.cost else { panic!() };
         // cost
         assert_eq!(200, cost1.quantity.into());
         assert_eq!("EUR", cost1.get_commodity().unwrap().symbol);
@@ -694,7 +715,7 @@ mod parser_tests {
         let p2 = &posts[1];
         assert_eq!("Assets", journal.get_account(p2.account).name);
         // amount
-        let Some(a2) = &p2.amount else {panic!()};
+        let Some(a2) = &p2.amount else { panic!() };
         assert_eq!("-200", a2.quantity.to_string());
         let comm2 = a2.get_commodity().unwrap();
         assert_eq!("EUR", comm2.symbol);
@@ -905,7 +926,9 @@ mod amount_parsing_tests {
         let _ = parse_post("  Assets  -20000.00 EUR", xact_ptr, &mut journal);
         let xact = &journal.xacts[0];
         let post = xact.posts.first().unwrap();
-        let Some(ref amount) = post.amount else { panic!()};
+        let Some(ref amount) = post.amount else {
+            panic!()
+        };
 
         // Assert
         assert_eq!("-20000.00", amount.quantity.to_string());
@@ -922,7 +945,9 @@ mod amount_parsing_tests {
         let _ = parse_post("  Assets  A$-20000.00", xact_ptr, &mut journal);
         let xact = &journal.xacts[0];
         let post = xact.posts.first().unwrap();
-        let Some(ref amount) = post.amount else { panic!()};
+        let Some(ref amount) = post.amount else {
+            panic!()
+        };
 
         // Assert
         assert_eq!("-20000.00", amount.quantity.to_string());

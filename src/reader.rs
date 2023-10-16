@@ -1,5 +1,7 @@
 //! The Journal Reader.
 //! Reads directives from the given source and returns them as an iterator.
+//! 
+//! An attempt to replace the Parser::parse() method.
 
 use std::io::{BufRead, BufReader, Cursor, Read};
 
@@ -13,7 +15,6 @@ pub fn create_reader<T: Read>(source: T) -> DirectiveIter<T> {
 pub fn create_str_reader<T: Read>(source: &str) -> DirectiveIter<Cursor<&str>> {
     let cursor = Cursor::new(source);
     let iter: DirectiveIter<Cursor<&str>> = DirectiveIter::new(cursor);
-    // read(cursor)
     iter
 }
 
@@ -48,6 +49,7 @@ impl<T: Read> Iterator for DirectiveIter<T> {
             }
             Ok(result) => {
                 // TODO: Recognise directive, if any.
+
                 // TODO: Read additional lines, if needed (like for Xact).
                 // TODO: Parse and return the directive.
 
@@ -63,7 +65,7 @@ impl<T: Read> Iterator for DirectiveIter<T> {
 mod tests {
     use std::io::Cursor;
 
-    use crate::reader::create_str_reader;
+    use crate::{reader::create_str_reader, directives::DirectiveType};
 
     #[test]
     fn basic_test() {
@@ -79,14 +81,19 @@ mod tests {
         assert_eq!(1, counter);
     }
 
-    // #[test]
-    fn iterator_test() {
-        let content = "blah blah";
+    #[test]
+    fn one_xact_test() {
+        let content = r#"2023-03-04 Shop
+    Expenses:Clothing  20 EUR
+    Assets:Credit Card
+"#;
         //let iter = DirectiveIter::new();
         let iter = create_str_reader::<Cursor<&str>>(content);
 
+        // iter.count()
         for x in iter {
             println!("Directive: {:?}", x);
+            // assert_eq!(DirectiveType::Xact())
         }
     }
 }
