@@ -65,7 +65,7 @@ impl<T: Read> Iterator for DirectiveIter<T> {
 mod tests {
     use std::io::Cursor;
 
-    use crate::{reader::create_str_reader, directives::DirectiveType};
+    use crate::reader::create_str_reader;
 
     #[test]
     fn basic_test() {

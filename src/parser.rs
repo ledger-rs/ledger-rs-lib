@@ -168,13 +168,14 @@ impl<'j, T: Read> Parser<'j, T> {
             }
 
             // The rest
-            c => {
+            _ => {
                 // 4.7.2 command directives
 
                 if self.general_directive() {
                     return Ok(());
                 }
 
+                let c = 'P';
                 match c {
                         // ACDNPY
                         'P' => {
@@ -226,7 +227,8 @@ impl<'j, T: Read> Parser<'j, T> {
             // bcde
             'i' => match directive {
                 "include" => {
-                    self.include_directive(argument.unwrap());
+                    let own_argument = argument.unwrap().to_owned();
+                    self.include_directive(&own_argument);
                     return true;
                 }
                 "import" => {
@@ -365,11 +367,7 @@ impl<'j, T: Read> Parser<'j, T> {
                 // let base = filename.file_name();
 
                 // read file.
-                //read_into_journal(source, journal);
-                // parse_file(filename.to_str().unwrap(), self.journal);
-                todo!("read file");
-                // The problem is again having a mutable reference and immutable ones.
-                // Try using Nom for parsing instead.
+                parse_file(filename.to_str().unwrap(), self.journal);
             }
         }
 
